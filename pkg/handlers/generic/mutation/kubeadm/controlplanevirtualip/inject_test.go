@@ -265,7 +265,7 @@ metadata:
 spec:
   containers:
     - name: kube-vip
-      image: ghcr.io/kube-vip/kube-vip:v1.1.1
+      image: ghcr.io/kube-vip/kube-vip:v1.2.4
       imagePullPolicy: IfNotPresent
       args:
         - manager

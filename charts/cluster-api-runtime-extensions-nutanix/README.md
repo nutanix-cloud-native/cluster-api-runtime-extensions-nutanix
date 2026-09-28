@@ -48,9 +48,11 @@ A Helm chart for cluster-api-runtime-extensions-nutanix
 | helmRepository.securityContext.runAsUser | int | `65532` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.aws.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-aws-ccm-helm-values-template"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.33" | string | `"v1.33.2"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.34" | string | `"v1.34.0"` |  |
-| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.35" | string | `"v1.35.0"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.33" | string | `"v1.33.4"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.34" | string | `"v1.34.3"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.35" | string | `"v1.35.2"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.36" | string | `"v1.36.1"` |  |
+| hooks.ccm.aws.k8sMinorVersionToCCMVersion."1.37" | string | `"v1.37.0"` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.create | bool | `true` |  |
 | hooks.ccm.nutanix.helmAddonStrategy.defaultValueTemplateConfigMap.name | string | `"default-nutanix-ccm-helm-values-template"` |  |
 | hooks.clusterAutoscaler.crsStrategy.defaultInstallationConfigMap.name | string | `"cluster-autoscaler"` |  |

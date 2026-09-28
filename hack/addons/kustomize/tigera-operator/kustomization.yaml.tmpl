@@ -13,6 +13,9 @@ sortOptions:
 resources:
 - namespace.yaml
 
+# As of Calico v3.32, CRDs (crd.projectcalico.org + operator.tigera.io) are shipped in a
+# separate chart. Keep tigera-operator first so helm-cm / HelmAddon metadata stays correct;
+# CRS SortForCreate still applies CustomResourceDefinitions before other kinds.
 helmCharts:
 - name: tigera-operator
   repo: https://docs.tigera.io/calico/charts
@@ -21,6 +24,21 @@ helmCharts:
   valuesInline:
     installation:
       enabled: false
+    # CRDs are applied via the crd.projectcalico.org.v1 chart below (CRS path).
+    manageCRDs: false
+    # Keep observability components off to match prior CAREN Calico defaults.
+    goldmane:
+      enabled: false
+    whisker:
+      enabled: false
+  includeCRDs: true
+  skipTests: true
+  skipHooks: true
+  namespace: tigera-operator
+- name: crd.projectcalico.org.v1
+  repo: https://docs.tigera.io/calico/charts
+  releaseName: calico-crds
+  version: ${CALICO_VERSION}
   includeCRDs: true
   skipTests: true
   skipHooks: true

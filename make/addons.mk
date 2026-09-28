@@ -11,103 +11,109 @@
 #   Run 'make addons.sync' to update the addons.
 
 # Calico (tigera-operator)
-#   Chart name: tigera-operator
+#   Chart name: tigera-operator (+ crd.projectcalico.org.v1 from Calico v3.32+)
 #   Chart repo: https://docs.tigera.io/calico/charts/index.yaml
-#   Chart version:   3.31.4
-#   App version:     3.31.4
+#   Chart version:   3.32.2
+#   App version:     3.32.2
 #   Repo:            https://github.com/projectcalico/calico
-#   Release:         https://github.com/projectcalico/calico/releases/tag/v3.31.4
-export CALICO_VERSION := v3.31.4
+#   Release:         https://github.com/projectcalico/calico/releases/tag/v3.32.2
+# From v3.32, CRDs are no longer bundled in tigera-operator; update-calico-manifests.sh
+# renders crd.projectcalico.org.v1 then tigera-operator into the CRS ConfigMaps.
+export CALICO_VERSION := v3.32.2
 
 # Cilium
 #   Chart name: cilium
 #   Chart repo: https://helm.cilium.io/index.yaml
-#   Chart version:   1.19.4
-#   App version:     1.19.4
+#   Chart version:   1.20.2
+#   App version:     1.20.2
 #   Repo:            https://github.com/cilium/cilium
-#   Release:         https://github.com/cilium/cilium/releases/tag/v1.19.4
-export CILIUM_VERSION := 1.19.4
+#   Release:         https://github.com/cilium/cilium/releases/tag/v1.20.2
+export CILIUM_VERSION := 1.20.2
 
 # Node Feature Discovery
 #   Chart name: node-feature-discovery
 #   Chart repo: https://kubernetes-sigs.github.io/node-feature-discovery/charts/index.yaml
-#   Chart version:   0.18.3
-#   App version:     0.18.3
+#   Chart version:   0.19.0
+#   App version:     0.19.0
 #   Repo:            https://github.com/kubernetes-sigs/node-feature-discovery
-#   Release:         https://github.com/kubernetes-sigs/node-feature-discovery/releases/tag/v0.18.3
-export NODE_FEATURE_DISCOVERY_VERSION := 0.18.3
+#   Release:         https://github.com/kubernetes-sigs/node-feature-discovery/releases/tag/v0.19.0
+export NODE_FEATURE_DISCOVERY_VERSION := 0.19.0
 
 # Cluster Autoscaler
 #   Chart name: cluster-autoscaler
 #   Chart repo: https://kubernetes.github.io/autoscaler/index.yaml
-#   Chart version:   9.56.0
+#   Chart version:   9.59.0
 #   App version:     1.35.0
 #   Repo:            https://github.com/kubernetes/autoscaler
 #   Release:         https://github.com/kubernetes/autoscaler/releases/tag/cluster-autoscaler-1.35.0
 # TODO: Remove tag override once https://github.com/kubernetes/autoscaler/issues/9439 is resolved.
-export CLUSTER_AUTOSCALER_CHART_VERSION := 9.56.0
+export CLUSTER_AUTOSCALER_CHART_VERSION := 9.59.0
 
 # AWS EBS CSI
 #   Chart name: aws-ebs-csi-driver
 #   Chart repo: https://kubernetes-sigs.github.io/aws-ebs-csi-driver/index.yaml
-#   Chart version:   v2.57.1
-#   App version:     1.57.1
+#   Chart version:   2.66.0
+#   App version:     1.66.0
 #   Repo:            https://github.com/kubernetes-sigs/aws-ebs-csi-driver
-#   Release:         https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/tag/v1.57.1
-export AWS_EBS_CSI_CHART_VERSION := 2.57.1
+#   Release:         https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/tag/v1.66.0
+export AWS_EBS_CSI_CHART_VERSION := 2.66.0
 
 # Nutanix Storage CSI
 #   Chart name: nutanix-csi-storage
 #   Chart repo: https://nutanix.github.io/helm-releases/index.yaml
-#   Chart version:   3.7.1
-#   App version:     3.7.1
+#   Chart version:   3.8.0
+#   App version:     3.8.0
 #   Repo:            https://portal.nutanix.com/page/documents/list?type=software&filterKey=product&filterVal=CSI
-#   Release:         https://portal.nutanix.com/page/documents/details?targetId=CSI-Volume-Driver-v3_7:CSI-Volume-Driver-v3_7
-export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.7.1
+#   Release:         https://portal.nutanix.com/page/documents/details?targetId=CSI-Volume-Driver-v3_8:CSI-Volume-Driver-v3_8
+export NUTANIX_STORAGE_CSI_CHART_VERSION := 3.8.0
 
 # Local Path Provisioner CSI
 #   Chart name: local-path-provisioner
 #   Chart repo: https://charts.containeroo.ch/index.yaml
-#   Chart version:   v0.0.36
-#   App version:     v0.0.35
+#   Chart version:   0.0.38
+#   App version:     v0.0.37
 #   Repo:            https://github.com/rancher/local-path-provisioner
-#   Release:         https://github.com/rancher/local-path-provisioner/releases/tag/v0.0.35
-export LOCAL_PATH_CSI_CHART_VERSION := 0.0.36
+#   Release:         https://github.com/rancher/local-path-provisioner/releases/tag/v0.0.37
+export LOCAL_PATH_CSI_CHART_VERSION := 0.0.38
 
 # Snapshot Controller
 #   Chart name: snapshot-controller
 #   Chart repo: https://piraeus.io/helm-charts/index.yaml
-#   Chart version:   5.0.3
-#   App version:     8.5.0
+#   Chart version:   5.3.0
+#   App version:     8.6.0
 #   Repo:            https://github.com/kubernetes-csi/external-snapshotter
-#   Release:         https://github.com/kubernetes-csi/external-snapshotter/releases/tag/v8.5.0
-export SNAPSHOT_CONTROLLER_CHART_VERSION := 5.0.3
+#   Release:         https://github.com/kubernetes-csi/external-snapshotter/releases/tag/v8.6.0
+export SNAPSHOT_CONTROLLER_CHART_VERSION := 5.3.0
 
 # AWS CCM (chart version same for all K8s; app image version per K8s minor - check image exists via crane ls registry.k8s.io/provider-aws/cloud-controller-manager)
 #   Chart name: aws-cloud-controller-manager
 #   Chart repo: https://kubernetes.github.io/cloud-provider-aws/index.yaml
-#   Chart version:   0.0.11
+#   Chart version:   0.0.12
 #   App versions:     per K8s minor (see AWS_CCM_VERSION_* below)
 #   Repo:            https://github.com/kubernetes/cloud-provider-aws
-#   Releases:        v1.33.2 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.33.2
-#                    v1.34.0 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.34.0
-#                    v1.35.0 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.35.0
+#   Releases:        v1.33.4 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.33.4
+#                    v1.34.3 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.34.3
+#                    v1.35.2 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.35.2
+#                    v1.36.1 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.36.1
+#                    v1.37.0 https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.37.0
 # AWS CCM uses the same chart version for all kubernetes versions. The image used in the deployment will
 # be updated by the addon kustomization for CRS deployments and via Helm values for HelmAddon deployments.
-export AWS_CCM_CHART_VERSION := 0.0.11
+export AWS_CCM_CHART_VERSION := 0.0.12
 # A map of AWS CCM versions.
-export AWS_CCM_VERSION_133 := v1.33.2
-export AWS_CCM_VERSION_134 := v1.34.0
-export AWS_CCM_VERSION_135 := v1.35.0
+export AWS_CCM_VERSION_133 := v1.33.4
+export AWS_CCM_VERSION_134 := v1.34.3
+export AWS_CCM_VERSION_135 := v1.35.2
+export AWS_CCM_VERSION_136 := v1.36.1
+export AWS_CCM_VERSION_137 := v1.37.0
 
 # AWS Load Balancer Controller
 #   Chart name: aws-load-balancer-controller
 #   Chart repo: https://aws.github.io/eks-charts/index.yaml
-#   Chart version:   3.1.0
-#   App version:     v3.1.0
+#   Chart version:   3.5.0
+#   App version:     v3.5.0
 #   Repo:            https://github.com/kubernetes-sigs/aws-load-balancer-controller (app; chart from aws/eks-charts)
-#   Release:         https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/tag/v3.1.0
-export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.1.0
+#   Release:         https://github.com/kubernetes-sigs/aws-load-balancer-controller/releases/tag/v3.5.0
+export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.5.0
 
 # Nutanix CCM
 #   Chart name:    nutanix-cloud-provider
@@ -116,16 +122,17 @@ export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.1.0
 #   App version:   v0.6.1
 #   Repo:          https://github.com/nutanix-cloud-native/cloud-provider-nutanix
 #   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.6.1
+# Latest app releases (v0.6.3 / v0.7.0) publish Helm charts to OCI only; classic helm index still tops at 0.6.2.
 export NUTANIX_CCM_CHART_VERSION := 0.6.2
 
 # MetalLB
 #   Chart name:    metallb
 #   Chart repo:    https://metallb.github.io/metallb/index.yaml
-#   Chart version: 0.15.3
-#   App version:   v0.15.3
+#   Chart version: 0.16.1
+#   App version:   v0.16.1
 #   Repo:          https://github.com/metallb/metallb
-#   Release:       https://github.com/metallb/metallb/releases/tag/v0.15.3
-export METALLB_CHART_VERSION := 0.15.3
+#   Release:       https://github.com/metallb/metallb/releases/tag/v0.16.1
+export METALLB_CHART_VERSION := 0.16.1
 
 # COSI Controller
 #   Chart name:    cosi-controller
@@ -143,6 +150,8 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 #   App version:   v1.4.2
 #   Repo:          https://github.com/nutanix-core/k8s-agent
 #   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.4.2
+# Stay on 1.4.2: 1.5.0 caused Nutanix e2e cluster deletion to hang on BeforeClusterDelete
+# (Konnector HelmChartProxy uninstall / PC deregistration never completed within 30m).
 export KONNECTOR_AGENT_VERSION := 1.4.2
 
 # Multus
@@ -165,13 +174,13 @@ export NUTANIX_FLOW_CNI_VERSION := 1.1.0
 
 # Kube-vip (container image, not Helm - latest version can be checked via crane ls ghcr.io/kube-vip/kube-vip)
 #   Repo:        https://github.com/kube-vip/kube-vip
-#   App version: v1.1.1
-#   Release:     https://github.com/kube-vip/kube-vip/releases/tag/v1.1.1
-export KUBE_VIP_VERSION := v1.1.1
+#   App version: v1.2.4
+#   Release:     https://github.com/kube-vip/kube-vip/releases/tag/v1.2.4
+export KUBE_VIP_VERSION := v1.2.4
 
 .PHONY: addons.sync
 addons.sync: $(addprefix update-addon.,calico cilium nfd cluster-autoscaler snapshot-controller local-path-provisioner-csi aws-ebs-csi kube-vip)
-addons.sync: $(addprefix update-addon.aws-ccm.,133 134 135)
+addons.sync: $(addprefix update-addon.aws-ccm.,133 134 135 136 137)
 addons.sync: template-helm-repository
 
 .PHONY: update-addon.calico

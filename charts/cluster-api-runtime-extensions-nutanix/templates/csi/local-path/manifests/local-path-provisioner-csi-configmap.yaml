@@ -16,8 +16,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
       namespace: kube-system
     ---
@@ -28,8 +28,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
       namespace: kube-system
     rules:
@@ -53,8 +53,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
     rules:
     - apiGroups:
@@ -112,8 +112,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
       namespace: kube-system
     roleRef:
@@ -132,8 +132,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
     roleRef:
       apiGroup: rbac.authorization.k8s.io
@@ -165,9 +165,9 @@ data:
           namespace: kube-system
           labels:
             app.kubernetes.io/name: local-path-provisioner
-            helm.sh/chart: local-path-provisioner-0.0.36
+            helm.sh/chart: local-path-provisioner-0.0.38
             app.kubernetes.io/instance: local-path-provisioner-csi
-            app.kubernetes.io/version: "v0.0.35"
+            app.kubernetes.io/version: "v0.0.37"
             app.kubernetes.io/managed-by: Helm
         spec:
           priorityClassName: system-node-critical
@@ -177,7 +177,7 @@ data:
               effect: NoSchedule
           containers:
             - name: helper-pod
-              image: busybox:1.36.1
+              image: docker.io/library/busybox:1.36.1
               imagePullPolicy: IfNotPresent
               resources:
                 {}
@@ -195,8 +195,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-config
       namespace: kube-system
     ---
@@ -207,8 +207,8 @@ data:
         app.kubernetes.io/instance: local-path-provisioner-csi
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: local-path-provisioner
-        app.kubernetes.io/version: v0.0.35
-        helm.sh/chart: local-path-provisioner-0.0.36
+        app.kubernetes.io/version: v0.0.37
+        helm.sh/chart: local-path-provisioner-0.0.38
       name: local-path-provisioner-csi
       namespace: kube-system
     spec:
@@ -223,13 +223,12 @@ data:
             app.kubernetes.io/instance: local-path-provisioner-csi
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: local-path-provisioner
-            app.kubernetes.io/version: v0.0.35
-            helm.sh/chart: local-path-provisioner-0.0.36
+            app.kubernetes.io/version: v0.0.37
+            helm.sh/chart: local-path-provisioner-0.0.38
         spec:
           containers:
           - command:
             - local-path-provisioner
-            - --debug
             - start
             - --config
             - /etc/config/config.json
@@ -238,7 +237,7 @@ data:
             - --provisioner-name
             - rancher.io/local-path
             - --helper-image
-            - busybox:1.36.1
+            - docker.io/library/busybox:1.36.1
             - --configmap-name
             - local-path-config
             env:
@@ -248,11 +247,36 @@ data:
                   fieldPath: metadata.namespace
             - name: CONFIG_MOUNT_PATH
               value: /etc/config/
-            image: rancher/local-path-provisioner:v0.0.35
+            - name: HEALTH_PORT
+              value: "8080"
+            image: docker.io/rancher/local-path-provisioner:v0.0.37
             imagePullPolicy: IfNotPresent
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: health
+              initialDelaySeconds: 10
+              periodSeconds: 10
             name: local-path-provisioner
+            ports:
+            - containerPort: 8080
+              name: health
+              protocol: TCP
+            readinessProbe:
+              httpGet:
+                path: /ready
+                port: health
+              initialDelaySeconds: 5
+              periodSeconds: 5
             resources: {}
             securityContext: {}
+            startupProbe:
+              failureThreshold: 12
+              httpGet:
+                path: /health
+                port: health
+              initialDelaySeconds: 5
+              periodSeconds: 5
             volumeMounts:
             - mountPath: /etc/config/
               name: config-volume
