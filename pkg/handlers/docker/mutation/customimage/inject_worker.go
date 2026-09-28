@@ -98,7 +98,7 @@ func (h *customImageWorkerPatchHandler) Mutate(
 					return err
 				}
 
-				customImageVar = defaultKinDImageRepository + ":" + kubernetesVersion
+				customImageVar = defaultKinDImage(kubernetesVersion)
 			}
 
 			log.WithValues(

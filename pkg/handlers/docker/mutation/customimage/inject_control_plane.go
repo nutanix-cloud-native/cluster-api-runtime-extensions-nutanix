@@ -23,8 +23,6 @@ import (
 const (
 	// VariableName is the external patch variable name.
 	VariableName = "customImage"
-
-	defaultKinDImageRepository = "ghcr.io/mesosphere/kind-node"
 )
 
 type customImageControlPlanePatchHandler struct {
@@ -106,7 +104,7 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 					return err
 				}
 
-				customImageVar = defaultKinDImageRepository + ":" + kubernetesVersion
+				customImageVar = defaultKinDImage(kubernetesVersion)
 			}
 
 			log.WithValues(
