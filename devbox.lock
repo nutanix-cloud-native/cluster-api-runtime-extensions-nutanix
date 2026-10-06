@@ -1488,50 +1488,50 @@
       }
     },
     "reviewdog@latest": {
-      "last_modified": "2025-09-18T16:33:27Z",
-      "resolved": "github:NixOS/nixpkgs/f4b140d5b253f5e2a1ff4e5506edbf8267724bde#reviewdog",
+      "last_modified": "2026-08-27T07:16:00Z",
+      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#reviewdog",
       "source": "devbox-search",
-      "version": "0.20.3",
+      "version": "0.21.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/99qwph9rjpr60qzcs8bpacmfwz3jmvxq-reviewdog-0.20.3",
+              "path": "/nix/store/c19vcy0k5mryix6s0f3d9lkan64nh675-reviewdog-0.21.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/99qwph9rjpr60qzcs8bpacmfwz3jmvxq-reviewdog-0.20.3"
+          "store_path": "/nix/store/c19vcy0k5mryix6s0f3d9lkan64nh675-reviewdog-0.21.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/xadr234dvzshgjirj7i4rq12immr4ld3-reviewdog-0.20.3",
+              "path": "/nix/store/4sl5haz0xcbb6f6s5cdpm6zbn1v5c548-reviewdog-0.21.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/xadr234dvzshgjirj7i4rq12immr4ld3-reviewdog-0.20.3"
+          "store_path": "/nix/store/4sl5haz0xcbb6f6s5cdpm6zbn1v5c548-reviewdog-0.21.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pp1frddq7nxsghic2rb6m1sjrnyn4rf4-reviewdog-0.20.3",
+              "path": "/nix/store/zqmrwwd44qn58sb7wpygll9sm6f47lbg-reviewdog-0.21.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pp1frddq7nxsghic2rb6m1sjrnyn4rf4-reviewdog-0.20.3"
+          "store_path": "/nix/store/zqmrwwd44qn58sb7wpygll9sm6f47lbg-reviewdog-0.21.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/24csavg1ici6n7dr80vzdcz7yfldbw8k-reviewdog-0.20.3",
+              "path": "/nix/store/znclp1qfcpfry860p0xqpis603d2yp81-reviewdog-0.21.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/24csavg1ici6n7dr80vzdcz7yfldbw8k-reviewdog-0.20.3"
+          "store_path": "/nix/store/znclp1qfcpfry860p0xqpis603d2yp81-reviewdog-0.21.0"
         }
       }
     },
