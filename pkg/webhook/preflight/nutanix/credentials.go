@@ -22,7 +22,7 @@ import (
 const (
 	credentialsSecretDataKey = "credentials"
 
-	prismCentralCredentialsSecretRefField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef" //nolint:lll // Field is long.
+	prismCentralCredentialsSecretRefField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef" //nolint:gosec,lll // This is not a security sensitive field and is long.
 
 	prismCentralAdditionalTrustBundleField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle" //nolint:lll // Field is long.
 )
