@@ -112,7 +112,9 @@ func generateRegistryAddonRootCAData() (certPEM, keyPEM []byte, err error) {
 	}
 
 	certPEM = pem.EncodeToMemory(&pem.Block{Type: pemBlockTypeCertificate, Bytes: certDER})
-	keyPEM = pem.EncodeToMemory(&pem.Block{Type: pemBlockTypeRSAPrivateKey, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+	keyPEM = pem.EncodeToMemory(
+		&pem.Block{Type: pemBlockTypeRSAPrivateKey, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)},
+	)
 
 	return certPEM, keyPEM, nil
 }
