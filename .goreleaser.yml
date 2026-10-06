@@ -66,6 +66,8 @@ before:
 builds:
   - id: cluster-api-runtime-extensions-nutanix
     dir: ./cmd
+    # Relative to dir. Ko passes this to `go list`; an empty main is rejected.
+    main: .
     env:
       - CGO_ENABLED=0
     flags:
