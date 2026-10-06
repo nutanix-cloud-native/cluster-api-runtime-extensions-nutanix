@@ -78,7 +78,7 @@ func TestCreateStorageClass(t *testing.T) {
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
 				VolumeBindingMode:    ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
 				Provisioner:          string(v1alpha1.AWSEBSProvisioner),
-				AllowVolumeExpansion: ptr.To(true),
+				AllowVolumeExpansion: new(true),
 			},
 		},
 		{
@@ -101,7 +101,7 @@ func TestCreateStorageClass(t *testing.T) {
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
 				VolumeBindingMode:    ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
 				Provisioner:          string(v1alpha1.NutanixProvisioner),
-				AllowVolumeExpansion: ptr.To(false),
+				AllowVolumeExpansion: new(false),
 			},
 		},
 		{
@@ -126,7 +126,7 @@ func TestCreateStorageClass(t *testing.T) {
 				ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimDelete),
 				VolumeBindingMode:    ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
 				Provisioner:          string(v1alpha1.AWSEBSProvisioner),
-				AllowVolumeExpansion: ptr.To(true),
+				AllowVolumeExpansion: new(true),
 			},
 		},
 	}

@@ -264,13 +264,16 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 				),
 				InfrastructureProviders: input.E2EConfig.GetProviderLatestVersionsByContract(
 					"*",
-					input.E2EConfig.InfrastructureProviders()...),
+					input.E2EConfig.InfrastructureProviders()...,
+				),
 				AddonProviders: input.E2EConfig.GetProviderLatestVersionsByContract(
 					"*",
-					input.E2EConfig.AddonProviders()...),
+					input.E2EConfig.AddonProviders()...,
+				),
 				RuntimeExtensionProviders: input.E2EConfig.GetProviderLatestVersionsByContract(
 					"*",
-					input.E2EConfig.RuntimeExtensionProviders()...),
+					input.E2EConfig.RuntimeExtensionProviders()...,
+				),
 				LogFolder: filepath.Join(
 					input.ArtifactFolder,
 					"clusters",
@@ -312,7 +315,8 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 				Namespace: selfHostedNamespace.Name,
 				Name:      cluster.Name,
 			},
-			input.E2EConfig.GetIntervals(specName, "wait-cluster")...)
+			input.E2EConfig.GetIntervals(specName, "wait-cluster")...,
+		)
 
 		if input.PostClusterMoved != nil {
 			By("Running the post-cluster moved function")
@@ -374,7 +378,8 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 					Namespace: namespace.Name,
 					Name:      clusterResources.Cluster.Name,
 				},
-				input.E2EConfig.GetIntervals(specName, "wait-cluster")...)
+				input.E2EConfig.GetIntervals(specName, "wait-cluster")...,
+			)
 		}
 		if selfHostedCancelWatches != nil {
 			selfHostedCancelWatches()
@@ -513,7 +518,8 @@ func dumpSpecResourcesAndCleanup(
 				ClusterctlConfigPath: clusterctlConfigPath,
 				Namespace:            namespace.Name,
 			},
-			intervalsGetter(specName, "wait-delete-cluster")...)
+			intervalsGetter(specName, "wait-delete-cluster")...,
+		)
 
 		capie2e.Byf("Deleting namespace used for hosting the %q test spec", specName)
 		capie2eframework.DeleteNamespace(ctx, capie2eframework.DeleteNamespaceInput{

@@ -6,8 +6,6 @@ package autorenewcerts
 import (
 	"testing"
 
-	"k8s.io/utils/ptr"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -66,7 +64,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 	capitest.ValidateDiscoverVariablesAs[mutation.DiscoverVariables, v1alpha1.NutanixClusterConfigSpec](
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
+		new(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		func() mutation.DiscoverVariables {
 			return nutanixclusterconfig.NewVariable()

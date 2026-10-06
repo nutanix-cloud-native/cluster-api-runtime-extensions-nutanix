@@ -51,7 +51,8 @@ func (h *containerdMetricsPatchHandler) Mutate(
 			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -64,10 +65,12 @@ func (h *containerdMetricsPatchHandler) Mutate(
 			).Info("adding containerd metrics config to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				metricsConfigDropIn)
+				metricsConfigDropIn,
+			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

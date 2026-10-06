@@ -577,15 +577,15 @@ func interClusterRTTMillis(
 
 	input := &v3.ClusterSyncReplicationCapableInput{
 		SourceClusterReferenceList: []*v3.Reference{
-			{Kind: ptr.To("cluster"), UUID: ptr.To(sourceClusterUUID)},
+			{Kind: new("cluster"), UUID: new(sourceClusterUUID)},
 		},
 		RemoteClusterReference: &v3.Reference{
-			Kind: ptr.To("cluster"),
-			UUID: ptr.To(remoteClusterUUID),
+			Kind: new("cluster"),
+			UUID: new(remoteClusterUUID),
 		},
 		RemoteAvailabilityZoneReference: &v3.Reference{
-			Kind: ptr.To("availability_zone"),
-			UUID: ptr.To(localAZUUID),
+			Kind: new("availability_zone"),
+			UUID: new(localAZUUID),
 		},
 	}
 	resp, err := v3client.V3.GetSyncReplicationCapableClusters(ctx, input)

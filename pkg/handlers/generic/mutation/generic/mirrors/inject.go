@@ -88,7 +88,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 	_, registryAddonErr := variables.Get[v1alpha1.RegistryAddon](
 		vars,
 		v1alpha1.ClusterConfigVariableName,
-		[]string{"addons", v1alpha1.RegistryAddonVariableName}...)
+		[]string{"addons", v1alpha1.RegistryAddonVariableName}...,
+	)
 
 	switch {
 	case variables.IsNotFoundError(imageRegistriesErr) &&
@@ -181,7 +182,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -195,7 +197,8 @@ func (h *globalMirrorPatchHandler) Mutate(
 			obj.Spec.Template.Spec.Files = append(obj.Spec.Template.Spec.Files, files...)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

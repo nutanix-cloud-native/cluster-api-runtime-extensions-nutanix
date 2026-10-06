@@ -8,7 +8,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -36,7 +35,8 @@ type usersPatchHandler struct {
 func NewPatch() *usersPatchHandler {
 	return newUsersPatchHandler(
 		v1alpha1.ClusterConfigVariableName,
-		VariableName)
+		VariableName,
+	)
 }
 
 func newUsersPatchHandler(
@@ -96,7 +96,8 @@ func (h *usersPatchHandler) Mutate(
 
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Users = bootstrapUsers
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -109,7 +110,8 @@ func (h *usersPatchHandler) Mutate(
 			).Info("setting users in worker node kubeadm config template")
 			obj.Spec.Template.Spec.Users = bootstrapUsers
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -135,23 +137,24 @@ func (h *usersPatchHandler) Mutate(
 				}
 				eksBootstrapUsers = append(eksBootstrapUsers, eksbootstrapv1.User{
 					Name:              user.Name,
-					Gecos:             ptr.To(user.Gecos),
-					Groups:            ptr.To(user.Groups),
-					HomeDir:           ptr.To(user.HomeDir),
+					Gecos:             new(user.Gecos),
+					Groups:            new(user.Groups),
+					HomeDir:           new(user.HomeDir),
 					Inactive:          user.Inactive,
-					Shell:             ptr.To(user.Shell),
-					Passwd:            ptr.To(user.Passwd),
+					Shell:             new(user.Shell),
+					Passwd:            new(user.Passwd),
 					PasswdFrom:        passwdFrom,
-					PrimaryGroup:      ptr.To(user.PrimaryGroup),
+					PrimaryGroup:      new(user.PrimaryGroup),
 					LockPassword:      user.LockPassword,
-					Sudo:              ptr.To(user.Sudo),
+					Sudo:              new(user.Sudo),
 					SSHAuthorizedKeys: user.SSHAuthorizedKeys,
 				})
 			}
 
 			obj.Spec.Template.Spec.Users = eksBootstrapUsers
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -172,11 +175,11 @@ func generateBootstrapUser(userFromVariable v1alpha1.User) bootstrapv1.User {
 	// (b) Hashed password is not defined, password authentication is enabled.
 	//
 	// We disable password authentication by default.
-	bootstrapUser.LockPassword = ptr.To(true)
+	bootstrapUser.LockPassword = new(true)
 
 	if userFromVariable.HashedPassword != "" {
 		// We enable password authentication only if a hashed password is defined.
-		bootstrapUser.LockPassword = ptr.To(false)
+		bootstrapUser.LockPassword = new(false)
 		bootstrapUser.Passwd = userFromVariable.HashedPassword
 	}
 

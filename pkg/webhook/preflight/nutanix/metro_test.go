@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -52,7 +51,7 @@ func newMetroFailureDomain(name, peUUID string, subnetUUIDs ...string) *capxv1.N
 	for _, subnetUUID := range subnetUUIDs {
 		subnets = append(subnets, capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierUUID,
-			UUID: ptr.To(subnetUUID),
+			UUID: new(subnetUUID),
 		})
 	}
 
@@ -61,7 +60,7 @@ func newMetroFailureDomain(name, peUUID string, subnetUUIDs ...string) *capxv1.N
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To(peUUID),
+				UUID: new(peUUID),
 			},
 			Subnets: subnets,
 		},
@@ -102,7 +101,7 @@ func metroNClient(subnets map[string]metroSubnetSpec) *clientWrapper {
 			cluster.ExtId = uuid
 			cluster.Name = uuid
 			resp := &clustermgmtv4.GetClusterApiResponse{
-				ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+				ObjectType_: new("clustermgmt.v4.config.GetClusterApiResponse"),
 			}
 			if err := resp.SetData(*cluster); err != nil {
 				return nil, err
@@ -123,7 +122,7 @@ func metroNClient(subnets map[string]metroSubnetSpec) *clientWrapper {
 			subnet.IpPrefix = spec.cidr
 			subnet.VpcReference = spec.vpcRef
 			resp := &netv4.GetSubnetApiResponse{
-				ObjectType_: ptr.To("networking.v4.config.GetSubnetApiResponse"),
+				ObjectType_: new("networking.v4.config.GetSubnetApiResponse"),
 			}
 			if err := resp.SetData(*subnet); err != nil {
 				return nil, err
@@ -297,8 +296,8 @@ func TestMetroCheck(t *testing.T) {
 				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
 			},
 			nclient: metroNClient(map[string]metroSubnetSpec{
-				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
-				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
+				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
+				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
 			}),
 			expectedAllowed: true,
 		},
@@ -340,8 +339,8 @@ func TestMetroCheck(t *testing.T) {
 				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet2),
 			},
 			nclient: metroNClient(map[string]metroSubnetSpec{
-				metroSubnet1: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: ptr.To("vpc-1")},
-				metroSubnet2: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: ptr.To("vpc-1")},
+				metroSubnet1: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: new("vpc-1")},
+				metroSubnet2: {subnetType: netv4.SUBNETTYPE_OVERLAY, vpcRef: new("vpc-1")},
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "VPC-backed subnets are not supported",
@@ -355,10 +354,10 @@ func TestMetroCheck(t *testing.T) {
 				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet3, metroSubnet4),
 			},
 			nclient: metroNClient(map[string]metroSubnetSpec{
-				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
-				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(200), cidr: ptr.To("10.0.1.0/24")},
-				metroSubnet3: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
-				metroSubnet4: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(200), cidr: ptr.To("10.0.1.0/24")},
+				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
+				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(200), cidr: new("10.0.1.0/24")},
+				metroSubnet3: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
+				metroSubnet4: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(200), cidr: new("10.0.1.0/24")},
 			}),
 			expectedAllowed: true,
 		},
@@ -370,10 +369,10 @@ func TestMetroCheck(t *testing.T) {
 				newMetroFailureDomain(metroFD2, metroPE2UUID, metroSubnet3, metroSubnet4),
 			},
 			nclient: metroNClient(map[string]metroSubnetSpec{
-				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
-				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(200), cidr: ptr.To("10.0.1.0/24")},
-				metroSubnet3: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(100), cidr: ptr.To("10.0.0.0/24")},
-				metroSubnet4: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: ptr.To(300), cidr: ptr.To("10.0.2.0/24")},
+				metroSubnet1: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
+				metroSubnet2: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(200), cidr: new("10.0.1.0/24")},
+				metroSubnet3: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(100), cidr: new("10.0.0.0/24")},
+				metroSubnet4: {subnetType: netv4.SUBNETTYPE_VLAN, networkID: new(300), cidr: new("10.0.2.0/24")},
 			}),
 			expectedAllowed:      false,
 			expectedCauseMessage: "do not match",
@@ -396,7 +395,7 @@ func TestMetroCheck(t *testing.T) {
 					cluster.Name = uuid
 					// ExtId intentionally left nil.
 					resp := &clustermgmtv4.GetClusterApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.GetClusterApiResponse"),
 					}
 					if err := resp.SetData(*cluster); err != nil {
 						return nil, err
@@ -612,7 +611,7 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "single metro site is allowed",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("site-1", metroName, metroFD1, new("dh1")),
 			},
 			expectedAllowed: true,
 		},
@@ -620,8 +619,8 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "sites of the same metro with distinct preferred FDs and labels are allowed",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
-				newMetroSite("site-2", metroName, metroFD2, ptr.To("dh2")),
+				newMetroSite("site-1", metroName, metroFD1, new("dh1")),
+				newMetroSite("site-2", metroName, metroFD2, new("dh2")),
 			},
 			expectedAllowed: true,
 		},
@@ -629,9 +628,9 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "sites of another metro are ignored",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("site-1", metroName, metroFD1, ptr.To("dh1")),
-				newMetroSite("other-1", "other-metro", metroFD1, ptr.To("dh1")),
-				newMetroSite("other-2", "other-metro", metroFD1, ptr.To("dh1")),
+				newMetroSite("site-1", metroName, metroFD1, new("dh1")),
+				newMetroSite("other-1", "other-metro", metroFD1, new("dh1")),
+				newMetroSite("other-2", "other-metro", metroFD1, new("dh1")),
 			},
 			expectedAllowed: true,
 		},
@@ -639,8 +638,8 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "duplicate preferred failure domain is rejected",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
-				newMetroSite("metro0-s1", metroName, metroFD1, ptr.To("dh2")),
+				newMetroSite("metro0-s0", metroName, metroFD1, new("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD1, new("dh2")),
 			},
 			expectedAllowed:      false,
 			expectedCauseCount:   1,
@@ -650,8 +649,8 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "duplicate groupNameLabel is rejected",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
-				newMetroSite("metro0-s1", metroName, metroFD2, ptr.To("dh1")),
+				newMetroSite("metro0-s0", metroName, metroFD1, new("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD2, new("dh1")),
 			},
 			expectedAllowed:      false,
 			expectedCauseCount:   1,
@@ -661,8 +660,8 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 			name:       "duplicate preferred FD and groupNameLabel are both reported",
 			metroNames: []string{metroName},
 			objects: []ctrlclient.Object{
-				newMetroSite("metro0-s0", metroName, metroFD1, ptr.To("dh1")),
-				newMetroSite("metro0-s1", metroName, metroFD1, ptr.To("dh1")),
+				newMetroSite("metro0-s0", metroName, metroFD1, new("dh1")),
+				newMetroSite("metro0-s1", metroName, metroFD1, new("dh1")),
 			},
 			expectedAllowed:    false,
 			expectedCauseCount: 2,
@@ -782,7 +781,7 @@ func TestMetroCheckErrMessage(t *testing.T) {
 		metroName:  metroName,
 		namespace:  namespace,
 		field:      field,
-		errMessage: ptr.To("boom"),
+		errMessage: new("boom"),
 	}
 
 	result := check.Run(context.TODO())
@@ -806,7 +805,7 @@ func metroHostingNClient(hostingPEUUID string, hostingErr error) *clientWrapper 
 			cluster.ExtId = uuid
 			cluster.Name = uuid
 			resp := &clustermgmtv4.GetClusterApiResponse{
-				ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+				ObjectType_: new("clustermgmt.v4.config.GetClusterApiResponse"),
 			}
 			if err := resp.SetData(*cluster); err != nil {
 				return nil, err
@@ -836,7 +835,7 @@ func TestPrismCentralMetroHostingCheck(t *testing.T) {
 	}{
 		{
 			name:                 "resolution error message is surfaced",
-			errMessage:           ptr.To("boom"),
+			errMessage:           new("boom"),
 			expectedAllowed:      false,
 			expectedCauseMessage: "boom",
 		},
@@ -926,7 +925,7 @@ func metroLatencyNClient(rttMillis float64, found bool, rttErr error) *clientWra
 			cluster.ExtId = uuid
 			cluster.Name = uuid
 			resp := &clustermgmtv4.GetClusterApiResponse{
-				ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+				ObjectType_: new("clustermgmt.v4.config.GetClusterApiResponse"),
 			}
 			if err := resp.SetData(*cluster); err != nil {
 				return nil, err
@@ -961,7 +960,7 @@ func TestMetroReplicationLatencyCheck(t *testing.T) {
 	}{
 		{
 			name:                 "resolution error message is surfaced",
-			errMessage:           ptr.To("boom"),
+			errMessage:           new("boom"),
 			expectedAllowed:      false,
 			expectedCauseMessage: "boom",
 		},
@@ -1068,7 +1067,7 @@ func TestClusterPrismElementScaleCheck(t *testing.T) {
 	}{
 		{
 			name:                 "resolution error message is surfaced",
-			errMessage:           ptr.To("boom"),
+			errMessage:           new("boom"),
 			expectedAllowed:      false,
 			expectedCauseMessage: "boom",
 		},

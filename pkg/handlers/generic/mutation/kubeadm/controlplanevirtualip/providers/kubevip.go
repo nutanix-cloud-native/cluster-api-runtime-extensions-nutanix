@@ -27,7 +27,8 @@ const (
 
 var (
 	configureForKubeVIPScriptOnRemote = common.ConfigFilePathOnRemote(
-		"configure-for-kube-vip.sh")
+		"configure-for-kube-vip.sh",
+	)
 
 	configureForKubeVIPScriptOnRemotePreKubeadmCommand = "/bin/bash " +
 		configureForKubeVIPScriptOnRemote + " set-host-aliases use-super-admin.conf"

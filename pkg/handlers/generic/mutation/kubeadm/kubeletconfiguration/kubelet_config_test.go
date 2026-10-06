@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -34,7 +33,7 @@ func renderAndDeserialize(
 
 func TestRenderKubeletConfigPatch_MaxPods(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		MaxPods: ptr.To(int32(110)),
+		MaxPods: new(int32(110)),
 	})
 	assert.Equal(t, int32(110), kubeletCfg.MaxPods)
 }
@@ -89,7 +88,7 @@ func TestRenderKubeletConfigPatch_EvictionSoftGracePeriod(t *testing.T) {
 
 func TestRenderKubeletConfigPatch_ProtectKernelDefaults(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		ProtectKernelDefaults: ptr.To(true),
+		ProtectKernelDefaults: new(true),
 	})
 	assert.True(t, kubeletCfg.ProtectKernelDefaults)
 }
@@ -121,21 +120,21 @@ func TestRenderKubeletConfigPatch_MemoryManagerPolicy(t *testing.T) {
 func TestRenderKubeletConfigPatch_PodPidsLimit(t *testing.T) {
 	t.Run("mid-range value", func(t *testing.T) {
 		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-			PodPidsLimit: ptr.To(int64(4096)),
+			PodPidsLimit: new(int64(4096)),
 		})
 		require.NotNil(t, kubeletCfg.PodPidsLimit)
 		assert.Equal(t, int64(4096), *kubeletCfg.PodPidsLimit)
 	})
 	t.Run("minimum boundary", func(t *testing.T) {
 		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-			PodPidsLimit: ptr.To(int64(1024)),
+			PodPidsLimit: new(int64(1024)),
 		})
 		require.NotNil(t, kubeletCfg.PodPidsLimit)
 		assert.Equal(t, int64(1024), *kubeletCfg.PodPidsLimit)
 	})
 	t.Run("maximum boundary", func(t *testing.T) {
 		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-			PodPidsLimit: ptr.To(int64(16384)),
+			PodPidsLimit: new(int64(16384)),
 		})
 		require.NotNil(t, kubeletCfg.PodPidsLimit)
 		assert.Equal(t, int64(16384), *kubeletCfg.PodPidsLimit)
@@ -152,7 +151,7 @@ func TestRenderKubeletConfigPatch_ContainerLogMaxSize(t *testing.T) {
 
 func TestRenderKubeletConfigPatch_ContainerLogMaxFiles(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		ContainerLogMaxFiles: ptr.To(int32(10)),
+		ContainerLogMaxFiles: new(int32(10)),
 	})
 	require.NotNil(t, kubeletCfg.ContainerLogMaxFiles)
 	assert.Equal(t, int32(10), *kubeletCfg.ContainerLogMaxFiles)
@@ -160,7 +159,7 @@ func TestRenderKubeletConfigPatch_ContainerLogMaxFiles(t *testing.T) {
 
 func TestRenderKubeletConfigPatch_ImageGCHighThresholdPercent(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		ImageGCHighThresholdPercent: ptr.To(int32(90)),
+		ImageGCHighThresholdPercent: new(int32(90)),
 	})
 	require.NotNil(t, kubeletCfg.ImageGCHighThresholdPercent)
 	assert.Equal(t, int32(90), *kubeletCfg.ImageGCHighThresholdPercent)
@@ -168,7 +167,7 @@ func TestRenderKubeletConfigPatch_ImageGCHighThresholdPercent(t *testing.T) {
 
 func TestRenderKubeletConfigPatch_ImageGCLowThresholdPercent(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		ImageGCLowThresholdPercent: ptr.To(int32(70)),
+		ImageGCLowThresholdPercent: new(int32(70)),
 	})
 	require.NotNil(t, kubeletCfg.ImageGCLowThresholdPercent)
 	assert.Equal(t, int32(70), *kubeletCfg.ImageGCLowThresholdPercent)
@@ -176,7 +175,7 @@ func TestRenderKubeletConfigPatch_ImageGCLowThresholdPercent(t *testing.T) {
 
 func TestRenderKubeletConfigPatch_MaxParallelImagePulls(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		MaxParallelImagePulls: ptr.To(int32(10)),
+		MaxParallelImagePulls: new(int32(10)),
 	})
 	require.NotNil(t, kubeletCfg.SerializeImagePulls)
 	assert.False(t, *kubeletCfg.SerializeImagePulls)
@@ -210,7 +209,7 @@ func TestRenderKubeletConfigPatch_SeccompDefault(t *testing.T) {
 
 	t.Run("true emits seccompDefault: true", func(t *testing.T) {
 		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-			SeccompDefault: ptr.To(true),
+			SeccompDefault: new(true),
 		})
 		require.NotNil(t, kubeletCfg.SeccompDefault)
 		assert.True(t, *kubeletCfg.SeccompDefault)
@@ -218,7 +217,7 @@ func TestRenderKubeletConfigPatch_SeccompDefault(t *testing.T) {
 
 	t.Run("false emits seccompDefault: false", func(t *testing.T) {
 		kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-			SeccompDefault: ptr.To(false),
+			SeccompDefault: new(false),
 		})
 		require.NotNil(t, kubeletCfg.SeccompDefault)
 		assert.False(t, *kubeletCfg.SeccompDefault)
@@ -311,7 +310,7 @@ func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_CompressibleMix(t *test
 
 func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_Empty(t *testing.T) {
 	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
-		MaxPods: ptr.To(int32(110)),
+		MaxPods: new(int32(110)),
 	})
 	assert.Empty(t, kubeletCfg.EnforceNodeAllocatable)
 	assert.Empty(t, kubeletCfg.SystemReservedCgroup)
@@ -335,7 +334,7 @@ func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 }
 
 func TestApplyDeprecatedMaxParallelImagePulls_NewFieldWins(t *testing.T) {
-	cfg := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: ptr.To(int32(8))}
+	cfg := &v1alpha1.KubeletConfiguration{MaxParallelImagePulls: new(int32(8))}
 	vars := map[string]apiextensionsv1.JSON{
 		v1alpha1.ClusterConfigVariableName: {
 			Raw: []byte(`{"maxParallelImagePullsPerNode": 4}`),

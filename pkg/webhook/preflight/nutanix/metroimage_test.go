@@ -11,7 +11,6 @@ import (
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -239,7 +238,7 @@ func imageDetails(uuid string) *carenv1.NutanixMachineDetails {
 	return &carenv1.NutanixMachineDetails{
 		Image: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierUUID,
-			UUID: ptr.To(uuid),
+			UUID: new(uuid),
 		},
 	}
 }
@@ -251,11 +250,11 @@ func imageByIDClient(t *testing.T, name string) client {
 			require.NotNil(t, uuid)
 			resp := &vmmv4.GetImageApiResponse{}
 			image := vmmv4.Image{
-				ObjectType_: ptr.To("vmm.v4.content.Image"),
+				ObjectType_: new("vmm.v4.content.Image"),
 				ExtId:       uuid,
 			}
 			if name != "" {
-				image.Name = ptr.To(name)
+				image.Name = new(name)
 			}
 			require.NoError(t, resp.SetData(image))
 			return resp, nil

@@ -62,7 +62,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			fmt.Errorf(
 				"failed to check if registry addon is enabled in cluster: %w",
 				err,
-			))
+			),
+		)
 	}
 	if clusterRegistry != nil {
 		return admission.Allowed("")
@@ -76,7 +77,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			fmt.Errorf(
 				"failed to check if global image registry mirror is enabled in cluster: %w",
 				err,
-			))
+			),
+		)
 	}
 	if globalImageRegistryMirror != nil {
 		return admission.Allowed("")
@@ -89,7 +91,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			fmt.Errorf(
 				"failed to get management cluster: %w",
 				err,
-			))
+			),
+		)
 	}
 	// Check if creating a workload cluster, ie managementCluster is not nil. If it is nil just return.
 	if managementCluster == nil {
@@ -107,7 +110,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			fmt.Errorf(
 				"failed to check if registry addon is enabled in management cluster: %w",
 				err,
-			))
+			),
+		)
 	}
 	if managementClusterRegistry == nil {
 		return admission.Allowed("")
@@ -121,7 +125,8 @@ func (a *workloadClusterAutoEnabler) defaulter(
 			fmt.Errorf(
 				"failed to enable registry addon in cluster: %w",
 				err,
-			))
+			),
+		)
 	}
 
 	marshaledCluster, err := json.Marshal(cluster)

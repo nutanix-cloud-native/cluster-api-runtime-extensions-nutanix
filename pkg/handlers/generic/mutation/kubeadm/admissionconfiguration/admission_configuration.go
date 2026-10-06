@@ -8,13 +8,16 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	"sigs.k8s.io/yaml"
 )
 
-const DefaultAdmissionConfigPath = "/etc/kubernetes/admission.yaml"
+const (
+	DefaultAdmissionConfigPath = "/etc/kubernetes/admission.yaml"
+
+	admissionControlConfigFileArg = "admission-control-config-file"
+)
 
 // Plugin describes an admission plugin to add to the API server's AdmissionConfiguration.
 type Plugin struct {
@@ -63,7 +66,7 @@ func AddPlugin(
 
 func getAdmissionConfigPath(args []bootstrapv1.Arg) string {
 	for _, arg := range args {
-		if arg.Name == "admission-control-config-file" && arg.Value != nil {
+		if arg.Name == admissionControlConfigFileArg && arg.Value != nil {
 			return *arg.Value
 		}
 	}
@@ -155,20 +158,20 @@ func addVolumeMountIfMissing(
 		Name:      name,
 		HostPath:  path,
 		MountPath: path,
-		ReadOnly:  ptr.To(true),
+		ReadOnly:  new(true),
 		PathType:  corev1.HostPathFile,
 	})
 }
 
 func setAdmissionConfigArg(apiServer *bootstrapv1.APIServer, path string) {
 	for _, arg := range apiServer.ExtraArgs {
-		if arg.Name == "admission-control-config-file" {
+		if arg.Name == admissionControlConfigFileArg {
 			return
 		}
 	}
 	apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
-		Name:  "admission-control-config-file",
-		Value: ptr.To(path),
+		Name:  admissionControlConfigFileArg,
+		Value: new(path),
 	})
 }
 
@@ -180,13 +183,13 @@ func addToEnabledPlugins(apiServer *bootstrapv1.APIServer, pluginName string) {
 					return
 				}
 			}
-			apiServer.ExtraArgs[i].Value = ptr.To(*arg.Value + "," + pluginName)
+			apiServer.ExtraArgs[i].Value = new(*arg.Value + "," + pluginName)
 			return
 		}
 	}
 	apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
 		Name:  "enable-admission-plugins",
-		Value: ptr.To(pluginName),
+		Value: new(pluginName),
 	})
 }
 

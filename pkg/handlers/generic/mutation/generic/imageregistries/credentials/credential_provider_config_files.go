@@ -33,6 +33,8 @@ const (
 	azureCloudConfigFilePath = "/etc/kubernetes/azure.json"
 
 	secretKeyForCACert = "ca.crt"
+
+	credentialProviderGetCredentialsArg = "get-credentials"
 )
 
 var (
@@ -54,7 +56,7 @@ var (
 type providerConfig struct {
 	URL       string
 	Username  string
-	Password  string //nolint:gosec // Does not contain hard coded credentials.
+	Password  string
 	HasCACert bool
 	Mirror    bool
 }
@@ -232,7 +234,7 @@ func templateDynamicCredentialProviderConfig(
 
 func kubeletCredentialProvider() (providerBinary string, providerArgs []string, providerAPIVersion string) {
 	return "dynamic-credential-provider",
-		[]string{"get-credentials", "-c", kubeletDynamicCredentialProviderConfigOnRemote},
+		[]string{credentialProviderGetCredentialsArg, "-c", kubeletDynamicCredentialProviderConfigOnRemote},
 		credentialproviderv1.SchemeGroupVersion.String()
 }
 
@@ -240,12 +242,12 @@ func dynamicCredentialProvider(host string) (
 	providerBinary string, providerArgs []string, providerAPIVersion string, err error,
 ) {
 	if matches, err := credentialprovider.URLMatchesECR(host); matches || err != nil {
-		return "ecr-credential-provider", []string{"get-credentials"},
+		return "ecr-credential-provider", []string{credentialProviderGetCredentialsArg},
 			credentialproviderv1.SchemeGroupVersion.String(), err
 	}
 
 	if matches, err := credentialprovider.URLMatchesGCR(host); matches || err != nil {
-		return "gcr-credential-provider", []string{"get-credentials"},
+		return "gcr-credential-provider", []string{credentialProviderGetCredentialsArg},
 			credentialproviderv1.SchemeGroupVersion.String(), err
 	}
 

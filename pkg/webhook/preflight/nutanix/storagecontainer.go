@@ -10,7 +10,6 @@ import (
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -242,11 +241,11 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 						check := &failureDomainCheck{
 							failureDomainName: fd,
 							namespace:         cd.cluster.Namespace,
-							field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+							field:             cpFailureDomainsField,
 							kclient:           cd.kclient,
 							nclient:           cd.nclient,
 						}
-						check.errMessage = ptr.To(err.Error())
+						check.errMessage = new(err.Error())
 
 						checks = append(checks, check)
 						continue
@@ -258,7 +257,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 								failureDomainName: fdName,
 								namespace:         cd.cluster.Namespace,
 								kclient:           cd.kclient,
-								field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // The field is long.
+								field:             cpFailureDomainsField,
 								csiSpec:           &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 								nclient:           cd.nclient,
 							},
@@ -270,7 +269,7 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 			checks = append(checks,
 				&storageContainerCheck{
 					machineSpec: &controlPlaneNutanix.MachineDetails,
-					field:       "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails",
+					field:       controlPlaneMachineDetailsField,
 					csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 					nclient:     cd.nclient,
 				},
@@ -292,11 +291,11 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 					check := &failureDomainCheck{
 						failureDomainName: fd,
 						namespace:         cd.cluster.Namespace,
-						field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+						field:             cpFailureDomainsField,
 						kclient:           cd.kclient,
 						nclient:           cd.nclient,
 					}
-					check.errMessage = ptr.To(err.Error())
+					check.errMessage = new(err.Error())
 
 					checks = append(checks, check)
 					continue

@@ -88,7 +88,8 @@ func (h *nodeRegistrationControlPlanePatchHandler) Mutate(
 			setIgnorePreflightErrorsForControlPlane(obj, nodeRegistrationVar.IgnorePreflightErrors)
 
 			return nil
-		})
+		},
+	)
 }
 
 func setIgnorePreflightErrorsForControlPlane(

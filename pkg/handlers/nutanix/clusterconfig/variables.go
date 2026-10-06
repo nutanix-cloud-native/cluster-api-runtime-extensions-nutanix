@@ -6,7 +6,6 @@ package clusterconfig
 import (
 	"context"
 
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -42,7 +41,7 @@ func (h *nutanixClusterConfigVariableHandler) DiscoverVariables(
 ) {
 	v1beta2Var := clusterv1.ClusterClassVariable{
 		Name:     v1alpha1.ClusterConfigVariableName,
-		Required: ptr.To(true),
+		Required: new(true),
 		Schema:   v1alpha1.NutanixClusterConfig{}.VariableSchema(),
 	}
 	resp.Variables = append(resp.Variables, v1beta2Var)

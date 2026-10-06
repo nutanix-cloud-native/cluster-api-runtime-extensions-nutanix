@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -220,12 +219,12 @@ func TestFailureDomainCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(peClusterName),
-							ExtId: ptr.To(peClusterUUID),
+							Name:  new(peClusterName),
+							ExtId: new(peClusterUUID),
 						},
 					})
 					require.NoError(t, err)
@@ -271,12 +270,12 @@ func TestFailureDomainCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(peClusterName),
-							ExtId: ptr.To(peClusterUUID),
+							Name:  new(peClusterName),
+							ExtId: new(peClusterUUID),
 						},
 					})
 					require.NoError(t, err)
@@ -296,12 +295,12 @@ func TestFailureDomainCheck(t *testing.T) {
 					args ...map[string]any,
 				) (*netv4.ListSubnetsApiResponse, error) {
 					resp := &netv4.ListSubnetsApiResponse{
-						ObjectType_: ptr.To("networking.v4.config.ListSubnetsApiResponse"),
+						ObjectType_: new("networking.v4.config.ListSubnetsApiResponse"),
 					}
 					err := resp.SetData([]netv4.Subnet{
 						{
-							Name:  ptr.To(subnetName),
-							ExtId: ptr.To(subnetUUID),
+							Name:  new(subnetName),
+							ExtId: new(subnetUUID),
 						},
 					})
 					require.NoError(t, err)
@@ -354,11 +353,11 @@ func getK8sClient() ctrlclient.Client {
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To(string(peClusterName)),
+				Name: new(string(peClusterName)),
 			},
 			Subnets: []capxv1.NutanixResourceIdentifier{{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To(subnetName),
+				Name: new(subnetName),
 			}},
 		},
 	}

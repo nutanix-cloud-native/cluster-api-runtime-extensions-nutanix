@@ -27,6 +27,12 @@ const (
 	kubeadmConfigTemplateRequestObjectName       = "test-kubeadmconfigtemplate"
 	kubeadmControlPlaneTemplateRequestObjectName = "test-kubeadmcontrolplanetemplate"
 	Namespace                                    = corev1.NamespaceDefault
+
+	kubeadmConfigTemplateKind  = "KubeadmConfigTemplate"
+	machineDeploymentKind      = "MachineDeployment"
+	infrastructureRefFieldPath = "spec.template.spec.infrastructureRef"
+	cloudProviderArgName       = "cloud-provider"
+	externalCloudProvider      = "external"
 )
 
 // NewRequestItem returns a GeneratePatchesRequestItem with the given variables and object.
@@ -61,7 +67,7 @@ func NewKubeadmConfigTemplateRequestItemWithKubeletExtraArgs(
 		&bootstrapv1.KubeadmConfigTemplate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: bootstrapv1.GroupVersion.String(),
-				Kind:       "KubeadmConfigTemplate",
+				Kind:       kubeadmConfigTemplateKind,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      kubeadmConfigTemplateRequestObjectName,
@@ -81,8 +87,8 @@ func NewKubeadmConfigTemplateRequestItemWithKubeletExtraArgs(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			Kind:      "MachineDeployment",
-			FieldPath: "spec.template.spec.infrastructureRef",
+			Kind:      machineDeploymentKind,
+			FieldPath: infrastructureRefFieldPath,
 		},
 		"",
 	)
@@ -96,7 +102,7 @@ func NewKubeadmConfigTemplateRequest(
 		&bootstrapv1.KubeadmConfigTemplate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: bootstrapv1.GroupVersion.String(),
-				Kind:       "KubeadmConfigTemplate",
+				Kind:       kubeadmConfigTemplateKind,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -109,7 +115,7 @@ func NewKubeadmConfigTemplateRequest(
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: "cloud-provider", Value: ptr.To("external")},
+									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
 								},
 							},
 						},
@@ -118,8 +124,8 @@ func NewKubeadmConfigTemplateRequest(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			Kind:      "MachineDeployment",
-			FieldPath: "spec.template.spec.infrastructureRef",
+			Kind:      machineDeploymentKind,
+			FieldPath: infrastructureRefFieldPath,
 		},
 		uid,
 	)
@@ -171,14 +177,14 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 						InitConfiguration: bootstrapv1.InitConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: "cloud-provider", Value: ptr.To("external")},
+									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
 								},
 							},
 						},
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: "cloud-provider", Value: ptr.To("external")},
+									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
 								},
 							},
 						},
@@ -268,8 +274,8 @@ func NewWorkerDockerMachineTemplateRequestItem(
 		},
 		&runtimehooksv1.HolderReference{
 			APIVersion: clusterv1.GroupVersion.String(),
-			Kind:       "MachineDeployment",
-			FieldPath:  "spec.template.spec.infrastructureRef",
+			Kind:       machineDeploymentKind,
+			FieldPath:  infrastructureRefFieldPath,
 		},
 		uid,
 	)

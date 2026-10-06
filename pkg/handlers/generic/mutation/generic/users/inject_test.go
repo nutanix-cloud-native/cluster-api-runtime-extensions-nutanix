@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"k8s.io/apiserver/pkg/storage/names"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -42,7 +41,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			want: bootstrapv1.User{
 				Name:         "example",
 				Passwd:       "example",
-				LockPassword: ptr.To(false),
+				LockPassword: new(false),
 			},
 		},
 		{
@@ -54,7 +53,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				LockPassword: ptr.To(true),
+				LockPassword: new(true),
 			},
 		},
 		{
@@ -67,7 +66,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				LockPassword: ptr.To(true),
+				LockPassword: new(true),
 			},
 		},
 		{
@@ -81,7 +80,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			want: bootstrapv1.User{
 				Name:         "example",
 				Sudo:         "example",
-				LockPassword: ptr.To(true),
+				LockPassword: new(true),
 			},
 		},
 		{
@@ -93,7 +92,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				LockPassword: ptr.To(true),
+				LockPassword: new(true),
 			},
 		},
 		{
@@ -106,7 +105,7 @@ func Test_generateBootstrapUser(t *testing.T) {
 			},
 			want: bootstrapv1.User{
 				Name:         "example",
-				LockPassword: ptr.To(true),
+				LockPassword: new(true),
 			},
 		},
 	}

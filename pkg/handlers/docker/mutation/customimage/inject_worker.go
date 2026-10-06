@@ -93,7 +93,8 @@ func (h *customImageWorkerPatchHandler) Mutate(
 				kubernetesVersion, err := variables.Get[string](
 					vars,
 					fieldPath[0],
-					fieldPath[1:]...)
+					fieldPath[1:]...,
+				)
 				if err != nil && !variables.IsNotFoundError(err) {
 					return err
 				}

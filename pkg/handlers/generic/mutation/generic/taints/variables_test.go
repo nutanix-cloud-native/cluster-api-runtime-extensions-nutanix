@@ -6,8 +6,6 @@ package taints
 import (
 	"testing"
 
-	"k8s.io/utils/ptr"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	eksworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/workerconfig"
@@ -18,7 +16,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.WorkerConfigVariableName,
-		ptr.To(v1alpha1.NutanixWorkerNodeConfig{}.VariableSchema()),
+		new(v1alpha1.NutanixWorkerNodeConfig{}.VariableSchema()),
 		false,
 		nutanixworkerconfig.NewVariable,
 		capitest.VariableTestDef{
@@ -40,7 +38,7 @@ func TestVariableValidation_EKS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.WorkerConfigVariableName,
-		ptr.To(v1alpha1.EKSWorkerNodeConfig{}.VariableSchema()),
+		new(v1alpha1.EKSWorkerNodeConfig{}.VariableSchema()),
 		false,
 		eksworkerconfig.NewVariable,
 		capitest.VariableTestDef{

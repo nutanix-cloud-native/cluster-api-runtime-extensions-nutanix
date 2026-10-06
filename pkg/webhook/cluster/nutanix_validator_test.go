@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -388,7 +387,7 @@ func fakeMachineDetails(pe, subnets bool) *v1alpha1.NutanixMachineDetails {
 		VCPUsPerSocket: 1,
 		Image: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-image"),
+			Name: new("fake-image"),
 		},
 		MemorySize:     resource.MustParse("8Gi"),
 		SystemDiskSize: resource.MustParse("40Gi"),
@@ -397,7 +396,7 @@ func fakeMachineDetails(pe, subnets bool) *v1alpha1.NutanixMachineDetails {
 	if pe {
 		md.Cluster = &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-pe-cluster"),
+			Name: new("fake-pe-cluster"),
 		}
 	}
 
@@ -405,7 +404,7 @@ func fakeMachineDetails(pe, subnets bool) *v1alpha1.NutanixMachineDetails {
 		md.Subnets = []capxv1.NutanixResourceIdentifier{
 			{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("fake-subnet"),
+				Name: new("fake-subnet"),
 			},
 		}
 	}

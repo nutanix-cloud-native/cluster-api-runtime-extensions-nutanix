@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -37,9 +36,9 @@ var _ = Describe("Generate sort extra args patches", func() {
 			Name: "unsorted apiServer extraArgs are sorted",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithAPIServerExtraArgs([]bootstrapv1.Arg{
-					{Name: "zzz", Value: ptr.To("last")},
-					{Name: "aaa", Value: ptr.To("first")},
-					{Name: "mmm", Value: ptr.To("middle")},
+					{Name: "zzz", Value: new("last")},
+					{Name: "aaa", Value: new("first")},
+					{Name: "mmm", Value: new("middle")},
 				}).
 				NewRequest(""),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
@@ -64,7 +63,7 @@ var _ = Describe("Generate sort extra args patches", func() {
 			Name: "already sorted apiServer extraArgs produce no patches",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithAPIServerExtraArgs([]bootstrapv1.Arg{
-					{Name: "aaa", Value: ptr.To("first")},
+					{Name: "aaa", Value: new("first")},
 				}).
 				NewRequest(""),
 		},
@@ -81,8 +80,8 @@ var _ = Describe("Generate sort extra args patches", func() {
 				),
 			},
 			RequestItem: request.NewKubeadmConfigTemplateRequestItemWithKubeletExtraArgs([]bootstrapv1.Arg{
-				{Name: "zzz", Value: ptr.To("last")},
-				{Name: "aaa", Value: ptr.To("first")},
+				{Name: "zzz", Value: new("last")},
+				{Name: "aaa", Value: new("first")},
 			}),
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{

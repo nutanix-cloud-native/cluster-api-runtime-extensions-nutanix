@@ -94,13 +94,14 @@ func (h *taintsControlPlanePatchHandler) Mutate(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints,
 				[]corev1.Taint{},
 			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = ptr.To(
+			obj.Spec.Template.Spec.KubeadmConfigSpec.InitConfiguration.NodeRegistration.Taints = new(
 				toCoreTaints(initTaints, taintsVar),
 			)
-			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = ptr.To(
+			obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.Taints = new(
 				toCoreTaints(joinTaints, taintsVar),
 			)
 
 			return nil
-		})
+		},
+	)
 }

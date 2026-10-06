@@ -10,7 +10,6 @@ import (
 
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -57,11 +56,11 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 					check := &failureDomainCheck{
 						failureDomainName: fd,
 						namespace:         cd.cluster.Namespace,
-						field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+						field:             cpFailureDomainsField,
 						kclient:           cd.kclient,
 						nclient:           cd.nclient,
 					}
-					check.errMessage = ptr.To(err.Error())
+					check.errMessage = new(err.Error())
 
 					checks = append(checks, check)
 					continue
@@ -71,7 +70,7 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 					checks = append(checks, &failureDomainCheck{
 						failureDomainName: fdName,
 						namespace:         cd.cluster.Namespace,
-						field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+						field:             cpFailureDomainsField,
 						kclient:           cd.kclient,
 						nclient:           cd.nclient,
 					})
@@ -99,11 +98,11 @@ func newFailureDomainChecks(cd *checkDependencies) []preflight.Check {
 				check := &failureDomainCheck{
 					failureDomainName: md.FailureDomain,
 					namespace:         cd.cluster.Namespace,
-					field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains", //nolint:lll // field is long.
+					field:             cpFailureDomainsField,
 					kclient:           cd.kclient,
 					nclient:           cd.nclient,
 				}
-				check.errMessage = ptr.To(err.Error())
+				check.errMessage = new(err.Error())
 
 				checks = append(checks, check)
 				continue

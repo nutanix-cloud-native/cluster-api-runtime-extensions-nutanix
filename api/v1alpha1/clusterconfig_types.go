@@ -14,15 +14,15 @@ import (
 
 var (
 	DefaultDockerCertSANs = []string{
-		"localhost",
-		"127.0.0.1",
+		localhost,
+		ipv4Loopback,
 		"0.0.0.0",
 		"host.docker.internal",
 	}
 
 	DefaultNutanixCertSANs = []string{
-		"localhost",
-		"127.0.0.1",
+		localhost,
+		ipv4Loopback,
 		"0.0.0.0",
 	}
 

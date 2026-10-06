@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 				Name: "cluster-defaulter.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/mutate-cluster"),
+						Path: new("/mutate-cluster"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 				Name: "cluster-validator.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/validate-cluster"),
+						Path: new("/validate-cluster"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{
