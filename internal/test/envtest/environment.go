@@ -349,7 +349,8 @@ func (e *Environment) CleanupAndWait(ctx context.Context, objs ...client.Object)
 					return false, err
 				}
 				return false, nil
-			})
+			},
+		)
 		errs = append(
 			errs,
 			errors.Wrapf(
@@ -388,7 +389,8 @@ func (e *Environment) CreateAndWait(
 				return false, err
 			}
 			return true, nil
-		}); err != nil {
+		},
+	); err != nil {
 		return errors.Wrapf(
 			err,
 			"object %s, %s is not being added to the testenv client cache",
@@ -435,7 +437,8 @@ func (e *Environment) PatchAndWait(
 				return false, nil
 			}
 			return true, nil
-		}); err != nil {
+		},
+	); err != nil {
 		return errors.Wrapf(
 			err,
 			"object %s, %s is not being added to or did not get updated in the testenv client cache",

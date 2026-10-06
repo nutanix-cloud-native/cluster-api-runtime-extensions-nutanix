@@ -16,7 +16,8 @@ import (
 
 var (
 	installKubeletCredentialProvidersScriptOnRemote = common.ConfigFilePathOnRemote(
-		"install-kubelet-credential-providers.sh")
+		"install-kubelet-credential-providers.sh",
+	)
 
 	installKubeletCredentialProvidersScriptOnRemoteCommand = "/bin/bash " + installKubeletCredentialProvidersScriptOnRemote
 )

@@ -57,7 +57,8 @@ func (h *sortExtraArgsPatchHandler) Mutate(
 			sortArgs(spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -72,7 +73,8 @@ func (h *sortExtraArgsPatchHandler) Mutate(
 			sortArgs(obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
-		})
+		},
+	)
 }
 
 func sortArgs(args []bootstrapv1.Arg) {

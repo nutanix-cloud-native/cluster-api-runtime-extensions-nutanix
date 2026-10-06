@@ -99,7 +99,8 @@ func (h *httpProxyPatchHandler) Mutate(
 				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
 			)
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -115,7 +116,8 @@ func (h *httpProxyPatchHandler) Mutate(
 				GenerateSystemdFiles(httpProxyVariable, httpProxyVariable.GenerateNoProxyNormalized(cluster))...,
 			)
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

@@ -6,7 +6,6 @@ package workerconfig
 import (
 	"context"
 
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -42,7 +41,7 @@ func (h *dockerWorkerConfigVariableHandler) DiscoverVariables(
 ) {
 	v1beta2Var := clusterv1.ClusterClassVariable{
 		Name:     v1alpha1.WorkerConfigVariableName,
-		Required: ptr.To(false),
+		Required: new(false),
 		Schema:   v1alpha1.DockerWorkerNodeConfig{}.VariableSchema(),
 	}
 	resp.Variables = append(resp.Variables, v1beta2Var)

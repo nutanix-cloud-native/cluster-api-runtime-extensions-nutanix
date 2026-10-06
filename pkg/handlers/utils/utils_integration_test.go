@@ -26,7 +26,7 @@ var _ = Describe("Namespace", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
-		})).To((Succeed()))
+		})).To(Succeed())
 	})
 
 	It(

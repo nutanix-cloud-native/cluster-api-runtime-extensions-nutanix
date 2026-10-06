@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 )
 
 func TestKubeletConfiguration_IsEmpty(t *testing.T) {
@@ -16,7 +15,7 @@ func TestKubeletConfiguration_IsEmpty(t *testing.T) {
 	empty := &KubeletConfiguration{}
 	assert.True(t, empty.IsEmpty())
 
-	withField := &KubeletConfiguration{MaxPods: ptr.To(int32(110))}
+	withField := &KubeletConfiguration{MaxPods: new(int32(110))}
 	assert.False(t, withField.IsEmpty())
 }
 

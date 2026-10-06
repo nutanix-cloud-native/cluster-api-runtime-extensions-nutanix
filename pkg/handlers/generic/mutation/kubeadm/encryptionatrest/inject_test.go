@@ -61,7 +61,8 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 		return mutation.NewMetaGeneratePatchesHandler(
 			"",
 			client,
-			NewPatch(client, testTokenGenerator)).(mutation.GeneratePatches)
+			NewPatch(client, testTokenGenerator),
+		).(mutation.GeneratePatches)
 	}
 
 	encryptionVar := []runtimehooksv1.Variable{
@@ -212,12 +213,14 @@ var _ = Describe("Generate Encryption configuration patches", func() {
 			err = client.Get(
 				ctx,
 				ctrlclient.ObjectKeyFromObject(gotSecret),
-				gotSecret)
+				gotSecret,
+			)
 			Expect(err).To(BeNil())
 			assert.Equal(
 				GinkgoT(),
 				testEncryptionConfigSecretData,
-				string(gotSecret.Data[SecretKeyForEtcdEncryption]))
+				string(gotSecret.Data[SecretKeyForEtcdEncryption]),
+			)
 		})
 	})
 })

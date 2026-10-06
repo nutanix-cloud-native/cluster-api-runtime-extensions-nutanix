@@ -129,5 +129,6 @@ func (h *coreDNSPatchHandler) Mutate(
 			}
 
 			return nil
-		})
+		},
+	)
 }

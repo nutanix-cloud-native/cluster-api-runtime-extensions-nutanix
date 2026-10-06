@@ -103,45 +103,29 @@ archives:
     ids:
       - cluster-api-runtime-extensions-nutanix
 
-dockers:
-  - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-amd64'
-    use: buildx
-    dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
+dockers_v2:
+  - dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
     extra_files:
       - hack/addons/helm-chart-bundler/repos.yaml
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--pull"
-      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
-      - "--label=org.opencontainers.image.created={{.CommitDate}}"
-      - "--label=org.opencontainers.image.title=cluster-api-runtime-extensions-helm-chart-bundle-initializer"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
-    goarch: amd64
-  - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-arm64'
-    use: buildx
-    dockerfile: ./hack/addons/helm-chart-bundler/Dockerfile
-    extra_files:
-      - hack/addons/helm-chart-bundler/repos.yaml
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--pull"
-      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
-      - "--label=org.opencontainers.image.created={{.CommitDate}}"
-      - "--label=org.opencontainers.image.title=cluster-api-runtime-extensions-helm-chart-bundle-initializer"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
-    goarch: arm64
-
-docker_manifests:
-  - name_template: ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}
-    image_templates:
-      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-amd64
-      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer:v{{ trimprefix .Version "v" }}-arm64
+    images:
+      - ghcr.io/nutanix-cloud-native/cluster-api-runtime-extensions-helm-chart-bundle-initializer
+    tags:
+      - 'v{{ trimprefix .Version "v" }}'
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.created: "{{.CommitDate}}"
+      org.opencontainers.image.title: cluster-api-runtime-extensions-helm-chart-bundle-initializer
+      org.opencontainers.image.revision: "{{.FullCommit}}"
+      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
+      org.opencontainers.image.source: "{{.GitURL}}"
+    build_args:
+      VERSION: 'v{{ trimprefix .Version "v" }}'
+    flags:
+      - "--pull=true"
+    # The previous dockers pipe did not attach an SBOM. dockers_v2 defaults this to true.
+    sbom: false
 
 kos:
   - id: cluster-api-runtime-extensions-nutanix

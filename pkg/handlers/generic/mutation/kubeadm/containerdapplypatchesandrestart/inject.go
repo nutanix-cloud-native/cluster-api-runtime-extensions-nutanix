@@ -68,7 +68,8 @@ func (h *containerdApplyPatchesAndRestartPatchHandler) Mutate(
 			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -96,7 +97,8 @@ func (h *containerdApplyPatchesAndRestartPatchHandler) Mutate(
 			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

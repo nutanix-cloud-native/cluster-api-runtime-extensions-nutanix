@@ -6,8 +6,6 @@ package network
 import (
 	"testing"
 
-	"k8s.io/utils/ptr"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	eksclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/clusterconfig"
@@ -17,7 +15,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.EKSClusterConfig{}.VariableSchema()),
+		new(v1alpha1.EKSClusterConfig{}.VariableSchema()),
 		true,
 		eksclusterconfig.NewVariable,
 		capitest.VariableTestDef{

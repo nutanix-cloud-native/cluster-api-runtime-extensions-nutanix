@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 )
@@ -47,8 +46,8 @@ plugins:
 	kcp := &controlplanev1.KubeadmControlPlaneTemplate{}
 	spec := &kcp.Spec.Template.Spec.KubeadmConfigSpec
 	spec.ClusterConfiguration.APIServer.ExtraArgs = []bootstrapv1.Arg{
-		{Name: "admission-control-config-file", Value: ptr.To(customPath)},
-		{Name: "enable-admission-plugins", Value: ptr.To("EventRateLimit,NodeRestriction")},
+		{Name: "admission-control-config-file", Value: new(customPath)},
+		{Name: "enable-admission-plugins", Value: new("EventRateLimit,NodeRestriction")},
 	}
 	spec.Files = []bootstrapv1.File{
 		{Path: customPath, Content: existingAdmissionConfig},
@@ -80,7 +79,7 @@ func TestAddPlugin_ExistingArgButNoFile(t *testing.T) {
 	kcp := &controlplanev1.KubeadmControlPlaneTemplate{}
 	spec := &kcp.Spec.Template.Spec.KubeadmConfigSpec
 	spec.ClusterConfiguration.APIServer.ExtraArgs = []bootstrapv1.Arg{
-		{Name: "admission-control-config-file", Value: ptr.To(customPath)},
+		{Name: "admission-control-config-file", Value: new(customPath)},
 	}
 
 	err := AddPlugin(kcp, Plugin{
@@ -105,8 +104,8 @@ plugins:
 	kcp := &controlplanev1.KubeadmControlPlaneTemplate{}
 	spec := &kcp.Spec.Template.Spec.KubeadmConfigSpec
 	spec.ClusterConfiguration.APIServer.ExtraArgs = []bootstrapv1.Arg{
-		{Name: "admission-control-config-file", Value: ptr.To(DefaultAdmissionConfigPath)},
-		{Name: "enable-admission-plugins", Value: ptr.To("PodSecurity")},
+		{Name: "admission-control-config-file", Value: new(DefaultAdmissionConfigPath)},
+		{Name: "enable-admission-plugins", Value: new("PodSecurity")},
 	}
 	spec.Files = []bootstrapv1.File{
 		{Path: DefaultAdmissionConfigPath, Content: existingAdmissionConfig},
@@ -128,7 +127,7 @@ func TestAddPlugin_EnableAdmissionPluginsDeduplication(t *testing.T) {
 	kcp := &controlplanev1.KubeadmControlPlaneTemplate{}
 	spec := &kcp.Spec.Template.Spec.KubeadmConfigSpec
 	spec.ClusterConfiguration.APIServer.ExtraArgs = []bootstrapv1.Arg{
-		{Name: "enable-admission-plugins", Value: ptr.To("PodSecurity,NodeRestriction")},
+		{Name: "enable-admission-plugins", Value: new("PodSecurity,NodeRestriction")},
 	}
 
 	err := AddPlugin(kcp, Plugin{

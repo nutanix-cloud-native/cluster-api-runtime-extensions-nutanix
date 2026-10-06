@@ -54,7 +54,7 @@ func WaitForKonnectorAgentToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "konnector-agent",
-				Namespace: "ntnx-system",
+				Namespace: ntnxSystemNamespace,
 			},
 		},
 	}, input.DeploymentIntervals...)

@@ -175,8 +175,8 @@ func (h *ControlPlaneVirtualIP) Mutate(
 }
 
 func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootstrapv1.File {
-	for i := len(files) - 1; i >= 0; i-- {
-		if slices.Contains(filePathsToDelete, files[i].Path) {
+	for i, file := range slices.Backward(files) {
+		if slices.Contains(filePathsToDelete, file.Path) {
 			files = slices.Delete(files, i, i+1)
 		}
 	}
@@ -188,10 +188,10 @@ func deleteFiles(files []bootstrapv1.File, filePathsToDelete ...string) []bootst
 // overriding any file with the same path and appending the rest.
 func mergeFiles(files []bootstrapv1.File, filesToMerge ...bootstrapv1.File) []bootstrapv1.File {
 	// replace any existing files with the same path
-	for i := len(filesToMerge) - 1; i >= 0; i-- {
+	for i, f := range slices.Backward(filesToMerge) {
 		for j := range files {
-			if files[j].Path == filesToMerge[i].Path {
-				files[j] = filesToMerge[i]
+			if files[j].Path == f.Path {
+				files[j] = f
 				filesToMerge = slices.Delete(filesToMerge, i, i+1)
 				break
 			}

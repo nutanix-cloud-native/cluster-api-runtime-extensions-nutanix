@@ -17,7 +17,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.EKSClusterConfig{}.VariableSchema()),
+		new(v1alpha1.EKSClusterConfig{}.VariableSchema()),
 		true,
 		eksclusterconfig.NewVariable,
 		capitest.VariableTestDef{

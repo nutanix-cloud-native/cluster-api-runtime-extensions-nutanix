@@ -44,7 +44,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -65,7 +65,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -86,7 +86,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -123,7 +123,7 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled for control plane
+						{Name: "fd1", ControlPlane: new(false)}, // Disabled for control plane
 					},
 				},
 			},
@@ -160,8 +160,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -197,8 +197,8 @@ func TestReconciler_shouldTriggerRollout(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -689,7 +689,7 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -709,7 +709,7 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -755,8 +755,8 @@ func TestReconciler_shouldSkipClusterReconciliation(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(false)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(false)},
 					},
 				},
 			},
@@ -961,7 +961,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -999,8 +999,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(false)}, // Disabled
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(false)}, // Disabled
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1038,9 +1038,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
-						{Name: "fd3", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
+						{Name: "fd3", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1079,8 +1079,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1118,10 +1118,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
-						{Name: "fd3", ControlPlane: ptr.To(true)},
-						{Name: "fd4", ControlPlane: ptr.To(true)}, // 4th FD added
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
+						{Name: "fd3", ControlPlane: new(true)},
+						{Name: "fd4", ControlPlane: new(true)}, // 4th FD added
 					},
 				},
 			},
@@ -1160,8 +1160,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1206,8 +1206,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1252,8 +1252,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Status: clusterv1beta2.ClusterStatus{
 					ObservedGeneration: 2, // Lower than generation
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
-						{Name: "fd2", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
+						{Name: "fd2", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1298,7 +1298,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1335,7 +1335,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1376,7 +1376,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Status: clusterv1beta2.ClusterStatus{
 					FailureDomains: []clusterv1beta2.FailureDomain{
-						{Name: "fd1", ControlPlane: ptr.To(true)},
+						{Name: "fd1", ControlPlane: new(true)},
 					},
 				},
 			},
@@ -1406,7 +1406,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(true),
+					Paused: new(true),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1427,7 +1427,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(false),
+					Paused: new(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1826,7 +1826,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(false),
+					Paused: new(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1846,7 +1846,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(true),
+					Paused: new(true),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{
@@ -1878,7 +1878,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(true),
+					Paused: new(true),
 				},
 			},
 			kcp:            nil,
@@ -1900,7 +1900,7 @@ func TestReconciler_areResourcesPaused(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: clusterv1beta2.ClusterSpec{
-					Paused: ptr.To(false),
+					Paused: new(false),
 				},
 			},
 			kcp: &controlplanev1.KubeadmControlPlane{

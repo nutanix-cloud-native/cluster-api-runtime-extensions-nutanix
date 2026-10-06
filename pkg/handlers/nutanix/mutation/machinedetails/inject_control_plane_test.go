@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -25,18 +24,18 @@ var (
 		VCPUsPerSocket: 1,
 		Image: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-image"),
+			Name: new("fake-image"),
 		},
 		Cluster: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-pe-cluster"),
+			Name: new("fake-pe-cluster"),
 		},
 		MemorySize:     resource.MustParse("8Gi"),
 		SystemDiskSize: resource.MustParse("40Gi"),
 		Subnets: []capxv1.NutanixResourceIdentifier{
 			{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("fake-subnet"),
+				Name: new("fake-subnet"),
 			},
 		},
 		AdditionalCategories: []capxv1.NutanixCategoryIdentifier{
@@ -49,18 +48,18 @@ var (
 				Value: "fake-value2",
 			},
 		},
-		Project: ptr.To(capxv1.NutanixResourceIdentifier{
+		Project: new(capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-project"),
+			Name: new("fake-project"),
 		}),
 		GPUs: []capxv1.NutanixGPU{
 			{
 				Type: "name",
-				Name: ptr.To("gpu1"),
+				Name: new("gpu1"),
 			},
 			{
 				Type:     "deviceID",
-				DeviceID: ptr.To(int64(1)),
+				DeviceID: new(int64(1)),
 			},
 		},
 	}
@@ -74,14 +73,14 @@ var (
 		},
 		Cluster: &capxv1.NutanixResourceIdentifier{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("fake-pe-cluster"),
+			Name: new("fake-pe-cluster"),
 		},
 		MemorySize:     resource.MustParse("8Gi"),
 		SystemDiskSize: resource.MustParse("40Gi"),
 		Subnets: []capxv1.NutanixResourceIdentifier{
 			{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("fake-subnet"),
+				Name: new("fake-subnet"),
 			},
 		},
 	}

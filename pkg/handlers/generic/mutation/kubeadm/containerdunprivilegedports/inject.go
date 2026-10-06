@@ -51,7 +51,8 @@ func (h *containerdUnprivilegedPortsPatchHandler) Mutate(
 			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -64,10 +65,12 @@ func (h *containerdUnprivilegedPortsPatchHandler) Mutate(
 			).Info("adding containerd unprivileged ports config to worker node kubeadm config template")
 			obj.Spec.Template.Spec.Files = append(
 				obj.Spec.Template.Spec.Files,
-				unprivilegedPortsConfigDropIn)
+				unprivilegedPortsConfigDropIn,
+			)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

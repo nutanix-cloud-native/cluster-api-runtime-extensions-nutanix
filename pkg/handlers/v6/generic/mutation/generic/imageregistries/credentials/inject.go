@@ -198,7 +198,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 				&obj.Spec.Template.Spec.KubeadmConfigSpec.JoinConfiguration.NodeRegistration.KubeletExtraArgs,
 			)
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -239,7 +240,8 @@ func (h *imageRegistriesPatchHandler) Mutate(
 			addImageCredentialProviderArgs(&obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs)
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

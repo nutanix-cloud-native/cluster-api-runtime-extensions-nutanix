@@ -5,7 +5,7 @@ module github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix
 
 go 1.26.0
 
-toolchain go1.26.5
+toolchain go1.27.1
 
 replace (
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api => ./api

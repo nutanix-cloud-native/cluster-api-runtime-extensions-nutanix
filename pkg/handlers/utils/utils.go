@@ -21,6 +21,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
+const namespaceKind = "Namespace"
+
 // PrivilegedPodSecurityEnforceLabels is the label set applied to addon
 // namespaces on workload clusters that contain workloads requiring privileged
 // Pod Security Standard features (hostPath volumes, hostNetwork, privileged
@@ -126,7 +128,7 @@ func EnsureNamespaceWithName(ctx context.Context, c ctrlclient.Client, name stri
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Namespace",
+			Kind:       namespaceKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -146,7 +148,7 @@ func EnsureNamespaceWithMetadata(ctx context.Context,
 	ns := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Namespace",
+			Kind:       namespaceKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -164,7 +166,7 @@ func EnsureNamespace(ctx context.Context, c ctrlclient.Client, ns *corev1.Namesp
 		ns.APIVersion = corev1.SchemeGroupVersion.String()
 	}
 	if ns.Kind == "" {
-		ns.Kind = "Namespace"
+		ns.Kind = namespaceKind
 	}
 	err := client.ServerSideApply(ctx, c, ns)
 	if err != nil {

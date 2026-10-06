@@ -8,7 +8,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -123,10 +122,10 @@ func (h *awsVolumesSpecPatchHandler) toCAPAVolume(vol *v1alpha1.AWSVolume) *capa
 
 	// Handle pointer fields - convert non-pointer v1alpha1 fields to pointer capav1 fields
 	if vol.Throughput != 0 {
-		capav1Volume.Throughput = ptr.To(vol.Throughput)
+		capav1Volume.Throughput = new(vol.Throughput)
 	}
 	if vol.Encrypted {
-		capav1Volume.Encrypted = ptr.To(vol.Encrypted)
+		capav1Volume.Encrypted = new(vol.Encrypted)
 	}
 
 	return capav1Volume

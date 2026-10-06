@@ -29,6 +29,11 @@ import (
 
 const (
 	caCrtKey = "ca.crt"
+
+	pemBlockTypeCertificate   = "CERTIFICATE"
+	pemBlockTypeRSAPrivateKey = "RSA PRIVATE KEY"
+
+	secretKind = "Secret"
 )
 
 var (
@@ -106,8 +111,8 @@ func generateRegistryAddonRootCAData() (certPEM, keyPEM []byte, err error) {
 		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: pemBlockTypeCertificate, Bytes: certDER})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: pemBlockTypeRSAPrivateKey, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
 
 	return certPEM, keyPEM, nil
 }
@@ -125,7 +130,7 @@ func buildRegistryAddonRootCASecret(
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Secret",
+			Kind:       secretKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      handlersutils.RegistryAddonRootCASecretName,
@@ -227,7 +232,7 @@ func buildClusterCASecret(
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Secret",
+			Kind:       secretKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      handlersutils.SecretNameForRegistryAddonCA(cluster),
@@ -255,7 +260,7 @@ func generateCertificateData(
 
 	// 2. parse CA cert
 	caBlock, _ := pem.Decode(caCertPEM)
-	if caBlock == nil || caBlock.Type != "CERTIFICATE" {
+	if caBlock == nil || caBlock.Type != pemBlockTypeCertificate {
 		return nil, nil, nil, fmt.Errorf("failed to decode CA certificate PEM")
 	}
 	caCert, err := x509.ParseCertificate(caBlock.Bytes)
@@ -270,7 +275,7 @@ func generateCertificateData(
 	}
 	var caPriv any
 	switch keyBlock.Type {
-	case "RSA PRIVATE KEY":
+	case pemBlockTypeRSAPrivateKey:
 		caPriv, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 	case "PRIVATE KEY":
 		caPriv, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
@@ -317,9 +322,9 @@ func generateCertificateData(
 	}
 
 	// 7. PEM-encode outputs
-	serverCertPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	serverCertPEM = pem.EncodeToMemory(&pem.Block{Type: pemBlockTypeCertificate, Bytes: derBytes})
 	serverKeyPEM = pem.EncodeToMemory(
-		&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)},
+		&pem.Block{Type: pemBlockTypeRSAPrivateKey, Bytes: x509.MarshalPKCS1PrivateKey(serverKey)},
 	)
 
 	return serverCertPEM, serverKeyPEM, caCertPEM, nil
@@ -357,7 +362,7 @@ func buildRegistryTLSCertificateSecret(
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Secret",
+			Kind:       secretKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,

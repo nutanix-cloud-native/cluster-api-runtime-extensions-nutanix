@@ -162,7 +162,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 				return []lifecycle.BeforeClusterCreate{h}
 			}
 			return nil
-		})
+		},
+	)
 	if len(bccHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
@@ -177,7 +178,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 				return []lifecycle.AfterControlPlaneInitialized{h}
 			}
 			return nil
-		})
+		},
+	)
 	if len(acpiHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
@@ -192,7 +194,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 				return []lifecycle.BeforeClusterUpgrade{h}
 			}
 			return nil
-		})
+		},
+	)
 	if len(bcuHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
@@ -207,7 +210,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 				return []lifecycle.AfterControlPlaneUpgrade{h}
 			}
 			return nil
-		})
+		},
+	)
 	if len(acpuHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,
@@ -222,7 +226,8 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 				return []lifecycle.BeforeClusterDelete{h}
 			}
 			return nil
-		})
+		},
+	)
 	if len(bcdHandlers) > 0 {
 		orderedHandlers = append(
 			orderedHandlers,

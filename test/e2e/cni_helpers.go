@@ -21,6 +21,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
+const (
+	tigeraOperatorName     = "tigera-operator"
+	calicoSystemNamespace  = "calico-system"
+	flowCNISystemNamespace = "flow-cni-system"
+	ovnKubernetesNamespace = "ovn-kubernetes"
+)
+
 type WaitForCNIToBeReadyInWorkloadClusterInput struct {
 	CNI                         *v1alpha1.CNI
 	WorkloadCluster             *clusterv1.Cluster
@@ -132,7 +139,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 			WaitForHelmReleaseProxyReadyForClusterInput{
 				GetLister:       input.clusterProxy.GetClient(),
 				Cluster:         input.workloadCluster,
-				HelmReleaseName: "tigera-operator",
+				HelmReleaseName: tigeraOperatorName,
 			},
 			input.helmReleaseIntervals...,
 		)
@@ -153,8 +160,8 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		Getter: workloadClusterClient,
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "tigera-operator",
-				Namespace: "tigera-operator",
+				Name:      tigeraOperatorName,
+				Namespace: tigeraOperatorName,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -163,7 +170,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "calico-typha",
-				Namespace: "calico-system",
+				Namespace: calicoSystemNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -172,7 +179,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "calico-kube-controllers",
-				Namespace: "calico-system",
+				Namespace: calicoSystemNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -181,7 +188,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "calico-node",
-				Namespace: "calico-system",
+				Namespace: calicoSystemNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -190,7 +197,7 @@ func waitForCalicoToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "csi-node-driver",
-				Namespace: "calico-system",
+				Namespace: calicoSystemNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -341,7 +348,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "flow-cni",
-				Namespace: "flow-cni-system",
+				Namespace: flowCNISystemNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -359,7 +366,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ovnkube-db",
-				Namespace: "ovn-kubernetes",
+				Namespace: ovnKubernetesNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -368,7 +375,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ovnkube-master",
-				Namespace: "ovn-kubernetes",
+				Namespace: ovnKubernetesNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -377,7 +384,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		StatefulSet: &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "flow-cni-nats",
-				Namespace: "flow-cni-system",
+				Namespace: flowCNISystemNamespace,
 			},
 		},
 	}, input.statefulSetIntervals...)
@@ -386,7 +393,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "flow-cni-conntrack-collector",
-				Namespace: "flow-cni-system",
+				Namespace: flowCNISystemNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -395,7 +402,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ovnkube-node",
-				Namespace: "ovn-kubernetes",
+				Namespace: ovnKubernetesNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -404,7 +411,7 @@ func waitForFlowToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ovs-node",
-				Namespace: "ovn-kubernetes",
+				Namespace: ovnKubernetesNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)

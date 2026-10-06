@@ -14,7 +14,6 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -469,7 +468,7 @@ func clusterFailureDomainNames(cd *checkDependencies) (names []string, errMessag
 		names, err := getFailureDomainNames(cd, fd)
 		if err != nil {
 			if errMessage == nil {
-				errMessage = ptr.To(err.Error())
+				errMessage = new(err.Error())
 			}
 			return
 		}
@@ -822,7 +821,7 @@ func referencedMetros(cd *checkDependencies) []metroReference {
 			refs = append(refs, metroReference{
 				metroName:  fd,
 				field:      field,
-				errMessage: ptr.To(err.Error()),
+				errMessage: new(err.Error()),
 			})
 			return
 		}

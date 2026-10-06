@@ -30,6 +30,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
 )
 
+const ntnxSystemNamespace = "ntnx-system"
+
 type WaitForCSIToBeReadyInWorkloadClusterInput struct {
 	CSI                         *apivariables.CSI
 	WorkloadCluster             *clusterv1.Cluster
@@ -317,7 +319,7 @@ func waitForNutanixCSIToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nutanix-csi-controller",
-				Namespace: "ntnx-system",
+				Namespace: ntnxSystemNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -327,7 +329,7 @@ func waitForNutanixCSIToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nutanix-csi-node",
-				Namespace: "ntnx-system",
+				Namespace: ntnxSystemNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)

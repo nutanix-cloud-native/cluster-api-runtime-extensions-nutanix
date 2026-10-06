@@ -89,7 +89,8 @@ func (h *nodeRegistrationWorkerPatchHandler) Mutate(
 			setIgnorePreflightErrorsForWorkers(obj, nodeRegistrationVar.IgnorePreflightErrors)
 
 			return nil
-		})
+		},
+	)
 }
 
 func setIgnorePreflightErrorsForWorkers(

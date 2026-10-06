@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -72,21 +71,21 @@ func (h *auditPolicyPatchHandler) Mutate(
 			// Now, we have 1 log of 100MB, and 90 compressed, rotated logs of approximately 10MB each,
 			// for a total of approximately 1000MB.
 			auditArgs := []bootstrapv1.Arg{
-				{Name: "audit-log-path", Value: ptr.To("/var/log/audit/kube-apiserver-audit.log")},
+				{Name: "audit-log-path", Value: new("/var/log/audit/kube-apiserver-audit.log")},
 				{
 					Name:  "audit-log-maxage",
-					Value: ptr.To("30"),
+					Value: new("30"),
 				}, // Maximum number of days to retain audit log files.
-				{Name: "audit-log-maxbackup", Value: ptr.To("90")}, // Maximum number of audit log files to retain.
+				{Name: "audit-log-maxbackup", Value: new("90")}, // Maximum number of audit log files to retain.
 				{
 					Name:  "audit-log-maxsize",
-					Value: ptr.To("100"),
+					Value: new("100"),
 				}, // Maximum size of log file in MB before it is rotated.
 				{
 					Name:  "audit-log-compress",
-					Value: ptr.To("true"),
+					Value: new("true"),
 				}, // Compress (gzip) audit log file when it is rotated.
-				{Name: "audit-policy-file", Value: ptr.To(auditPolicyPath)},
+				{Name: "audit-policy-file", Value: new(auditPolicyPath)},
 			}
 			for _, arg := range auditArgs {
 				if !extraArgsMap[arg.Name] {
@@ -105,7 +104,7 @@ func (h *auditPolicyPatchHandler) Mutate(
 					Name:      "audit-policy",
 					HostPath:  auditPolicyPath,
 					MountPath: auditPolicyPath,
-					ReadOnly:  ptr.To(true),
+					ReadOnly:  new(true),
 					PathType:  corev1.HostPathFile,
 				},
 				bootstrapv1.HostPathMount{
