@@ -146,13 +146,13 @@ export COSI_CONTROLLER_VERSION := 0.2.2
 # Konnector Agent
 #   Chart name:    konnector-agent
 #   Chart repo: 	 https://nutanix.github.io/helm-releases/index.yaml
-#   Chart version: 1.4.2
-#   App version:   v1.4.2
+#   Chart version: 1.5.0
+#   App version:   v1.5.0
 #   Repo:          https://github.com/nutanix-core/k8s-agent
-#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.4.2
+#   Release:       https://github.com/nutanix-core/k8s-agent/releases/tag/1.5.0
 # Stay on 1.4.2: 1.5.0 caused Nutanix e2e cluster deletion to hang on BeforeClusterDelete
 # (Konnector HelmChartProxy uninstall / PC deregistration never completed within 30m).
-export KONNECTOR_AGENT_VERSION := 1.4.2
+export KONNECTOR_AGENT_VERSION := 1.5.0
 
 # Multus
 #   Chart name: multus

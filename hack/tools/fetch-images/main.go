@@ -388,6 +388,8 @@ prismEndPoint: endpoint
 			PrismCredentialsSecretName           string
 			EnableKubeconfigUpload               bool
 			ControlPlaneEndpoint                 string
+			ProjectID                            string
+			ProjectName                          string
 		}{
 			AgentName:                            "konnector-agent",
 			PrismCentralHost:                     "prism-central.example.com",

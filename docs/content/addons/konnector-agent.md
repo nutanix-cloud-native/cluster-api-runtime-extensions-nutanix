@@ -77,6 +77,49 @@ spec:
 |-------|------|----------|-------------|
 | `secretRef.name` | string | Yes | Name of the Secret containing Prism Central credentials |
 
+## Project Association
+
+If the cluster's machines are deployed into a Prism Central project, the cluster registration is
+associated with that same project. There is no separate field to configure: the project is derived
+from `controlPlane.nutanix.machineDetails.project`, so the registration always lands in the same
+project as the virtual machines.
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: project-scoped-cluster
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          addons:
+            konnectorAgent:
+              credentials:
+                secretRef:
+                  name: cluster-name-pc-credentials-for-konnector-agent
+          controlPlane:
+            nutanix:
+              machineDetails:
+                project:
+                  type: name
+                  name: my-project
+```
+
+A project referenced by `type: uuid` is passed to the agent as `projectId`, and a project referenced
+by `type: name` is passed as `projectName`. When no project is referenced, the cluster is registered
+without a project association.
+
+Note the following limitations:
+
+- The project association is applied only when the cluster is first registered with Prism Central.
+  Changing the project on an existing cluster does not re-associate its registration; the agent
+  preserves the original association and logs a warning.
+- Project association on registration requires a Prism Central version that supports it. Older
+  versions ignore the project fields, and the agent logs a warning when it cannot confirm the
+  association.
+
 ## Prerequisites
 
 ### 1. Prism Central Credentials Secret
@@ -125,7 +168,7 @@ The addon uses the following default values:
 - **Agent Name**: `konnector-agent`
 - **Strategy**: `HelmAddon`
 - **Chart**: `konnector-agent`
-- **Version**: `1.4.2`
+- **Version**: `1.5.0`
 
 ## Pod Security Admission
 

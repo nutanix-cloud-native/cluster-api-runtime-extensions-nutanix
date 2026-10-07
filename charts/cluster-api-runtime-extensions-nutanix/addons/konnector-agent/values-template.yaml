@@ -17,6 +17,12 @@ prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
 {{- end }}
+{{- if .ProjectID }}
+projectId: "{{ .ProjectID }}"
+{{- end }}
+{{- if .ProjectName }}
+projectName: "{{ .ProjectName }}"
+{{- end }}
 
 {{- if .CreateAdditionalTrustBundleConfigMap }}
 createAdditionalTrustBundleConfigMap: {{ .CreateAdditionalTrustBundleConfigMap }}
