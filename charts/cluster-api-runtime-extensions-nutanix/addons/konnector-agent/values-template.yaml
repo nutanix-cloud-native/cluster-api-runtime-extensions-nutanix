@@ -2,6 +2,8 @@ agent:
   name: {{ .AgentName }}
   image:
     privateRegistry: false
+    repository: quay.io/karbon
+    name: k8s-agent
 pc:
   port: {{ .PrismCentralPort }}
   insecure: {{ .PrismCentralInsecure }}
@@ -16,6 +18,12 @@ createSecret: false
 prismCredentialsSecretName: "{{ .PrismCredentialsSecretName }}"
 {{- if .CategoryMappings }}
 categoryMappings: {{ .CategoryMappings }}
+{{- end }}
+{{- if .ProjectID }}
+projectId: "{{ .ProjectID }}"
+{{- end }}
+{{- if .ProjectName }}
+projectName: "{{ .ProjectName }}"
 {{- end }}
 
 {{- if .CreateAdditionalTrustBundleConfigMap }}
