@@ -169,7 +169,7 @@ func createTestCluster(
 			},
 			Topology: clusterv1beta2.Topology{
 				ClassRef:  clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
-				Version:   "dummy-version",
+				Version:   "v1.30.100",
 				Variables: []clusterv1beta2.ClusterVariable{*variable},
 			},
 		},
