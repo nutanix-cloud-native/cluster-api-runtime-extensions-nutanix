@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/blang/semver/v4"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -208,8 +209,16 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 		return "", fmt.Errorf("failed to get registry metadata: %w", err)
 	}
 
+	// Strip pre-release and build metadata so the value is always a valid image tag.
+	kubernetesVersion, err := semver.ParseTolerant(cluster.Spec.Topology.Version)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cluster Kubernetes version: %w", err)
+	}
+
 	type input struct {
 		CusterName string
+
+		KubernetesVersion string
 
 		SourceRegistryAddress string
 
@@ -222,7 +231,8 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	templateInput := input{
-		CusterName: cluster.Name,
+		CusterName:        cluster.Name,
+		KubernetesVersion: "v" + kubernetesVersion.FinalizeVersion(),
 		// FIXME: This assumes that the source and destination registry names are the same.
 		// This is true now with a single registry addon provider, but may not be true in the future.
 		SourceRegistryAddress:                       registryMetadata.AddressFromClusterNetwork,
