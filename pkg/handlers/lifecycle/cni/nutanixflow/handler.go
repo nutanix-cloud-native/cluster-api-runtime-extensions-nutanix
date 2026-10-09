@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,7 +33,10 @@ const (
 	defaultImagePullSecretName = "flow-cni-image-pull-secret"
 )
 
-var imagePullSecretNamespaces = []string{
+// flowCNIRemoteNamespaces are namespaces that Flow CNI Helm pre-install /
+// pre-upgrade hooks run in (and where private images may be pulled). They must
+// exist on the workload cluster before HelmChartProxy applies the chart.
+var flowCNIRemoteNamespaces = []string{
 	"flow-cni-system",
 	"flow-cns-system",
 	"ovn-kubernetes",
@@ -187,6 +191,28 @@ func (c *NutanixFlowCNI) apply(
 		return
 	}
 
+	// Helm hooks for Flow CNI run in these namespaces before chart resources are
+	// created. HelmChartProxy only ensures the release namespace (kube-system),
+	// so create them here whether or not image pull credentials are set.
+	remoteClient, err := remote.NewClusterClient(
+		ctx,
+		"",
+		c.client,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		log.Error(err, "error creating remote cluster client")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("error creating remote cluster client: %v", err))
+		return
+	}
+	if err := ensureFlowCNIRemoteNamespaces(ctx, remoteClient); err != nil {
+		log.Error(err, "error ensuring Flow CNI namespaces on remote cluster")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(err.Error())
+		return
+	}
+
 	var imagePullSecretName string
 	if cniVar.ImagePullCredentials != nil {
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
@@ -212,7 +238,7 @@ func (c *NutanixFlowCNI) apply(
 			return
 		}
 
-		for _, ns := range imagePullSecretNamespaces {
+		for _, ns := range flowCNIRemoteNamespaces {
 			key := ctrlclient.ObjectKey{
 				Name:      defaultImagePullSecretName,
 				Namespace: ns,
@@ -297,4 +323,17 @@ func (c *NutanixFlowCNI) apply(
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+// ensureFlowCNIRemoteNamespaces creates the namespaces required by Flow CNI
+// Helm hooks on the workload cluster. This must run even when
+// ImagePullCredentials is nil, because pull-secret copy is no longer the only
+// path that creates these namespaces.
+func ensureFlowCNIRemoteNamespaces(ctx context.Context, remoteClient ctrlclient.Client) error {
+	for _, ns := range flowCNIRemoteNamespaces {
+		if err := handlersutils.EnsureNamespaceWithName(ctx, remoteClient, ns); err != nil {
+			return fmt.Errorf("failed to ensure namespace %q on the remote cluster: %w", ns, err)
+		}
+	}
+	return nil
 }
