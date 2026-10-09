@@ -229,6 +229,9 @@ func newCredentialsCheck(
 	if err == nil {
 		// We initialized the converged client and verified the credentials using the Users API.
 		cd.nclient = nclient
+		// Retain the validated credentials so dependent checks (e.g. Nutanix Files NFSv4) can reuse
+		// them as a fallback when a StorageClass does not carry usable ones.
+		cd.pcCredentials = &credentials
 		return credentialsCheck
 	}
 
