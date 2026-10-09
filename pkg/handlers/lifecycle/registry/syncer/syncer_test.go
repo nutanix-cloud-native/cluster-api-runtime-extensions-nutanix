@@ -109,6 +109,15 @@ func Test_templateValues(t *testing.T) {
 	assert.Equal(t, expectedRegistrySyncerValues, result)
 }
 
+func Test_templateValues_KubernetesVersionTag(t *testing.T) {
+	cluster := namedClusterWithRegistry(t, "test-cluster")
+	cluster.Spec.Topology.Version = "v1.30.100-rc.0+build.1"
+
+	result, err := templateValues(cluster, testRegistrySyncerTemplate)
+	require.NoError(t, err)
+	assert.Equal(t, expectedRegistrySyncerValues, result)
+}
+
 func clusterWithRegistry(t *testing.T) *clusterv1beta2.Cluster {
 	t.Helper()
 
