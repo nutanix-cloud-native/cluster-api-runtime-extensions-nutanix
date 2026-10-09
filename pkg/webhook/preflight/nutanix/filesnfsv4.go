@@ -3,6 +3,38 @@
 
 package nutanix
 
+/*
+NutanixFilesNFSv4 runs only for Cluster updates; create operations pass silently.
+
+
+Flow:
+preflight runner → nutanixChecker.Init() → credentials check(validates Prism Central credentials and stores them as fallback) →
+newFilesNFSv4Checks() → Run() creates workload-cluster client →
+listNutanixFilesStorageClasses(lists Files StorageClasses(storageType=NutanixFiles) → evaluates each StorageClass.)
+
+SC Evaluation:
+  - Skips evaluation when mountOptions contains nfsvers=4* or vers=4*.
+  - Resolve file server from StorageClass:
+	- nfsServerName for dynamic provisioning.
+	- nfsServer for static provisioning.
+	- If neither exists, add warning and skip that StorageClass.
+  - Resolve credentials from CSI provisioner Secret.
+	- If Secret is missing, unreadable, malformed, or lacks files-key, fall back to validated Prism Central credentials.
+  - Queries the file server’s name-services API to get NFS version.
+	- NFSV4/NFSV3V4: allow that StorageClass.
+	- UNKNOWN: warning, allow.
+	- NFSV3: add blocking cause.
+  - Validate NFS version
+  - StorageClass evaluation continues independently after one warning.
+
+Validation, Errors:
+- Fail-open cases produce warnings and leave upgrade allowed:
+	- Errors encountered while inspecting an individual Files StorageClass fail open for this check
+	- only confirmed NFSv3-only servers block the upgrade.
+- Confirmed NFSV4 or NFSV3V4 allows upgrade.
+- Only a confirmed NFSV3-only server without an explicit NFSv4 mount option blocks upgrade by adding a preflight cause for that StorageClass.
+*/
+
 import (
 	"context"
 	"encoding/base64"
@@ -156,7 +188,8 @@ func (c *filesNFSv4Check) Run(ctx context.Context) preflight.CheckResult {
 	// StorageClasses simply warn + allow).
 	if !c.isUpdate() {
 		c.log.V(5).Info(
-			"Skipping Nutanix Files NFSv4 preflight check: not a Cluster update (create operation has no existing workload cluster to protect)",
+			"Skipping Nutanix Files NFSv4 preflight check: not a Cluster update "+
+				"(create operation has no existing workload cluster to protect)",
 			"operation", "create",
 		)
 		return result
@@ -242,7 +275,8 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 	fsRef, ok := fileServerRefFromStorageClass(sc)
 	if !ok {
 		result.Warnings = append(result.Warnings, fmt.Sprintf(
-			"StorageClass %q specifies neither %q nor %q, so its Nutanix Files server cannot be identified; skipping its NFSv4 check.",
+			"StorageClass %q specifies neither %q nor %q, so its Nutanix Files server cannot be identified; "+
+				"skipping its NFSv4 check.",
 			sc.Name,
 			csiParameterKeyNFSServerName,
 			csiParameterKeyNFSServer,
@@ -260,7 +294,8 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 	getter, err := c.nfsVersionGetterFactory(ctx, remoteClient, sc, fsRef, c.pcCredentials)
 	if err != nil {
 		result.Warnings = append(result.Warnings, fmt.Sprintf(
-			"Could not resolve credentials to check the NFS version of Nutanix Files server %q for StorageClass %q (%s); skipping its NFSv4 check.",
+			"Could not resolve credentials to check the NFS version of Nutanix Files server %q for StorageClass %q (%s); "+
+				"skipping its NFSv4 check.",
 			fileServer,
 			sc.Name,
 			err,
@@ -285,7 +320,8 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 	// confirmed NFSv3-only server, so it must never block the upgrade: warn + allow.
 	if version == nfsVersionUnknown {
 		result.Warnings = append(result.Warnings, fmt.Sprintf(
-			"The NFS version of Nutanix Files server %q for StorageClass %q could not be determined (the Files API returned no usable value); skipping its NFSv4 check.",
+			"The NFS version of Nutanix Files server %q for StorageClass %q could not be determined "+
+				"(the Files API returned no usable value); skipping its NFSv4 check.",
 			fileServer,
 			sc.Name,
 		))
@@ -313,7 +349,8 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 	result.Allowed = false
 	result.Causes = append(result.Causes, preflight.Cause{
 		Message: fmt.Sprintf(
-			"StorageClass %q uses Nutanix Files server %q which is configured for NFSv3 only. NKP upgrade requires NFSv4: either enable NFSv4 on the file server, or add `nfsvers=4.1` to the StorageClass `mountOptions`.",
+			"StorageClass %q uses Nutanix Files server %q which is configured for NFSv3 only. NKP upgrade requires NFSv4: "+
+				"either enable NFSv4 on the file server, or add `nfsvers=4.1` to the StorageClass `mountOptions`.",
 			sc.Name,
 			fileServer,
 		),
