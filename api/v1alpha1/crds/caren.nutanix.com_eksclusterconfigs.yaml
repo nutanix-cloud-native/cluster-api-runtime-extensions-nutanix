@@ -315,6 +315,7 @@ spec:
                             the CCM acts as the provider.
                           enum:
                             - MetalLB
+                            - Cilium
                           type: string
                       required:
                         - provider

@@ -58,3 +58,10 @@ routingMode: native
 endpointRoutes:
   enabled: true
 {{- end }}
+{{- if .ServiceLoadBalancerProviderIsCilium }}
+l2announcements:
+  enabled: true
+k8sClientRateLimit:
+  qps: 50
+  burst: 100
+{{- end }}
