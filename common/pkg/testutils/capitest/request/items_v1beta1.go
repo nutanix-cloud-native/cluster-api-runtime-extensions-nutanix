@@ -31,7 +31,7 @@ func NewKubeadmConfigTemplateV1Beta1Request(
 		&bootstrapv1beta1.KubeadmConfigTemplate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: bootstrapv1beta1.GroupVersion.String(),
-				Kind:       "KubeadmConfigTemplate",
+				Kind:       kubeadmConfigTemplateKind,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -43,7 +43,7 @@ func NewKubeadmConfigTemplateV1Beta1Request(
 						JoinConfiguration: &bootstrapv1beta1.JoinConfiguration{
 							NodeRegistration: bootstrapv1beta1.NodeRegistrationOptions{
 								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+									cloudProviderArgName: externalCloudProvider,
 								},
 							},
 						},
@@ -52,8 +52,8 @@ func NewKubeadmConfigTemplateV1Beta1Request(
 			},
 		},
 		&runtimehooksv1.HolderReference{
-			Kind:      "MachineDeployment",
-			FieldPath: "spec.template.spec.infrastructureRef",
+			Kind:      machineDeploymentKind,
+			FieldPath: infrastructureRefFieldPath,
 		},
 		uid,
 	)
@@ -105,14 +105,14 @@ func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) NewRequest(
 						InitConfiguration: &bootstrapv1beta1.InitConfiguration{
 							NodeRegistration: bootstrapv1beta1.NodeRegistrationOptions{
 								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+									cloudProviderArgName: externalCloudProvider,
 								},
 							},
 						},
 						JoinConfiguration: &bootstrapv1beta1.JoinConfiguration{
 							NodeRegistration: bootstrapv1beta1.NodeRegistrationOptions{
 								KubeletExtraArgs: map[string]string{
-									"cloud-provider": "external",
+									cloudProviderArgName: externalCloudProvider,
 								},
 							},
 						},

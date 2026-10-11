@@ -28,6 +28,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework/nutanix"
 )
 
+const yamlStringTag = "!!str"
+
 const automaticReservationsFlavorSuffix = "-kubelet-reservations"
 
 // kubeletInUserNamespaceEnvVar, when set to a truthy value, makes the e2e ClusterClass enable
@@ -309,7 +311,7 @@ func upsertFeatureGate(seq *yaml.Node) {
 		value := mappingValue(item, "value")
 		if value == nil {
 			setMappingValue(item, "value", &yaml.Node{
-				Kind: yaml.ScalarNode, Tag: "!!str", Value: kubeletInUserNamespaceFeatureGate,
+				Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: kubeletInUserNamespaceFeatureGate,
 			})
 			return
 		}
@@ -317,17 +319,17 @@ func upsertFeatureGate(seq *yaml.Node) {
 			return
 		}
 		value.Value += "," + kubeletInUserNamespaceFeatureGate
-		value.Tag = "!!str"
+		value.Tag = yamlStringTag
 		value.Style = 0
 		return
 	}
 	seq.Content = append(seq.Content, &yaml.Node{
 		Kind: yaml.MappingNode,
 		Content: []*yaml.Node{
-			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "name"},
-			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "feature-gates"},
-			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "value"},
-			{Kind: yaml.ScalarNode, Tag: "!!str", Value: kubeletInUserNamespaceFeatureGate},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "name"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "feature-gates"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "value"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: kubeletInUserNamespaceFeatureGate},
 		},
 	})
 }
@@ -442,7 +444,7 @@ func enableReservationsInWorkerConfigVariables(seq *yaml.Node) {
 			value = &yaml.Node{Kind: yaml.MappingNode}
 			item.Content = append(
 				item.Content,
-				&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: "value"},
+				&yaml.Node{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "value"},
 				value,
 			)
 		}
@@ -460,12 +462,12 @@ func enableReservationsInWorkerConfigVariables(seq *yaml.Node) {
 // reservationsNode builds the kubeletConfiguration value enabling capacity-tiered reservations.
 func reservationsNode() *yaml.Node {
 	return &yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Tag: "!!str", Value: "automaticReservations"},
+		{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "automaticReservations"},
 		{Kind: yaml.MappingNode, Content: []*yaml.Node{
-			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "profile"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "profile"},
 			{
 				Kind:  yaml.ScalarNode,
-				Tag:   "!!str",
+				Tag:   yamlStringTag,
 				Value: string(v1alpha1.ReservationProfileCapacityTiered),
 			},
 		}},
@@ -495,7 +497,7 @@ func setMappingValue(node *yaml.Node, key string, value *yaml.Node) {
 	}
 	node.Content = append(
 		node.Content,
-		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: key},
 		value,
 	)
 }

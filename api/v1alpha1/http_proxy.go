@@ -14,6 +14,9 @@ const (
 	// instanceMetadataIP is the IPv4 address used to retrieve
 	// instance metadata in AWS, Azure, OpenStack, etc.
 	instanceMetadataIP = "169.254.169.254"
+
+	localhost    = "localhost"
+	ipv4Loopback = "127.0.0.1"
 )
 
 // HTTPProxy required for providing proxy configuration.
@@ -53,8 +56,8 @@ func (p *HTTPProxy) GenerateNoProxyNormalized(cluster *clusterv1.Cluster) []stri
 // networking. It appends additional values from HTTPProxy.AdditionalNo.
 func (p *HTTPProxy) GenerateNoProxy(cluster *clusterv1.Cluster) []string {
 	noProxy := []string{
-		"localhost",
-		"127.0.0.1",
+		localhost,
+		ipv4Loopback,
 	}
 
 	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) > 0 {

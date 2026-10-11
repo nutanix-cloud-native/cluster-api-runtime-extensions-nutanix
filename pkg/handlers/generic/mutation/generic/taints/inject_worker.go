@@ -96,11 +96,12 @@ func (h *taintsWorkerPatchHandler) Mutate(
 				"patchedObjectName", ctrlclient.ObjectKeyFromObject(obj),
 			).Info("adding taints to worker node kubeadm config template")
 			joinTaints := ptr.Deref(obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints, []v1.Taint{})
-			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = ptr.To(
+			obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.Taints = new(
 				toCoreTaints(joinTaints, taintsVar),
 			)
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -117,7 +118,8 @@ func (h *taintsWorkerPatchHandler) Mutate(
 			kubeletOptions.Flags = append(kubeletOptions.Flags, fmt.Sprintf("--register-with-taints=%s", newTaints))
 			obj.Spec.Template.Spec.Kubelet = &kubeletOptions
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

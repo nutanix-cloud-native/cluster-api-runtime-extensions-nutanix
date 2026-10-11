@@ -42,7 +42,8 @@ var _ = Describe("Generate HTTPProxy Patches", func() {
 		return mutation.NewMetaGeneratePatchesHandler(
 			"",
 			cl,
-			NewPatch(cl)).(mutation.GeneratePatches)
+			NewPatch(cl),
+		).(mutation.GeneratePatches)
 	}
 
 	testDefs := []capitest.PatchTestDef{

@@ -39,7 +39,8 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
-				}}),
+				}},
+			),
 			cluster: &clusterv1beta2.Cluster{
 				Spec: clusterv1beta2.ClusterSpec{
 					Topology: clusterv1beta2.Topology{
@@ -78,7 +79,8 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
-				}}),
+				}},
+			),
 			cluster: &clusterv1beta2.Cluster{
 				Spec: clusterv1beta2.ClusterSpec{
 					Topology: clusterv1beta2.Topology{
@@ -112,7 +114,8 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
-				}}),
+				}},
+			),
 			cluster: &clusterv1beta2.Cluster{
 				Spec: clusterv1beta2.ClusterSpec{
 					Topology: clusterv1beta2.Topology{
@@ -145,7 +148,8 @@ func Test_GenerateFilesAndCommands(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    kubeVIPFilePath,
 					Content: validKubeVIPTemplate,
-				}}),
+				}},
+			),
 			cluster: &clusterv1beta2.Cluster{
 				Spec: clusterv1beta2.ClusterSpec{
 					Topology: clusterv1beta2.Topology{
@@ -201,7 +205,8 @@ func Test_getTemplate(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    kubeVIPFilePath,
 					Content: "kube-vip-template",
-				}}),
+				}},
+			),
 			expectedData: "kube-vip-template",
 		},
 		{
@@ -210,7 +215,8 @@ func Test_getTemplate(t *testing.T) {
 				t, []bootstrapv1.File{{
 					Path:    "some-other-file",
 					Content: "content",
-				}}),
+				}},
+			),
 			expectedErr: missingTemplateError{
 				path: kubeVIPFilePath,
 			},

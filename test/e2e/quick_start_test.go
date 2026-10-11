@@ -107,7 +107,8 @@ var _ = Describe("Quick start", func() {
 									fmt.Sprintf(
 										"topology-with-failuredomains-%s-%s",
 										strings.ToLower(cniProvider),
-										strategy),
+										strategy,
+									),
 								)
 							}
 							for _, flavor := range flavors {

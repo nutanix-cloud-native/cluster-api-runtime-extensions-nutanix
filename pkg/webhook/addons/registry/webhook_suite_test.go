@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 				Name: "registry-defaulter.caren.nutanix.com",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
-						Path: ptr.To("/mutate-v1beta2-registry-addon"),
+						Path: new("/mutate-v1beta2-registry-addon"),
 					},
 				},
 				Rules: []admissionv1.RuleWithOperations{{

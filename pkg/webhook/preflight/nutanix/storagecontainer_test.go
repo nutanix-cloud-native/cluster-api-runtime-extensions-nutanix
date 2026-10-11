@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -33,7 +32,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("pe-cluster-from-fd-1"),
+				Name: new("pe-cluster-from-fd-1"),
 			},
 		},
 	}
@@ -42,7 +41,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("pe-cluster-from-fd-2"),
+				Name: new("pe-cluster-from-fd-2"),
 			},
 		},
 	}
@@ -51,7 +50,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("pe-cluster-from-fd-3"),
+				Name: new("pe-cluster-from-fd-3"),
 			},
 		},
 	}
@@ -60,7 +59,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 		Spec: capxv1.NutanixFailureDomainSpec{
 			PrismElementCluster: capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("pe-cluster-from-fd-4"),
+				Name: new("pe-cluster-from-fd-4"),
 			},
 		},
 	}
@@ -144,7 +143,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("my-cluster"),
+								Name: new("my-cluster"),
 							},
 						},
 					},
@@ -180,7 +179,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("my-cluster"),
+								Name: new("my-cluster"),
 							},
 						},
 					},
@@ -224,7 +223,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker-cluster"),
+								Name: new("worker-cluster"),
 							},
 						},
 					},
@@ -252,7 +251,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker-cluster"),
+								Name: new("worker-cluster"),
 							},
 						},
 					},
@@ -272,7 +271,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("cp-cluster"),
+								Name: new("cp-cluster"),
 							},
 						},
 					},
@@ -291,7 +290,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker1-cluster"),
+								Name: new("worker1-cluster"),
 							},
 						},
 					},
@@ -301,7 +300,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker2-cluster"),
+								Name: new("worker2-cluster"),
 							},
 						},
 					},
@@ -345,7 +344,7 @@ func TestInitStorageContainerChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("worker1-cluster"),
+								Name: new("worker1-cluster"),
 							},
 						},
 					},
@@ -409,7 +408,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec:              &carenv1.CSIProvider{StorageClassConfigs: nil},
@@ -423,7 +422,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -442,7 +441,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -463,7 +462,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -500,12 +499,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -524,7 +523,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListStorageContainersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.StorageContainer{}) // Empty list - container not found
 					require.NoError(t, err)
@@ -540,7 +539,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -579,12 +578,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -603,14 +602,14 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListStorageContainersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.StorageContainer{
 						{
-							Name: ptr.To("duplicate-container"),
+							Name: new("duplicate-container"),
 						},
 						{
-							Name: ptr.To("duplicate-container"),
+							Name: new("duplicate-container"),
 						},
 					})
 					require.NoError(t, err)
@@ -626,7 +625,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -663,12 +662,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -687,11 +686,11 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListStorageContainersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.StorageContainer{
 						{
-							Name: ptr.To("valid-container"),
+							Name: new("valid-container"),
 						},
 					})
 					require.NoError(t, err)
@@ -706,7 +705,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -733,16 +732,16 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-456"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-456"),
 						},
 					})
 					require.NoError(t, err)
@@ -758,7 +757,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -806,7 +805,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -843,12 +842,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -878,7 +877,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -915,12 +914,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -953,7 +952,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -990,12 +989,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -1025,7 +1024,7 @@ func TestStorageContainerCheck(t *testing.T) {
 			machineSpec: &carenv1.NutanixMachineDetails{
 				Cluster: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To(clusterName),
+					Name: new(clusterName),
 				},
 			},
 			csiSpec: &carenv1.CSIProvider{
@@ -1072,12 +1071,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To(clusterName),
-							ExtId: ptr.To("cluster-uuid-123"),
+							Name:  new(clusterName),
+							ExtId: new("cluster-uuid-123"),
 						},
 					})
 					require.NoError(t, err)
@@ -1108,11 +1107,11 @@ func TestStorageContainerCheck(t *testing.T) {
 					}
 
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListStorageContainersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.StorageContainer{
 						{
-							Name: ptr.To(containerName),
+							Name: new(containerName),
 						},
 					})
 					require.NoError(t, err)
@@ -1156,12 +1155,12 @@ func TestStorageContainerCheck(t *testing.T) {
 					)
 
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							Name:  ptr.To("pe-cluster-from-fd"),
-							ExtId: ptr.To("cluster-uuid-fd"),
+							Name:  new("pe-cluster-from-fd"),
+							ExtId: new("cluster-uuid-fd"),
 						},
 					})
 					require.NoError(t, err)
@@ -1188,11 +1187,11 @@ func TestStorageContainerCheck(t *testing.T) {
 					)
 
 					resp := &clustermgmtv4.ListStorageContainersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListStorageContainersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListStorageContainersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.StorageContainer{
 						{
-							Name: ptr.To("fd-container"),
+							Name: new("fd-container"),
 						},
 					})
 					require.NoError(t, err)
@@ -1207,7 +1206,7 @@ func TestStorageContainerCheck(t *testing.T) {
 					Spec: capxv1.NutanixFailureDomainSpec{
 						PrismElementCluster: capxv1.NutanixResourceIdentifier{
 							Type: capxv1.NutanixIdentifierName,
-							Name: ptr.To("pe-cluster-from-fd"),
+							Name: new("pe-cluster-from-fd"),
 						},
 					},
 				}).Build(),
@@ -1316,7 +1315,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by UUID - success",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid-123"),
+				UUID: new("test-uuid-123"),
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
@@ -1329,13 +1328,13 @@ func TestGetClusters(t *testing.T) {
 				) {
 					assert.Equal(t, "test-uuid-123", *uuid)
 					resp := &clustermgmtv4.GetClusterApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.GetClusterApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.GetClusterApiResponse"),
 					}
 					err := resp.SetData(
 						clustermgmtv4.Cluster{
-							ObjectType_: ptr.To("clustermgmt.v4.config.Cluster"),
-							ExtId:       ptr.To("test-uuid-123"),
-							Name:        ptr.To("test-cluster"),
+							ObjectType_: new("clustermgmt.v4.config.Cluster"),
+							ExtId:       new("test-uuid-123"),
+							Name:        new("test-cluster"),
 						},
 					)
 					require.NoError(t, err)
@@ -1349,7 +1348,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by UUID - API error",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid-error"),
+				UUID: new("test-uuid-error"),
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
@@ -1370,7 +1369,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by UUID - error response",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid-invalid"),
+				UUID: new("test-uuid-invalid"),
 			},
 			client: &clientWrapper{
 				GetClusterByIdFunc: func(
@@ -1394,7 +1393,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - success",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster"),
+				Name: new("test-cluster"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1411,12 +1410,12 @@ func TestGetClusters(t *testing.T) {
 					assert.NotNil(t, filter)
 					assert.Equal(t, "name eq 'test-cluster'", *filter)
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							ExtId: ptr.To("test-uuid-123"),
-							Name:  ptr.To("test-cluster"),
+							ExtId: new("test-uuid-123"),
+							Name:  new("test-cluster"),
 						},
 					})
 					require.NoError(t, err)
@@ -1430,7 +1429,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - API error",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-error"),
+				Name: new("test-cluster-error"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1454,7 +1453,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - nil response",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-nil"),
+				Name: new("test-cluster-nil"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1478,7 +1477,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - error response",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-nil"),
+				Name: new("test-cluster-nil"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1505,7 +1504,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - nil data",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-nil-data"),
+				Name: new("test-cluster-nil-data"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1531,7 +1530,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - no clusters found",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-not-found"),
+				Name: new("test-cluster-not-found"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1546,7 +1545,7 @@ func TestGetClusters(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{})
 					require.NoError(t, err)
@@ -1560,7 +1559,7 @@ func TestGetClusters(t *testing.T) {
 			name: "get cluster by name - multiple clusters found",
 			clusterIdentifier: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-cluster-duplicate"),
+				Name: new("test-cluster-duplicate"),
 			},
 			client: &clientWrapper{
 				ListClustersFunc: func(ctx context.Context, page,
@@ -1575,16 +1574,16 @@ func TestGetClusters(t *testing.T) {
 					error,
 				) {
 					resp := &clustermgmtv4.ListClustersApiResponse{
-						ObjectType_: ptr.To("clustermgmt.v4.config.ListClustersApiResponse"),
+						ObjectType_: new("clustermgmt.v4.config.ListClustersApiResponse"),
 					}
 					err := resp.SetData([]clustermgmtv4.Cluster{
 						{
-							ExtId: ptr.To("test-uuid-1"),
-							Name:  ptr.To("test-cluster-duplicate"),
+							ExtId: new("test-uuid-1"),
+							Name:  new("test-cluster-duplicate"),
 						},
 						{
-							ExtId: ptr.To("test-uuid-2"),
-							Name:  ptr.To("test-cluster-duplicate"),
+							ExtId: new("test-uuid-2"),
+							Name:  new("test-cluster-duplicate"),
 						},
 					})
 					require.NoError(t, err)

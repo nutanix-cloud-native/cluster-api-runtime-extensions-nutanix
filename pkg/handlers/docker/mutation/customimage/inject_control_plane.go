@@ -99,7 +99,8 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 				kubernetesVersion, err := variables.Get[string](
 					vars,
 					variablePath[0],
-					variablePath[1:]...)
+					variablePath[1:]...,
+				)
 				if err != nil && !variables.IsNotFoundError(err) {
 					return err
 				}

@@ -206,7 +206,10 @@ formatters:
         - Prefix(github.com/nutanix-cloud-native)
         - Prefix(github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix)
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
     golines:
       max-len: 120
   exclusions:
