@@ -62,3 +62,6 @@ golangci-lint-kube-api-linter
 
 # Cursor IDE - ignore local/user state, commit shared rules
 .cursor/mcp.json
+
+# results produced by hack/dev-vm/caren-pc-test.sh
+test-results/
