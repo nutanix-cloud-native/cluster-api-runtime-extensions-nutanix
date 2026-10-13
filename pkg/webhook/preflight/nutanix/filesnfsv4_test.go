@@ -630,6 +630,7 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			scWithSecret(),
 			fileServerRef{identifier: "fs-1"},
 			&prismgoclient.Credentials{Endpoint: "pc.example.com:9440", Username: "pc", Password: "pc-pass"},
+			nil,
 		)
 		require.NoError(t, err)
 		fc, ok := getter.(*filesClient)
@@ -649,6 +650,7 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			filesStorageClass("nfs-sc", "", "fs-1", nil),
 			fileServerRef{identifier: "fs-1", isFQDN: false},
 			&prismgoclient.Credentials{Endpoint: "pc.example.com:9440", Username: "pc", Password: "pc-pass", Insecure: false},
+			nil,
 		)
 		require.NoError(t, err)
 		fc, ok := getter.(*filesClient)
@@ -672,6 +674,7 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			staticFilesStorageClass("static-sc", "10.15.98.173", "/share", nil),
 			fileServerRef{identifier: "10.15.98.173", isFQDN: true},
 			&prismgoclient.Credentials{Endpoint: "pc.example.com:9440", Username: "pc", Password: "pc-pass"},
+			nil,
 		)
 		require.NoError(t, err)
 		fc, ok := getter.(*filesClient)
@@ -702,6 +705,7 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			sc,
 			fileServerRef{identifier: "10.15.98.173", isFQDN: true},
 			&prismgoclient.Credentials{Endpoint: "pc.example.com:9440", Username: "pc", Password: "pc-pass"},
+			nil,
 		)
 		require.NoError(t, err)
 		fc, ok := getter.(*filesClient)
@@ -721,6 +725,7 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			remoteClient,
 			filesStorageClass("nfs-sc", "", "fs-1", nil),
 			fileServerRef{identifier: "fs-1"},
+			nil,
 			nil,
 		)
 		require.Error(t, err)
@@ -1011,6 +1016,85 @@ func TestFilesClient_NFSVersion_PCScoped_Pagination(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not found")
 		assert.Equal(t, 1, pages, "must stop paging once all results are consumed")
+	})
+}
+
+func TestFilesClient_NFSVersion_SharedCache(t *testing.T) {
+	t.Parallel()
+
+	const (
+		fsA    = "fs-a"
+		fsB    = "fs-b"
+		extA   = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+		extB   = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+		fsBody = `{"data":[` +
+			`{"name":"` + fsA + `","extId":"` + extA + `"},` +
+			`{"name":"` + fsB + `","extId":"` + extB + `"}]}`
+	)
+
+	t.Run("PC scoped caches the NFS version per file server", func(t *testing.T) {
+		t.Parallel()
+
+		var listCalls, nsCalls int
+		srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == filesPCFileServersURI {
+				listCalls++
+				_, _ = w.Write([]byte(fsBody))
+				return
+			}
+			nsCalls++
+			version := filesconfig.NFSVERSION_NFSV4
+			if strings.Contains(r.URL.Path, extB) {
+				version = filesconfig.NFSVERSION_NFSV3
+			}
+			_, _ = w.Write(nameServicesJSON(t, version))
+		}))
+		defer srv.Close()
+
+		cache := newFilesLookupCache()
+		first := clientForServer(t, srv, true)
+		first.cache = cache
+		second := clientForServer(t, srv, true)
+		second.cache = cache
+
+		gotA, err := first.NFSVersion(context.Background(), fsA)
+		require.NoError(t, err)
+		gotB, err := second.NFSVersion(context.Background(), fsB)
+		require.NoError(t, err)
+		gotAAgain, err := first.NFSVersion(context.Background(), fsA)
+		require.NoError(t, err)
+
+		assert.Equal(t, nfsVersionV4, gotA)
+		assert.Equal(t, nfsVersionV3, gotB)
+		assert.Equal(t, nfsVersionV4, gotAAgain)
+		// fsA and fsB each resolve once (two list + two name-services calls); the repeated fsA
+		// lookup is served from the version cache and makes no API calls.
+		assert.Equal(t, 2, listCalls)
+		assert.Equal(t, 2, nsCalls)
+	})
+
+	t.Run("direct lookup caches the NFS version for a file server", func(t *testing.T) {
+		t.Parallel()
+
+		var calls int
+		srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			calls++
+			_, _ = w.Write(nameServicesJSON(t, filesconfig.NFSVERSION_NFSV4))
+		}))
+		defer srv.Close()
+
+		cache := newFilesLookupCache()
+		first := clientForServer(t, srv, false)
+		first.cache = cache
+		second := clientForServer(t, srv, false)
+		second.cache = cache
+
+		_, err := first.NFSVersion(context.Background(), "fs-1")
+		require.NoError(t, err)
+		_, err = second.NFSVersion(context.Background(), "fs-1")
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, calls)
 	})
 }
 
