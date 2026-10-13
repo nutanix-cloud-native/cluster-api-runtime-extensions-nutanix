@@ -8,7 +8,8 @@ NutanixFilesNFSv4 runs only for Cluster updates; create operations pass silentl
 
 
 Flow:
-preflight runner → nutanixChecker.Init() → credentials check(validates Prism Central credentials and stores them as fallback) →
+preflight runner → nutanixChecker.Init() →
+credentials check(validates Prism Central credentials and stores them as fallback) →
 newFilesNFSv4Checks() → Run() creates workload-cluster client →
 listNutanixFilesStorageClasses(lists Files StorageClasses(storageType=NutanixFiles) → evaluates each StorageClass.)
 
@@ -32,7 +33,8 @@ Validation, Errors:
 	- Errors encountered while inspecting an individual Files StorageClass fail open for this check
 	- only confirmed NFSv3-only servers block the upgrade.
 - Confirmed NFSV4 or NFSV3V4 allows upgrade.
-- Only a confirmed NFSV3-only server without an explicit NFSv4 mount option blocks upgrade by adding a preflight cause for that StorageClass.
+- Only a confirmed NFSV3-only server without an explicit NFSv4 mount option blocks the upgrade
+  by adding a preflight cause for that StorageClass.
 */
 
 import (
@@ -81,7 +83,9 @@ const (
 
 	// csiParameterKeyProvisionerSecretName and csiParameterKeyProvisionerSecretNamespace identify the
 	// CSI provisioner Secret (on the workload cluster) used to authenticate to Nutanix Files.
-	csiParameterKeyProvisionerSecretName      = "csi.storage.k8s.io/provisioner-secret-name"
+	//nolint:gosec // CSI parameter key, not a credential.
+	csiParameterKeyProvisionerSecretName = "csi.storage.k8s.io/provisioner-secret-name"
+	//nolint:gosec // CSI parameter key, not a credential.
 	csiParameterKeyProvisionerSecretNamespace = "csi.storage.k8s.io/provisioner-secret-namespace"
 
 	// filesKeySecretDataKey holds a "fqdn:username:password" value used to reach a Nutanix Files
@@ -424,15 +428,26 @@ func newFilesNFSv4Checks(cd *checkDependencies) []preflight.Check {
 		return nil
 	}
 
+	// One cache per admission: StorageClasses that name the same file server share one
+	// file-server list and one NFS version lookup.
+	cache := newFilesLookupCache()
 	return []preflight.Check{
 		&filesNFSv4Check{
-			cluster:                 cd.cluster,
-			oldCluster:              cd.oldCluster,
-			kclient:                 cd.kclient,
-			log:                     cd.log,
-			pcCredentials:           cd.pcCredentials,
-			clusterClientGetter:     remote.NewClusterClient,
-			nfsVersionGetterFactory: newFilesNFSVersionGetter,
+			cluster:             cd.cluster,
+			oldCluster:          cd.oldCluster,
+			kclient:             cd.kclient,
+			log:                 cd.log,
+			pcCredentials:       cd.pcCredentials,
+			clusterClientGetter: remote.NewClusterClient,
+			nfsVersionGetterFactory: func(
+				ctx context.Context,
+				remoteClient ctrlclient.Client,
+				sc *storagev1.StorageClass,
+				fsRef fileServerRef,
+				pcFallback *prismgoclient.Credentials,
+			) (filesNFSVersionGetter, error) {
+				return newFilesNFSVersionGetter(ctx, remoteClient, sc, fsRef, pcFallback, cache)
+			},
 		},
 	}
 }
@@ -463,14 +478,66 @@ type filesConnection struct {
 
 // filesClient is the concrete filesNFSVersionGetter backed by the Nutanix files-go-client.
 type filesClient struct {
-	conn filesConnection
+	conn  filesConnection
+	cache *filesLookupCache
+}
+
+var _ filesNFSVersionGetter = (*filesClient)(nil)
+
+// filesLookupCache memoizes the NFS version of each file server across the StorageClasses
+// evaluated by a single check run, so StorageClasses that name the same file server share one
+// lookup. A single check's StorageClasses are evaluated serially (see filesNFSv4Check.Run), so
+// no locking is needed.
+type filesLookupCache struct {
+	versions map[string]nfsVersionEntry
+}
+
+type nfsVersionEntry struct {
+	version nfsVersion
+	err     error
+}
+
+func newFilesLookupCache() *filesLookupCache {
+	return &filesLookupCache{
+		versions: map[string]nfsVersionEntry{},
+	}
+}
+
+// versionKey identifies a file server by the endpoint used to reach it plus the file server
+// identifier. Each StorageClass may carry its own files-key Secret (direct file-server endpoint/creds),
+// and SCs without one fall back to CAREN's Prism Central. Keying on the endpoint prevents two
+// distinct file servers sharing a name (reached via different endpoints) from colliding.
+func (f *filesClient) versionKey(fileServer string) string {
+	return strings.Join([]string{
+		f.conn.host,
+		strconv.Itoa(f.conn.port),
+		f.conn.username,
+		strconv.FormatBool(f.conn.pcScoped),
+		strconv.FormatBool(f.conn.matchByFQDN),
+		fileServer,
+	}, "\x00")
 }
 
 func (f *filesClient) NFSVersion(ctx context.Context, fileServer string) (nfsVersion, error) {
-	if f.conn.pcScoped {
-		return f.nfsVersionPCScoped(ctx, fileServer)
+	if f.cache != nil {
+		if entry, ok := f.cache.versions[f.versionKey(fileServer)]; ok {
+			return entry.version, entry.err
+		}
 	}
-	return f.nfsVersionFileServerDirect(ctx, f.newAPIClient())
+
+	var (
+		version nfsVersion
+		err     error
+	)
+	if f.conn.pcScoped {
+		version, err = f.nfsVersionPCScoped(ctx, fileServer)
+	} else {
+		version, err = f.nfsVersionFileServerDirect(ctx, f.newAPIClient())
+	}
+	if f.cache != nil {
+		f.cache.versions[f.versionKey(fileServer)] = nfsVersionEntry{version: version, err: err}
+	}
+	return version, err
 }
 
 // Builds a files-go-client ApiClient configured with this connection's endpoint and credentials.
@@ -514,7 +581,8 @@ func (f *filesClient) pcGet(
 	})
 }
 
-// Resolves the NFS version by talking to a file server directly, using the SDK's (singular, unscoped) name-services endpoint.
+// Resolves the NFS version by talking to a file server directly, using the SDK's
+// (singular, unscoped) name-services endpoint.
 // This is correct when connecting straight to a file server (the files-key Secret case).
 func (f *filesClient) nfsVersionFileServerDirect(
 	ctx context.Context,
@@ -535,7 +603,8 @@ func (f *filesClient) nfsVersionFileServerDirect(
 // Resolves the NFS version through Prism Central. Prism Central only serves the
 // plural, file server-scoped collection endpoints, so this first resolves the file server's external ID (UUID)
 // from its name, then queries that file server's name-services.
-// Both calls target manually-built URIs because the vendored SDK does not expose the Prism Central-scoped paths (mirroring the Nutanix CSI driver).
+// Both calls target manually-built URIs because the vendored SDK does not expose
+// the Prism Central-scoped paths (mirroring the Nutanix CSI driver).
 func (f *filesClient) nfsVersionPCScoped(ctx context.Context, fileServer string) (nfsVersion, error) {
 	apiClient := f.newAPIClient()
 
@@ -784,13 +853,14 @@ func newFilesNFSVersionGetter(
 	sc *storagev1.StorageClass,
 	fsRef fileServerRef,
 	pcFallback *prismgoclient.Credentials,
+	cache *filesLookupCache,
 ) (filesNFSVersionGetter, error) {
 	// Prefer the StorageClass's own files-key Secret: it carries "fqdn:user:password" where fqdn is the
 	// file server's management endpoint, so the file-server-direct lookup works for both dynamic and
 	// static SCs. This matches the Nutanix CSI driver, which uses Files secrets when present.
 	conn, err := filesConnectionFromProvisionerSecret(ctx, remoteClient, sc)
 	if err == nil && conn != nil {
-		return &filesClient{conn: *conn}, nil
+		return &filesClient{conn: *conn, cache: cache}, nil
 	}
 
 	// No usable Secret: fall back to CAREN's Prism Central credentials. The identifier is matched
@@ -811,10 +881,10 @@ func newFilesNFSVersionGetter(
 			insecure:    true,
 			pcScoped:    true,
 			matchByFQDN: fsRef.isFQDN,
-		}}, nil
+		}, cache: cache}, nil
 	}
 
-	return nil, fmt.Errorf("no usable credentials to query Nutanix Files: %w", err)
+	return nil, fmt.Errorf("no usable credentials to query Nutanix Files: %v", err)
 }
 
 // Builds a filesConnection from the StorageClass's CSI
