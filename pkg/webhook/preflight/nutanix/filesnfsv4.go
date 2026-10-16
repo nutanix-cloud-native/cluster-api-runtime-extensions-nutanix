@@ -659,7 +659,7 @@ func decodeNameServicesResponse(body []byte) (resp *filesconfig.NameServicesApiR
 }
 
 // recoverToError calls f and converts a panic into an error.
-func recoverToError[T any](f func(args ...map[string]interface{}) (T, error)) (res T, err error) {
+func recoverToError[T any](f func(args ...map[string]any) (T, error)) (res T, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var zero T
@@ -779,7 +779,7 @@ func (f *filesClient) fileServerExtIDByName(
 	fileServer string,
 ) (string, error) {
 	seen := 0
-	for page := 0; page < filesPCListMaxPages; page++ {
+	for page := range filesPCListMaxPages {
 		query := url.Values{}
 		query.Set("$page", strconv.Itoa(page))
 		query.Set("$limit", strconv.Itoa(filesPCListPageSize))

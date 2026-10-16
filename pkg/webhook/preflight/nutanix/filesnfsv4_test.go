@@ -497,7 +497,12 @@ func TestSplitHostPort(t *testing.T) {
 		wantHost string
 		wantPort int
 	}{
-		{name: "host only", endpoint: "fs.example.com", wantHost: "fs.example.com", wantPort: defaultNutanixFilesAPIPort},
+		{
+			name:     "host only",
+			endpoint: "fs.example.com",
+			wantHost: "fs.example.com",
+			wantPort: defaultNutanixFilesAPIPort,
+		},
 		{name: "host and port", endpoint: "fs.example.com:9441", wantHost: "fs.example.com", wantPort: 9441},
 		{
 			name:     "https scheme is stripped",
@@ -511,7 +516,12 @@ func TestSplitHostPort(t *testing.T) {
 			wantHost: "fs.example.com",
 			wantPort: defaultNutanixFilesAPIPort,
 		},
-		{name: "empty is left as-is with default port", endpoint: "", wantHost: "", wantPort: defaultNutanixFilesAPIPort},
+		{
+			name:     "empty is left as-is with default port",
+			endpoint: "",
+			wantHost: "",
+			wantPort: defaultNutanixFilesAPIPort,
+		},
 	}
 
 	for _, tt := range tests {
@@ -649,7 +659,12 @@ func TestNewFilesNFSVersionGetter(t *testing.T) {
 			remoteClient,
 			filesStorageClass("nfs-sc", "", "fs-1", nil),
 			fileServerRef{identifier: "fs-1", isFQDN: false},
-			&prismgoclient.Credentials{Endpoint: "pc.example.com:9440", Username: "pc", Password: "pc-pass", Insecure: false},
+			&prismgoclient.Credentials{
+				Endpoint: "pc.example.com:9440",
+				Username: "pc",
+				Password: "pc-pass",
+				Insecure: false,
+			},
 			nil,
 		)
 		require.NoError(t, err)
@@ -954,7 +969,7 @@ func TestFilesClient_NFSVersion_PCScoped_Pagination(t *testing.T) {
 	// 120 file servers; the target is the last one, beyond any single default page.
 	const total = 120
 	all := make([]pcFileServer, 0, total)
-	for i := 0; i < total-1; i++ {
+	for i := range total - 1 {
 		all = append(all, pcFileServer{Name: "fs-" + strconv.Itoa(i), ExtID: "id-" + strconv.Itoa(i)})
 	}
 	all = append(all, pcFileServer{Name: fsName, ExtID: fsExtID})
@@ -1125,17 +1140,32 @@ func TestPCFileServerMatches(t *testing.T) {
 	}{
 		{name: "name match (dynamic)", identifier: "csi-files", byFQDN: false, want: true},
 		{name: "extId match (dynamic)", identifier: "ext-1", byFQDN: false, want: true},
-		{name: "FQDN not matched when byFQDN is false", identifier: "csi-files.afs-delhi.com", byFQDN: false, want: false},
+		{
+			name:       "FQDN not matched when byFQDN is false",
+			identifier: "csi-files.afs-delhi.com",
+			byFQDN:     false,
+			want:       false,
+		},
 		{name: "IP not matched when byFQDN is false", identifier: "10.15.98.173", byFQDN: false, want: false},
 		{name: "full FQDN match (static)", identifier: "csi-files.afs-delhi.com", byFQDN: true, want: true},
 		{name: "full FQDN match is case-insensitive", identifier: "CSI-Files.AFS-Delhi.com", byFQDN: true, want: true},
-		{name: "absolute FQDN with trailing dot matches", identifier: "csi-files.afs-delhi.com.", byFQDN: true, want: true},
+		{
+			name:       "absolute FQDN with trailing dot matches",
+			identifier: "csi-files.afs-delhi.com.",
+			byFQDN:     true,
+			want:       true,
+		},
 		{name: "bare name is not a valid nfsServer (static)", identifier: "csi-files", byFQDN: true, want: false},
 		{name: "domain suffix alone does not match", identifier: "afs-delhi.com", byFQDN: true, want: false},
 		{name: "wrong domain does not match", identifier: "csi-files.other.com", byFQDN: true, want: false},
 		{name: "external IP match (static)", identifier: "10.15.98.173", byFQDN: true, want: true},
 		{name: "virtual IP match (static)", identifier: "10.0.0.9", byFQDN: true, want: true},
-		{name: "host:port identifier matches on host (static)", identifier: "10.15.98.173:9440", byFQDN: true, want: true},
+		{
+			name:       "host:port identifier matches on host (static)",
+			identifier: "10.15.98.173:9440",
+			byFQDN:     true,
+			want:       true,
+		},
 		{name: "FQDN with port matches (static)", identifier: "csi-files.afs-delhi.com:9440", byFQDN: true, want: true},
 		{name: "unrelated identifier does not match", identifier: "other", byFQDN: true, want: false},
 	}
