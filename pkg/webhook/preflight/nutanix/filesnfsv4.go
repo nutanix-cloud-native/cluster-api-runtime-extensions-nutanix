@@ -708,7 +708,7 @@ type pcIPValue struct {
 //   - an FQDN (e.g. "csi-files.afs-delhi.com"), matched against the file server's fully qualified
 //     name. The Files API exposes the FQDN as two parts: the file server "name" (e.g. "csi-files")
 //     and the "dnsDomainName" suffix (e.g. "afs-delhi.com"); the FQDN is "<name>.<dnsDomainName>".
-func (fs pcFileServer) matches(identifier string, byFQDN bool) bool {
+func (fs *pcFileServer) matches(identifier string, byFQDN bool) bool {
 	if !byFQDN {
 		// Dynamic SCs identify the file server by name (or, defensively, extId).
 		return fs.Name == identifier || (fs.ExtID != "" && fs.ExtID == identifier)
@@ -798,7 +798,7 @@ func (f *filesClient) fileServerExtIDByName(
 		}
 
 		for i := range resp.Data {
-			fs := resp.Data[i]
+			fs := &resp.Data[i]
 			if fs.matches(fileServer, f.conn.matchByFQDN) {
 				if fs.ExtID == "" {
 					return "", fmt.Errorf("file server %q has no external ID", fileServer)
