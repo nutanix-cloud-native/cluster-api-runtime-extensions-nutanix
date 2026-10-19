@@ -1,0 +1,14 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/discussions
+    about: Questions and usage help belong in Discussions.
+  - name: Documentation
+    url: https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/
+    about: Read the user documentation.
+  - name: Security vulnerability
+    url: https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/security/advisories/new
+    about: Report a vulnerability in private.
