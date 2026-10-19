@@ -3,11 +3,38 @@
  SPDX-License-Identifier: Apache-2.0
  -->
 
-# CAPI Runtime Extensions
+# Cluster API Runtime Extensions - Nutanix (CAREN)
 
-For user docs, please see [https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/].
+CAREN is a [Cluster API Runtime Extension][runtime-sdk]. It patches
+ClusterClass-managed clusters during topology mutation, and it installs cluster
+addons from lifecycle hooks. The cluster resource is the place to choose those
+options, including generic Kubernetes settings such as audit policy and HTTP
+proxy, and essential addons such as CNI.
 
-See [upstream documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/index.html).
+## Supported providers
+
+| Provider | Role |
+| --- | --- |
+| Nutanix | Clusters on Nutanix infrastructure |
+| AWS | Self-managed clusters on AWS |
+| EKS | Managed control plane with worker configuration |
+| Docker | Local development and tests |
+| Generic | Provider-independent Kubernetes settings |
+
+## Documentation
+
+User docs: <https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/>.
+
+Install with [clusterctl](https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/getting-started/deployment/via-clusterctl/)
+or [Helm](https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-nutanix/getting-started/deployment/via-helm/).
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
+- [Security](SECURITY.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [AGENTS.md](AGENTS.md) for coding agents
 
 ## Development
 
@@ -180,4 +207,5 @@ To delete the dev KinD cluster, run:
 make kind.delete
 ```
 
+[runtime-sdk]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/
 [topology mutation handlers]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/runtime-sdk/implement-topology-mutation-hook#implementing-topology-mutation-hook-runtime-extensions
