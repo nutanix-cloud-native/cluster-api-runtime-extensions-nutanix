@@ -58,3 +58,5 @@ routingMode: native
 endpointRoutes:
   enabled: true
 {{- end }}
+bpf:
+  masquerade: true
