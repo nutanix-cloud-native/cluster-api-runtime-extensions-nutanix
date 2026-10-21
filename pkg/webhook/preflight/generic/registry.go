@@ -184,8 +184,9 @@ func (r *registryCheck) checkRegistry(
 	// For an anonymous ping, a 401/403 still proves the registry is reachable, so it is not a failure.
 	isAnonymous := registryHost.User == "" && registryHost.Pass == ""
 	isUnauthorized := errors.Is(err, errs.ErrHTTPUnauthorized)
+	isAnonymousUnauthorized := isAnonymous && isUnauthorized
 	// Ping will return an error for anything that's not 200.
-	if err != nil && !(isAnonymous && isUnauthorized) {
+	if err != nil && !isAnonymousUnauthorized {
 		result.Allowed = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
