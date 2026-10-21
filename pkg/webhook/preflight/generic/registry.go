@@ -5,12 +5,14 @@ package generic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/go-logr/logr"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/config"
+	"github.com/regclient/regclient/types/errs"
 	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	corev1 "k8s.io/api/core/v1"
@@ -178,8 +180,12 @@ func (r *registryCheck) checkRegistry(
 			Scheme: "reg",
 		},
 	)
+	// Registries such as Harbor reject anonymous pings with 401 even when the repositories are public.
+	// For an anonymous ping, a 401/403 still proves the registry is reachable, so it is not a failure.
+	isAnonymous := registryHost.User == "" && registryHost.Pass == ""
+	isUnauthorized := errors.Is(err, errs.ErrHTTPUnauthorized)
 	// Ping will return an error for anything that's not 200.
-	if err != nil {
+	if err != nil && !(isAnonymous && isUnauthorized) {
 		result.Allowed = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{

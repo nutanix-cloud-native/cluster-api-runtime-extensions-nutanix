@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/regclient/regclient"
+	"github.com/regclient/regclient/types/errs"
 	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/stretchr/testify/assert"
@@ -192,6 +193,60 @@ func TestRegistryCheck(t *testing.T) {
 							testPingFailedError,
 						),
 						Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+					},
+				},
+			},
+		},
+		{
+			name: "registry mirror anonymous ping unauthorized is allowed",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return errs.ErrHTTPUnauthorized },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+			},
+		},
+		{
+			name:  "registry mirror ping unauthorized with credentials fails",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"username": []byte("testuser"),
+						"password": []byte("testpass"),
+					}
+					return nil
+				},
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return errs.ErrHTTPUnauthorized },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Causes: []preflight.Cause{
+					{
+						Message: pingFailedMessage(testRegistryURL, errs.ErrHTTPUnauthorized),
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 					},
 				},
 			},
