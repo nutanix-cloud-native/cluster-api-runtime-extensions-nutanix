@@ -1,7 +1,9 @@
+defaultMTU: 1350
 nutanix-core-flow-ovn-kubernetes:
   k8sAPIServer: "https://{{ .ControlPlaneEndpoint.Host }}:{{ .ControlPlaneEndpoint.Port }}"
   podNetwork: "{{ .PodCIDR }}"
   serviceNetwork: "{{ .ServiceCIDR }}"
+  mtu: 1350
 {{- if .ImagePullSecretName }}
 global:
   imagePullSecretName: "{{ .ImagePullSecretName }}"
