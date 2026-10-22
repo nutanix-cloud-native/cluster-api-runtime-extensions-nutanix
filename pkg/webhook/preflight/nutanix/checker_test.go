@@ -34,20 +34,21 @@ func (m *mockCheck) Run(ctx context.Context) preflight.CheckResult {
 
 func TestNutanixChecker_Init(t *testing.T) {
 	tests := []struct {
-		name                               string
-		nutanixConfig                      *carenv1.NutanixClusterConfigSpec
-		workerNodeConfigs                  map[string]*carenv1.NutanixWorkerNodeConfigSpec
-		expectedCheckCount                 int
-		expectedFirstCheckName             string
-		expectedSecondCheckName            string
-		expectedThirdCheckName             string
-		vmImageCheckCount                  int
-		vmImageKubernetesVersionCheckCount int
-		cidrValidationCheckCount           int
-		storageContainerCheckCount         int
-		failureDomainCheckCount            int
-		controlPlaneEndpointCheckCount     int
-		metroCheckCount                    int
+		name                                     string
+		nutanixConfig                            *carenv1.NutanixClusterConfigSpec
+		workerNodeConfigs                        map[string]*carenv1.NutanixWorkerNodeConfigSpec
+		expectedCheckCount                       int
+		expectedFirstCheckName                   string
+		expectedSecondCheckName                  string
+		expectedThirdCheckName                   string
+		vmImageCheckCount                        int
+		vmImageKubernetesVersionCheckCount       int
+		cidrValidationCheckCount                 int
+		storageContainerCheckCount               int
+		failureDomainCheckCount                  int
+		controlPlaneEndpointCheckCount           int
+		metroCheckCount                          int
+		flowNetworkSecurityDSRToSNATCheckerCount int
 	}{
 		{
 			name:                               "basic initialization with no configs",
@@ -304,6 +305,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.flowNetworkSecurityDSRToSNATCheckerFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.flowNetworkSecurityDSRToSNATCheckerCount; i++ {
+					tt.flowNetworkSecurityDSRToSNATCheckerCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixFlowNetworkSecurityDSRToSNATChecker-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
 			// Call Init
 			ctx := context.Background()
 			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
@@ -464,6 +481,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				flowNetworkSecurityDSRToSNATCheckerFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 			}
