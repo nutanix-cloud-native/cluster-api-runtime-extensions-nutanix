@@ -141,6 +141,13 @@ Flow CNI is available for Nutanix clusters only. It uses the `HelmAddon` strateg
 Flow CNI and OVN-Kubernetes need more node CPU and memory than Cilium or Calico. The Nutanix
 Flow quick-start example uses 4 vCPU / 8Gi machines.
 
+On a Nutanix VPC the guest NIC (`breth0`) is typically 1442 bytes. OVN-Kubernetes
+then fails to start when the overlay MTU is larger than that interface, for example
+`MTU (1442) of network interface breth0 is too small for specified overlay MTU (1458)`.
+The default Flow values set `defaultMTU` and `nutanix-core-flow-ovn-kubernetes.mtu`
+to `1350`, which fits that NIC. Clusters that need a different MTU can replace the
+values with a ConfigMap, as shown below.
+
 Flow CNI images are hosted on a private Docker Hub registry (`docker.io/nutanix`). If your
 environment does not use a mirror or registry credentials configured via `imageRegistries`, you
 must provide an image pull secret so the workload cluster can pull the Flow CNI images.

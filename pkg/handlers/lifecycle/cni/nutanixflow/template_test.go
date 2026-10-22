@@ -51,19 +51,23 @@ func Test_templateValues(t *testing.T) {
 		{
 			name:                "without image pull secret",
 			imagePullSecretName: "",
-			expected: `nutanix-core-flow-ovn-kubernetes:
+			expected: `defaultMTU: 1350
+nutanix-core-flow-ovn-kubernetes:
   k8sAPIServer: "https://192.168.1.100:6443"
   podNetwork: "10.244.0.0/16"
   serviceNetwork: "10.96.0.0/12"
+  mtu: 1350
 `,
 		},
 		{
 			name:                "with image pull secret",
 			imagePullSecretName: "flow-cni-image-pull-secret",
-			expected: `nutanix-core-flow-ovn-kubernetes:
+			expected: `defaultMTU: 1350
+nutanix-core-flow-ovn-kubernetes:
   k8sAPIServer: "https://192.168.1.100:6443"
   podNetwork: "10.244.0.0/16"
   serviceNetwork: "10.96.0.0/12"
+  mtu: 1350
 global:
   imagePullSecretName: "flow-cni-image-pull-secret"
 imagePullSecrets:
