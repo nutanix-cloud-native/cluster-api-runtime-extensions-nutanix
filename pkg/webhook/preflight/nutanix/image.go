@@ -100,7 +100,7 @@ func newVMImageChecks(
 		checks = append(checks,
 			&imageCheck{
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
-				field:          "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails", ///nolint:lll // Field is long.
+				field:          controlPlaneMachineDetailsField,
 				nclient:        cd.nclient,
 			},
 		)

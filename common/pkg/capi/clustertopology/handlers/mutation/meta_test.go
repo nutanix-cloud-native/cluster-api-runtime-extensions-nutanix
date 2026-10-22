@@ -179,7 +179,8 @@ func TestMetaGeneratePatches(t *testing.T) {
 						"add",
 						"/spec/template/spec/kubeadmConfigSpec/postKubeadmCommands",
 						[]string{"control-plane-extra-post-kubeadm-0"},
-					)),
+					),
+				),
 			}},
 		},
 	}, {

@@ -64,7 +64,8 @@ func ForObject[T client.Object](
 				// Retry if check fails.
 				return ok, nil
 			}
-		})
+		},
+	)
 
 	if wait.Interrupted(waitErr) {
 		if getErr != nil {

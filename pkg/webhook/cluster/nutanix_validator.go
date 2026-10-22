@@ -197,7 +197,8 @@ func validateControlPlaneFailureDomainConfig(clusterConfig *variables.ClusterCon
 				hasFailureDomains,
 				&machineDetails,
 				"failureDomains",
-			)...)
+			)...,
+		)
 	}
 
 	return fldErrs
@@ -267,7 +268,8 @@ func validateWorkerFailureDomainConfig(
 					hasFailureDomain,
 					&machineDetails,
 					"failureDomain",
-				)...)
+				)...,
+			)
 		}
 	}
 

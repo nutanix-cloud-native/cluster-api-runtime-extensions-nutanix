@@ -6,8 +6,6 @@ package customimage
 import (
 	"testing"
 
-	"k8s.io/utils/ptr"
-
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
@@ -17,7 +15,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.DockerClusterConfig{}.VariableSchema()),
+		new(v1alpha1.DockerClusterConfig{}.VariableSchema()),
 		true,
 		dockerclusterconfig.NewVariable,
 		capitest.VariableTestDef{

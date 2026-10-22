@@ -30,6 +30,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 )
 
+const metallbSystemNamespace = "metallb-system"
+
 type WaitForServiceLoadBalancerToBeReadyInWorkloadClusterInput struct {
 	ServiceLoadBalancer  *v1alpha1.ServiceLoadBalancer
 	WorkloadCluster      *clusterv1.Cluster
@@ -103,7 +105,7 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "metallb-controller",
-				Namespace: "metallb-system",
+				Namespace: metallbSystemNamespace,
 			},
 		},
 	}, input.deploymentIntervals...)
@@ -113,7 +115,7 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "metallb-speaker",
-				Namespace: "metallb-system",
+				Namespace: metallbSystemNamespace,
 			},
 		},
 	}, input.daemonSetIntervals...)
@@ -122,7 +124,7 @@ func waitForMetalLBServiceLoadBalancerToBeReadyInWorkloadCluster(
 	// created on the workload cluster.
 	cos, err := metallb.ConfigurationObjects(&metallb.ConfigurationInput{
 		Name:      "metallb",
-		Namespace: "metallb-system",
+		Namespace: metallbSystemNamespace,
 		// We need to populate AddressRanges to generate the configuration,
 		// but the values are not important, because this test does not compare
 		// them against the actual values.
@@ -279,7 +281,7 @@ func testServiceLoadBalancer(
 	var output string
 	Eventually(func(g Gomega) string {
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), http.NoBody)
-		resp, err := hc.Do(req) //nolint:gosec // OK in tests.
+		resp, err := hc.Do(req)
 		if err != nil {
 			return ""
 		}

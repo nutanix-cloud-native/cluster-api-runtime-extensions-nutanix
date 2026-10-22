@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -32,7 +31,7 @@ var _ = Describe("Generate KubeletConfiguration patches for Worker", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						PodPidsLimit: ptr.To(int64(4096)),
+						PodPidsLimit: new(int64(4096)),
 					},
 					VariableName,
 				),
@@ -51,7 +50,7 @@ var _ = Describe("Generate KubeletConfiguration patches for Worker", func() {
 				capitest.VariableWithValue(
 					v1alpha1.WorkerConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						MaxPods: ptr.To(int32(110)),
+						MaxPods: new(int32(110)),
 					},
 					VariableName,
 				),
@@ -89,7 +88,7 @@ maxPods: 110
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.WorkerConfigVariableName,
-					v1alpha1.KubeletConfiguration{MaxPods: ptr.To(int32(110))},
+					v1alpha1.KubeletConfiguration{MaxPods: new(int32(110))},
 					VariableName,
 				),
 				capitest.VariableWithValue(
@@ -149,7 +148,7 @@ maxPods: 110
 				capitest.VariableWithValue(
 					v1alpha1.WorkerConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						SeccompDefault: ptr.To(true),
+						SeccompDefault: new(true),
 					},
 					VariableName,
 				),

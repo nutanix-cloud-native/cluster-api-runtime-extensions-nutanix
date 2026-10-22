@@ -11,6 +11,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
+const infrastructureAPIGroup = "infrastructure.cluster.x-k8s.io"
+
 func ControlPlane() clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: controlplanev1.GroupVersion.String(),
@@ -55,7 +57,7 @@ func WorkersConfigTemplateSelector(capiInfrastructureAPIVersion, kind string) cl
 func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: schema.GroupVersion{
-			Group:   "infrastructure.cluster.x-k8s.io",
+			Group:   infrastructureAPIGroup,
 			Version: capiInfrastructureAPIVersion,
 		}.String(),
 		Kind: kind,
@@ -73,7 +75,7 @@ func InfrastructureWorkerMachineTemplates(
 ) clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: schema.GroupVersion{
-			Group:   "infrastructure.cluster.x-k8s.io",
+			Group:   infrastructureAPIGroup,
 			Version: capiInfrastructureAPIVersion,
 		}.String(),
 		Kind: kind,
@@ -93,7 +95,7 @@ func InfrastructureControlPlaneMachines(
 ) clusterv1.PatchSelector {
 	return clusterv1.PatchSelector{
 		APIVersion: schema.GroupVersion{
-			Group:   "infrastructure.cluster.x-k8s.io",
+			Group:   infrastructureAPIGroup,
 			Version: capiInfrastructureAPIVersion,
 		}.String(),
 		Kind: kind,

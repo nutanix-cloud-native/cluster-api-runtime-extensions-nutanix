@@ -13,7 +13,6 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -409,19 +408,19 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 
 	subnetByName := capxv1.NutanixResourceIdentifier{
 		Type: capxv1.NutanixIdentifierName,
-		Name: ptr.To("subnet-a"),
+		Name: new("subnet-a"),
 	}
 	subnetByUUID := capxv1.NutanixResourceIdentifier{
 		Type: capxv1.NutanixIdentifierUUID,
-		UUID: ptr.To("11111111-1111-1111-1111-111111111111"),
+		UUID: new("11111111-1111-1111-1111-111111111111"),
 	}
 	cpCluster := &capxv1.NutanixResourceIdentifier{
 		Type: capxv1.NutanixIdentifierUUID,
-		UUID: ptr.To("cp-pe-uuid"),
+		UUID: new("cp-pe-uuid"),
 	}
 	workerCluster := &capxv1.NutanixResourceIdentifier{
 		Type: capxv1.NutanixIdentifierName,
-		Name: ptr.To("worker-pe"),
+		Name: new("worker-pe"),
 	}
 
 	cd := &checkDependencies{
@@ -514,9 +513,9 @@ func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {
 						Ipv4: &netv4.IPv4Config{
 							IpSubnet: &netv4.IPv4Subnet{
 								Ip: &networkingcommonapi.IPv4Address{
-									Value: ptr.To("10.0.0.0"),
+									Value: new("10.0.0.0"),
 								},
-								PrefixLength: ptr.To(24),
+								PrefixLength: new(24),
 							},
 						},
 					},
@@ -571,7 +570,7 @@ func configuredSubnets(enabled bool) []capxv1.NutanixResourceIdentifier {
 	return []capxv1.NutanixResourceIdentifier{
 		{
 			Type: capxv1.NutanixIdentifierName,
-			Name: ptr.To("subnet-a"),
+			Name: new("subnet-a"),
 		},
 	}
 }

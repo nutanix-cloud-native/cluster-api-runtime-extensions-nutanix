@@ -8,7 +8,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -80,7 +79,7 @@ func (h *awsSecurityGroupSpecPatchHandler) Mutate(
 	resourceRefs := make([]capav1.AWSResourceReference, 0, len(additionalSecGroupVar))
 	for _, secGroup := range additionalSecGroupVar {
 		resourceRefs = append(resourceRefs, capav1.AWSResourceReference{
-			ID: ptr.To(secGroup.ID),
+			ID: new(secGroup.ID),
 		})
 	}
 	return patches.MutateIfApplicable(

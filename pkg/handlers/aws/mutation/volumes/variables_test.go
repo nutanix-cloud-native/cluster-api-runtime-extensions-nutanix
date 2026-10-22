@@ -6,8 +6,6 @@ package volumes
 import (
 	"testing"
 
-	"k8s.io/utils/ptr"
-
 	capav1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-provider-aws/v2/api/v1beta2"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
@@ -18,7 +16,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
+		new(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		capitest.VariableTestDef{
