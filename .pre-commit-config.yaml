@@ -166,7 +166,7 @@ repos:
     name: License headers - Markdown
     stages: [pre-commit]
     files: \.md$
-    exclude: ^(CHANGELOG|docs/.+|.github/pull_request_template|.cursor/commands/speckit.+)\.md$
+    exclude: ^(CHANGELOG|docs/.+|.github/pull_request_template|.github/ISSUE_TEMPLATE/.+|.cursor/commands/speckit.+)\.md$
     args:
       - --license-filepath
       - hack/license-header.txt
