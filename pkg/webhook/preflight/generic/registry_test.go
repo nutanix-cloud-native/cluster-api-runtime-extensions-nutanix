@@ -5,11 +5,14 @@ package generic
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/regclient/regclient"
+	"github.com/regclient/regclient/types/errs"
 	"github.com/regclient/regclient/types/ping"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +32,12 @@ var (
 	//nolint:errname,staticcheck  // this is an internal test error not for consumption
 	testPingFailedError = fmt.Errorf("ping failed")
 	testRegistryURL     = "https://artifactory.canaveral-corp.us-west-2.aws"
+	// Mirrors how regclient's bearer auth wraps any token request failure as unauthorized.
+	testTokenServerUnreachableError = fmt.Errorf(
+		"failed to request auth token (get): %w: %w",
+		&url.Error{Op: "Get", URL: "https://auth.example.com/token", Err: errors.New("connection refused")},
+		errs.ErrHTTPUnauthorized,
+	)
 )
 
 type mockRegClient struct {
@@ -192,6 +201,129 @@ func TestRegistryCheck(t *testing.T) {
 							testPingFailedError,
 						),
 						Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+					},
+				},
+			},
+		},
+		{
+			name:  "registry mirror anonymous ping unauthorized is allowed with warning",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return errs.ErrHTTPUnauthorized },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+				Warnings: []string{
+					anonymousUnauthorizedWarning(
+						testRegistryURL,
+						"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+						errs.ErrHTTPUnauthorized,
+					),
+				},
+			},
+		},
+		{
+			name:  "registry mirror with CA-only credentials secret anonymous ping unauthorized is allowed with warning",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"ca.crt": []byte("test-ca-cert"),
+					}
+					return nil
+				},
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return errs.ErrHTTPUnauthorized },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: true,
+				Warnings: []string{
+					anonymousUnauthorizedWarning(
+						testRegistryURL,
+						"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+						errs.ErrHTTPUnauthorized,
+					),
+				},
+			},
+		},
+		{
+			name:  "registry mirror anonymous ping with unreachable token server fails",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return testTokenServerUnreachableError },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Causes: []preflight.Cause{
+					{
+						Message: pingFailedMessage(testRegistryURL, testTokenServerUnreachableError),
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+					},
+				},
+			},
+		},
+		{
+			name:  "registry mirror ping unauthorized with credentials fails",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: testRegistryURL,
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"username": []byte("testuser"),
+						"password": []byte("testpass"),
+					}
+					return nil
+				},
+			},
+			mockRegClientPingerFactory: func(...regclient.Opt) regClientPinger {
+				return &mockRegClient{
+					pingFunc: func(ref.Ref) error { return errs.ErrHTTPUnauthorized },
+				}
+			},
+			want: preflight.CheckResult{
+				Allowed: false,
+				Causes: []preflight.Cause{
+					{
+						Message: pingFailedMessage(testRegistryURL, errs.ErrHTTPUnauthorized),
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
 					},
 				},
 			},
@@ -384,6 +516,7 @@ func TestRegistryCheck(t *testing.T) {
 			assert.Equal(t, tc.want.Allowed, got.Allowed, "(allowed) mismatch for test "+tc.name)
 			assert.Equal(t, tc.want.InternalError, got.InternalError, "(error) mismatch test "+tc.name)
 			assert.Equal(t, tc.want.Causes, got.Causes, "(causes) mismatch test "+tc.name)
+			assert.Equal(t, tc.want.Warnings, got.Warnings, "(warnings) mismatch test "+tc.name)
 		})
 	}
 }
