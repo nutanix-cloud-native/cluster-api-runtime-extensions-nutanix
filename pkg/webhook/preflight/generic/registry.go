@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 
 	"github.com/go-logr/logr"
@@ -64,6 +65,15 @@ func pingFailedMessage(registryURL string, err error) string {
 		"Failed to ping registry %q: %s. First verify that the management cluster can reach the registry, then retry.", ///nolint:lll // Message is long.
 		registryURL,
 		err.Error(),
+	)
+}
+
+func anonymousUnauthorizedWarning(registryURL, field string, err error) string {
+	return fmt.Sprintf(
+		"Registry %q rejected an anonymous request: %s. If this registry requires authentication, set %s.credentials.", ///nolint:lll // Message is long.
+		registryURL,
+		err.Error(),
+		field,
 	)
 }
 
@@ -180,13 +190,18 @@ func (r *registryCheck) checkRegistry(
 			Scheme: "reg",
 		},
 	)
-	// Registries such as Harbor reject anonymous pings with 401 even when the repositories are public.
-	// For an anonymous ping, a 401/403 still proves the registry is reachable, so it is not a failure.
-	isAnonymous := registryHost.User == "" && registryHost.Pass == ""
-	isUnauthorized := errors.Is(err, errs.ErrHTTPUnauthorized)
-	isAnonymousUnauthorized := isAnonymous && isUnauthorized
+	// Registries such as Harbor reject anonymous pings with 401/403 even when the repositories are public.
+	// That still proves the registry is reachable, so warn rather than fail. regclient also wraps network
+	// failures reaching the token server as unauthorized, and those must still fail.
+	var netErr net.Error
+	if registryHost.User == "" && registryHost.Pass == "" &&
+		errors.Is(err, errs.ErrHTTPUnauthorized) && !errors.As(err, &netErr) {
+		result.Allowed = true
+		result.Warnings = append(result.Warnings, anonymousUnauthorizedWarning(registryURL, r.field, err))
+		return result
+	}
 	// Ping will return an error for anything that's not 200.
-	if err != nil && !isAnonymousUnauthorized {
+	if err != nil {
 		result.Allowed = false
 		result.Causes = append(result.Causes,
 			preflight.Cause{
