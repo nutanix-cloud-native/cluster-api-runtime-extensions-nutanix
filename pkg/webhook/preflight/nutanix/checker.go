@@ -20,16 +20,17 @@ import (
 )
 
 var Checker = &nutanixChecker{
-	configurationCheckFactory:             newConfigurationCheck,
-	credentialsCheckFactory:               newCredentialsCheck,
-	prismCentralVersionCheckFactory:       newPrismCentralVersionCheck,
-	failureDomainCheckFactory:             newFailureDomainChecks,
-	vmImageChecksFactory:                  newVMImageChecks,
-	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
-	cidrValidationChecksFactory:           newCIDRValidationChecks,
-	storageContainerChecksFactory:         newStorageContainerChecks,
-	controlPlaneEndpointChecksFactory:     newControlPlaneEndpointChecks,
-	metroChecksFactory:                    newMetroChecks,
+	configurationCheckFactory:                  newConfigurationCheck,
+	credentialsCheckFactory:                    newCredentialsCheck,
+	prismCentralVersionCheckFactory:            newPrismCentralVersionCheck,
+	failureDomainCheckFactory:                  newFailureDomainChecks,
+	vmImageChecksFactory:                       newVMImageChecks,
+	vmImageKubernetesVersionChecksFactory:      newVMImageKubernetesVersionChecks,
+	cidrValidationChecksFactory:                newCIDRValidationChecks,
+	storageContainerChecksFactory:              newStorageContainerChecks,
+	controlPlaneEndpointChecksFactory:          newControlPlaneEndpointChecks,
+	metroChecksFactory:                         newMetroChecks,
+	flowNetworkSecurityDSRToSNATCheckerFactory: newFlowNetworkSecurityDSRToSNATChecker,
 }
 
 type nutanixChecker struct {
@@ -77,6 +78,10 @@ type nutanixChecker struct {
 	) []preflight.Check
 
 	metroChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	flowNetworkSecurityDSRToSNATCheckerFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 }
@@ -130,6 +135,7 @@ func (n *nutanixChecker) Init(
 		n.storageContainerChecksFactory(cd),
 		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
+		n.flowNetworkSecurityDSRToSNATCheckerFactory(cd),
 	)
 
 	return checks
