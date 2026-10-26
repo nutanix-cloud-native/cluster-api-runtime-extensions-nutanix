@@ -30,6 +30,7 @@ var Checker = &nutanixChecker{
 	storageContainerChecksFactory:         newStorageContainerChecks,
 	controlPlaneEndpointChecksFactory:     newControlPlaneEndpointChecks,
 	metroChecksFactory:                    newMetroChecks,
+	filesNFSv4ChecksFactory:               newFilesNFSv4Checks,
 }
 
 type nutanixChecker struct {
@@ -79,6 +80,10 @@ type nutanixChecker struct {
 	metroChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
+
+	filesNFSv4ChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
 }
 
 type checkDependencies struct {
@@ -90,9 +95,10 @@ type checkDependencies struct {
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 	failureDomainByMachineDeploymentName               map[string]string
 
-	nclient   client
-	pcVersion string
-	log       logr.Logger
+	nclient       client
+	pcVersion     string
+	pcCredentials *prismgoclient.Credentials
+	log           logr.Logger
 }
 
 func (n *nutanixChecker) Init(
@@ -130,6 +136,7 @@ func (n *nutanixChecker) Init(
 		n.storageContainerChecksFactory(cd),
 		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
+		n.filesNFSv4ChecksFactory(cd),
 	)
 
 	return checks

@@ -48,6 +48,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		failureDomainCheckCount            int
 		controlPlaneEndpointCheckCount     int
 		metroCheckCount                    int
+		filesNFSv4CheckCount               int
 	}{
 		{
 			name:                               "basic initialization with no configs",
@@ -162,6 +163,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			failureDomainCheckCount := 0
 			controlPlaneEndpointCheckCount := 0
 			metroCheckCount := 0
+			filesNFSv4CheckCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
 				configCheckCalled = true
@@ -304,6 +306,22 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.filesNFSv4ChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				checks := []preflight.Check{}
+				for i := 0; i < tt.filesNFSv4CheckCount; i++ {
+					filesNFSv4CheckCount++
+					checks = append(checks,
+						&mockCheck{
+							name: fmt.Sprintf("NutanixFilesNFSv4-%d", i),
+							result: preflight.CheckResult{
+								Allowed: true,
+							},
+						},
+					)
+				}
+				return checks
+			}
+
 			// Call Init
 			ctx := context.Background()
 			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
@@ -344,6 +362,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 				tt.metroCheckCount,
 				metroCheckCount,
 				"Wrong number of metro checks",
+			)
+			assert.Equal(
+				t,
+				tt.filesNFSv4CheckCount,
+				filesNFSv4CheckCount,
+				"Wrong number of Nutanix Files NFSv4 checks",
 			)
 
 			// Verify the first three checks when we have results
@@ -464,6 +488,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				filesNFSv4ChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 			}
