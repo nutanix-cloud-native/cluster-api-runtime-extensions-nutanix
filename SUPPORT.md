@@ -38,6 +38,5 @@ and the Kubernetes version. Published releases are on the
 
 `metadata.yaml` records the Cluster API contract for each release series.
 Several series can be published at the same time. The GitHub Latest badge is
-the release GitHub marks as latest. It is not a statement that every other
-published series is unsupported. Use the tag you deployed, and read
+the release GitHub marks as latest. Use the tag you deployed, and read
 `metadata.yaml` on that tag for its contract.
