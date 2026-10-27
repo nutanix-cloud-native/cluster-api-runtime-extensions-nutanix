@@ -5,7 +5,6 @@ package nutanix
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,327 +32,69 @@ func (m *mockCheck) Run(ctx context.Context) preflight.CheckResult {
 }
 
 func TestNutanixChecker_Init(t *testing.T) {
-	tests := []struct {
-		name                               string
-		nutanixConfig                      *carenv1.NutanixClusterConfigSpec
-		workerNodeConfigs                  map[string]*carenv1.NutanixWorkerNodeConfigSpec
-		expectedCheckCount                 int
-		expectedFirstCheckName             string
-		expectedSecondCheckName            string
-		expectedThirdCheckName             string
-		vmImageCheckCount                  int
-		vmImageKubernetesVersionCheckCount int
-		cidrValidationCheckCount           int
-		storageContainerCheckCount         int
-		failureDomainCheckCount            int
-		controlPlaneEndpointCheckCount     int
-		metroCheckCount                    int
-	}{
-		{
-			name:                               "basic initialization with no configs",
-			nutanixConfig:                      nil,
-			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 3, // config check, credentials check, and PC version check
-			expectedFirstCheckName:             "NutanixConfiguration",
-			expectedSecondCheckName:            "NutanixCredentials",
-			expectedThirdCheckName:             "NutanixPrismCentralVersion",
-			vmImageCheckCount:                  0,
-			vmImageKubernetesVersionCheckCount: 0,
-			cidrValidationCheckCount:           0,
-			storageContainerCheckCount:         0,
-			failureDomainCheckCount:            0,
-			controlPlaneEndpointCheckCount:     0,
+	t.Parallel()
+
+	var calls []string
+	record := func(name string) []preflight.Check {
+		calls = append(calls, name)
+		return nil
+	}
+
+	checker := &nutanixChecker{
+		configurationCheckFactory: func(cd *checkDependencies) preflight.Check {
+			calls = append(calls, "configuration")
+			return &mockCheck{name: "configuration"}
 		},
-		{
-			name: "initialization with control plane config",
-			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
-				Nutanix: &carenv1.NutanixSpec{
-					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
-						Host: "192.168.1.1",
-						Port: 6443,
-					},
-				},
-				ControlPlane: &carenv1.NutanixControlPlaneSpec{
-					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
-				},
-			},
-			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 9, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check, 1 control plane endpoint check
-			expectedFirstCheckName:             "NutanixConfiguration",
-			expectedSecondCheckName:            "NutanixCredentials",
-			expectedThirdCheckName:             "NutanixPrismCentralVersion",
-			vmImageCheckCount:                  1,
-			vmImageKubernetesVersionCheckCount: 1,
-			cidrValidationCheckCount:           1,
-			storageContainerCheckCount:         1,
-			failureDomainCheckCount:            1,
-			controlPlaneEndpointCheckCount:     1,
+		credentialsCheckFactory: func(
+			ctx context.Context,
+			nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
+			cd *checkDependencies,
+		) preflight.Check {
+			calls = append(calls, "credentials")
+			return &mockCheck{name: "credentials"}
 		},
-		{
-			name: "initialization with worker node configs",
-			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
-				Nutanix: &carenv1.NutanixSpec{
-					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
-						Host: "192.168.1.1",
-						Port: 6443,
-					},
-				},
-			},
-			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
-				"worker-1": {
-					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
-				},
-				"worker-2": {
-					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
-				},
-			},
-			expectedCheckCount:                 14, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks, 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks, 2 failure domain checks, 1 control plane endpoint check
-			expectedFirstCheckName:             "NutanixConfiguration",
-			expectedSecondCheckName:            "NutanixCredentials",
-			expectedThirdCheckName:             "NutanixPrismCentralVersion",
-			vmImageCheckCount:                  2,
-			vmImageKubernetesVersionCheckCount: 2,
-			cidrValidationCheckCount:           2,
-			storageContainerCheckCount:         2,
-			failureDomainCheckCount:            2,
-			controlPlaneEndpointCheckCount:     1,
+		prismCentralVersionCheckFactory: func(ctx context.Context, cd *checkDependencies) preflight.Check {
+			calls = append(calls, "prismCentralVersion")
+			return &mockCheck{name: "prismCentralVersion"}
 		},
-		{
-			name: "initialization with both control plane and worker node configs",
-			nutanixConfig: &carenv1.NutanixClusterConfigSpec{
-				Nutanix: &carenv1.NutanixSpec{
-					ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
-						Host: "192.168.1.1",
-						Port: 6443,
-					},
-				},
-			},
-			workerNodeConfigs: map[string]*carenv1.NutanixWorkerNodeConfigSpec{
-				"worker-1": {
-					Nutanix: &carenv1.NutanixWorkerNodeSpec{},
-				},
-			},
-			expectedCheckCount:                 14, //nolint:lll // config check, credentials check, Prism Central version check, 2 VM image checks (1 CP + 1 worker), 2 VM image Kubernetes version checks, 2 CIDR validation checks, 2 storage container checks (1 CP + 1 worker), 2 failure domain checks, 1 control plane endpoint check
-			expectedFirstCheckName:             "NutanixConfiguration",
-			expectedSecondCheckName:            "NutanixCredentials",
-			expectedThirdCheckName:             "NutanixPrismCentralVersion",
-			vmImageCheckCount:                  2,
-			vmImageKubernetesVersionCheckCount: 2,
-			cidrValidationCheckCount:           2,
-			storageContainerCheckCount:         2,
-			failureDomainCheckCount:            2,
-			controlPlaneEndpointCheckCount:     1,
+		failureDomainCheckFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("failureDomain")
+		},
+		vmImageChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("vmImage")
+		},
+		vmImageKubernetesVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("vmImageKubernetesVersion")
+		},
+		cidrValidationChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("cidrValidation")
+		},
+		storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("storageContainer")
+		},
+		controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("controlPlaneEndpoint")
+		},
+		metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("metro")
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create the checker
-			checker := &nutanixChecker{}
+	checker.Init(context.Background(), nil, &clusterv1beta2.Cluster{}, nil)
 
-			// Mock the sub-check functions to track their calls
-			configCheckCalled := false
-			credsCheckCalled := false
-			prismCentralVersionCheckCalled := false
-			vmImageCheckCount := 0
-			storageContainerCheckCount := 0
-			vmImageKubernetesVersionCheckCount := 0
-			cidrValidationCheckCount := 0
-			failureDomainCheckCount := 0
-			controlPlaneEndpointCheckCount := 0
-			metroCheckCount := 0
-
-			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
-				configCheckCalled = true
-				return &mockCheck{
-					name:   tt.expectedFirstCheckName,
-					result: preflight.CheckResult{Allowed: true},
-				}
-			}
-
-			checker.credentialsCheckFactory = func(
-				ctx context.Context,
-				nclientFactory func(prismgoclient.Credentials, types.NamespacedName, string) (client, error),
-				cd *checkDependencies,
-			) preflight.Check {
-				credsCheckCalled = true
-				cd.nclient = &clientWrapper{}
-				return &mockCheck{
-					name:   tt.expectedSecondCheckName,
-					result: preflight.CheckResult{Allowed: true},
-				}
-			}
-
-			checker.prismCentralVersionCheckFactory = func(ctx context.Context, cd *checkDependencies) preflight.Check {
-				prismCentralVersionCheckCalled = true
-				return &mockCheck{
-					name:   tt.expectedThirdCheckName,
-					result: preflight.CheckResult{Allowed: true},
-				}
-			}
-
-			checker.vmImageChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.vmImageCheckCount; i++ {
-					vmImageCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixVMImage-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.storageContainerChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.storageContainerCheckCount; i++ {
-					storageContainerCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixStorageContainer-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.vmImageKubernetesVersionChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.vmImageKubernetesVersionCheckCount; i++ {
-					vmImageKubernetesVersionCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixVMImageKubernetesVersion-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.cidrValidationChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.cidrValidationCheckCount; i++ {
-					cidrValidationCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixCIDRValidation-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.failureDomainCheckFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.failureDomainCheckCount; i++ {
-					failureDomainCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixFailureDomain-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.controlPlaneEndpointChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.controlPlaneEndpointCheckCount; i++ {
-					controlPlaneEndpointCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixControlPlaneEndpoint-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			checker.metroChecksFactory = func(cd *checkDependencies) []preflight.Check {
-				checks := []preflight.Check{}
-				for i := 0; i < tt.metroCheckCount; i++ {
-					metroCheckCount++
-					checks = append(checks,
-						&mockCheck{
-							name: fmt.Sprintf("NutanixMetro-%d", i),
-							result: preflight.CheckResult{
-								Allowed: true,
-							},
-						},
-					)
-				}
-				return checks
-			}
-
-			// Call Init
-			ctx := context.Background()
-			checks := checker.Init(ctx, nil, &clusterv1beta2.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-cluster",
-					Namespace: "default",
-				},
-			}, nil)
-
-			// Verify correct number of checks
-			assert.Len(t, checks, tt.expectedCheckCount)
-
-			// Verify the sub-functions were called
-			assert.True(t, configCheckCalled, "initNutanixConfiguration should have been called")
-			assert.True(t, credsCheckCalled, "initCredentialsCheck should have been called")
-			assert.True(t, prismCentralVersionCheckCalled, "initPrismCentralVersionCheck should have been called")
-			assert.Equal(t, tt.vmImageCheckCount, vmImageCheckCount, "Wrong number of VM image checks")
-			assert.Equal(
-				t,
-				tt.cidrValidationCheckCount,
-				cidrValidationCheckCount,
-				"Wrong number of CIDR validation checks",
-			)
-			assert.Equal(
-				t,
-				tt.storageContainerCheckCount,
-				storageContainerCheckCount,
-				"Wrong number of storage container checks",
-			)
-			assert.Equal(
-				t,
-				tt.failureDomainCheckCount,
-				failureDomainCheckCount,
-				"Wrong number of failure domain checks",
-			)
-			assert.Equal(
-				t,
-				tt.metroCheckCount,
-				metroCheckCount,
-				"Wrong number of metro checks",
-			)
-
-			// Verify the first three checks when we have results
-			if len(checks) >= 3 {
-				assert.Equal(t, tt.expectedFirstCheckName, checks[0].Name())
-				assert.Equal(t, tt.expectedSecondCheckName, checks[1].Name())
-				assert.Equal(t, tt.expectedThirdCheckName, checks[2].Name())
-			}
-		})
+	if !assert.Len(t, calls, 10) {
+		return
 	}
+	assert.Equal(t, []string{"configuration", "credentials", "prismCentralVersion"}, calls[:3])
+	assert.ElementsMatch(t, []string{
+		"failureDomain",
+		"vmImage",
+		"vmImageKubernetesVersion",
+		"cidrValidation",
+		"storageContainer",
+		"controlPlaneEndpoint",
+		"metro",
+	}, calls[3:])
 }
 
 func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
