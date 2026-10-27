@@ -324,8 +324,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 	t.Parallel()
 
 	dsrAnnotations := map[string]string{
-		"service.cilium.io/type": "LoadBalancer",
-		"service.cilium.io/dsr":  "true",
+		CiliumForwardingModeAnnotationKey: CiliumForwardingModeAnnotationValueDSR,
 	}
 
 	failGetWhen := func(shouldFail func(ctrlclient.Object) bool) interceptor.Funcs {
@@ -528,16 +527,13 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					},
 				}),
 				testService("kube-system", "ingress", nil),
-				testService("istio-system", "gateway", map[string]string{
-					"service.cilium.io/type": "LoadBalancer",
-				}),
+				testService("istio-system", "gateway", nil),
 				testService("default", "ignored", nil),
 			},
 			messageContains: []string{
 				"kube-system/ingress",
 				"istio-system/gateway",
-				"(service.cilium.io/type: LoadBalancer)",
-				"(service.cilium.io/dsr: true)",
+				"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the Service resources.",
 			},
 		},
 	}

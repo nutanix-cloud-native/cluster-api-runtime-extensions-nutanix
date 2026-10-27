@@ -26,12 +26,10 @@ const (
 	CiliumConfigMapNamespace       = "kube-system"
 	CiliumLoadBalancerModeKey      = "bpf-lb-mode"
 	CiliumLoadBalancerModeValueDSR = "dsr"
-)
 
-var ciliumDSRAnnotations = map[string]string{
-	"service.cilium.io/type": "LoadBalancer",
-	"service.cilium.io/dsr":  "true",
-}
+	CiliumForwardingModeAnnotationKey      = "service.cilium.io/forwarding-mode"
+	CiliumForwardingModeAnnotationValueDSR = "dsr"
+)
 
 var FlowNetworkSecurityGroupVersion = schema.GroupVersion{
 	Group:   "flow-container-security.nutanix.com",
@@ -303,10 +301,9 @@ func serviceHasCiliumDSRAnnotations(
 	if err != nil {
 		return false, fmt.Errorf("error getting service %s: %w", key.String(), err)
 	}
-	for key, value := range ciliumDSRAnnotations {
-		if service.Annotations[key] != value {
-			return false, nil
-		}
+	val, ok := service.Annotations[CiliumForwardingModeAnnotationKey]
+	if !ok || val != CiliumForwardingModeAnnotationValueDSR {
+		return false, nil
 	}
 	return true, nil
 }
@@ -318,6 +315,7 @@ func buildFailureMessage(missingCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey)
 		"This cluster is enrolled in Flow Network Security, and must use Direct Service Return (DSR) for these LoadBalancer Services: ",
 	)
 
+	// List the LoadBalancer Services that are missing the DSR annotation.
 	serviceNamesAndNamespaces := make([]string, 0, len(missingCiliumDSRAnnotationsKeys))
 	for _, service := range missingCiliumDSRAnnotationsKeys {
 		serviceNamesAndNamespaces = append(
@@ -328,13 +326,9 @@ func buildFailureMessage(missingCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey)
 	messageBuilder.WriteString(strings.Join(serviceNamesAndNamespaces, ", "))
 	messageBuilder.WriteString(".")
 
-	messageBuilder.WriteString("Add these annotations to the LoadBalancer Services.")
-	annotations := make([]string, 0, len(ciliumDSRAnnotations))
-	for key, value := range ciliumDSRAnnotations {
-		annotations = append(annotations, fmt.Sprintf("(%s: %s)", key, value))
-	}
-	messageBuilder.WriteString(strings.Join(annotations, ", "))
-	messageBuilder.WriteString(".")
-
+	// Explain the annotation to add.
+	fmt.Fprintf(&messageBuilder, "Add the annotation '%s: %s' to the Service resources.",
+		CiliumForwardingModeAnnotationKey,
+		CiliumForwardingModeAnnotationValueDSR)
 	return messageBuilder.String()
 }
