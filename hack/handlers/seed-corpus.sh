@@ -3,8 +3,9 @@
 # Copyright 2026 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Writes golden test inputs that do not exist yet: one per example Cluster, each combined with its provider's default
-# ClusterClass. Existing inputs are never overwritten because released golden files depend on them.
+# Writes golden test inputs that do not exist yet: one per example Cluster and per file in corpus-minimal and
+# corpus-features, each combined with its provider's default ClusterClass and the shared corpus-fixtures. Existing inputs
+# are never overwritten because released golden files depend on them.
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -63,4 +64,8 @@ done
 
 for f in "${SCRIPT_DIR}"/corpus-minimal/*.yaml; do
   seed "$(basename "${f}" .yaml)" "${f}" minimal
+done
+
+for f in "${SCRIPT_DIR}"/corpus-features/*.yaml; do
+  seed "$(basename "${f}" .yaml)" "${f}" features
 done

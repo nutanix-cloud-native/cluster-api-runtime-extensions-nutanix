@@ -1,0 +1,116 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${CLUSTER_NAME}-pc-creds
+stringData:
+  credentials: |-
+    [
+      {
+        "type": "basic_auth",
+        "data": {
+          "prismCentral":{
+            "username": "${NUTANIX_USER}",
+            "password": "${NUTANIX_PASSWORD}"
+          },
+          "prismElements": null
+        }
+      }
+    ]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${CLUSTER_NAME}-registry-creds
+stringData:
+  password: golden-password
+  username: golden-user
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  topology:
+    classRef:
+      name: nutanix-quick-start
+    controlPlane:
+      replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+    variables:
+    - name: clusterConfig
+      value:
+        controlPlane:
+          autoRenewCertificates:
+            daysBeforeExpiry: 30
+          kubeletConfiguration:
+            maxPods: 120
+          nutanix:
+            machineDetails:
+              imageLookup:
+                baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
+                format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+          taints:
+          - effect: NoSchedule
+            key: golden-key
+            value: golden-value
+        extraAPIServerCertSANs:
+        - api.example.com
+        globalImageRegistryMirror:
+          url: https://mirror.example.com
+        imageRegistries:
+        - credentials:
+            secretRef:
+              name: ${CLUSTER_NAME}-registry-creds
+          url: https://registry.example.com
+        kubeProxy:
+          mode: nftables
+        kubernetesImageRepository: registry.example.com/kubernetes
+        ntp:
+          servers:
+          - time.example.com
+        nutanix:
+          controlPlaneEndpoint:
+            host: ${CONTROL_PLANE_ENDPOINT_IP}
+            port: 6443
+          prismCentralEndpoint:
+            credentials:
+              secretRef:
+                name: ${CLUSTER_NAME}-pc-creds
+            url: https://${NUTANIX_ENDPOINT}:${NUTANIX_PORT}
+        podSecurityAdmission:
+          audit: restricted
+          enforce: restricted
+          warn: restricted
+        proxy:
+          additionalNo:
+          - no-proxy.example.com
+          http: http://proxy.example.com
+          https: http://proxy.example.com
+        users:
+        - name: golden
+          sshAuthorizedKeys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAua0lo8BiGWgvIiDCKnQDKL5uERHfnehm0ns5CEJpJw golden
+          sudo: ALL=(ALL) NOPASSWD:ALL
+    # externalcloudprovider only patches Kubernetes < 1.33.
+    version: v1.32.9
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        replicas: ${WORKER_MACHINE_COUNT}
+        variables:
+          overrides:
+          - name: workerConfig
+            value:
+              kubeletConfiguration:
+                maxPods: 120
+              taints:
+              - effect: NoSchedule
+                key: golden-key
+                value: golden-value
