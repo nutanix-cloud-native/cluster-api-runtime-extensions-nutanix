@@ -17,17 +17,24 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/util/wait"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/webhooks"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 )
@@ -301,6 +308,146 @@ func BuildRequest(in *Input, patch string) (*runtimehooksv1.GeneratePatchesReque
 	}
 
 	return req, nil
+}
+
+const (
+	// Namespace replaces the generated namespace of each run in golden output.
+	Namespace = "golden-namespace"
+	// ClusterUID replaces the Cluster UID assigned by the API server in golden output.
+	ClusterUID = "golden-cluster-uid"
+)
+
+// Run defaults in, creates its Cluster and fixtures in a new namespace, calls h with the request for patch, and
+// returns the patched templates as YAML. Validation and handler failures are returned as YAML output rather than
+// errors because they are part of a handler's observable behavior. Run mutates in.
+func Run(
+	ctx context.Context,
+	c client.Client,
+	h mutation.GeneratePatches,
+	in *Input,
+	patch string,
+	discovery map[string]mutation.DiscoverVariables,
+) ([]byte, error) {
+	errs, err := DefaultVariables(ctx, in, discovery)
+	if err != nil {
+		return nil, err
+	}
+	if len(errs) > 0 {
+		var messages []string
+		for _, e := range errs {
+			messages = append(messages, e.Error())
+		}
+		return yaml.Marshal(map[string]any{"validationErrors": messages})
+	}
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{GenerateName: "golden-"}}
+	if err := c.Create(ctx, ns); err != nil {
+		return nil, err
+	}
+	in.Cluster.Namespace = ns.Name
+	objs := []client.Object{in.Cluster}
+	for _, f := range in.Fixtures {
+		f.SetNamespace(ns.Name)
+		objs = append(objs, f)
+	}
+	for _, o := range objs {
+		if err := c.Create(ctx, o); err != nil {
+			return nil, fmt.Errorf("creating %T %s: %w", o, o.GetName(), err)
+		}
+	}
+	// Handlers read through the manager's cache, which lags behind writes.
+	for _, o := range objs {
+		key := client.ObjectKeyFromObject(o)
+		if err := wait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true,
+			func(ctx context.Context) (bool, error) {
+				return c.Get(ctx, key, o.DeepCopyObject().(client.Object)) == nil, nil
+			}); err != nil {
+			return nil, fmt.Errorf("waiting for cache to see %s: %w", key, err)
+		}
+	}
+
+	req, err := BuildRequest(in, patch)
+	if err != nil {
+		return nil, err
+	}
+	resp := &runtimehooksv1.GeneratePatchesResponse{}
+	h.GeneratePatches(ctx, req, resp)
+
+	var out []byte
+	if resp.Status != runtimehooksv1.ResponseStatusSuccess {
+		out, err = yaml.Marshal(map[string]any{"error": resp.Message})
+	} else {
+		out, err = applyPatches(req, resp)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewBufferString(strings.NewReplacer(
+		ns.Name, Namespace,
+		string(in.Cluster.UID), ClusterUID,
+	).Replace(string(out))).Bytes(), nil
+}
+
+// applyPatches applies resp to the templates in req as CAPI's applyPatchToRequest does, keeping only spec changes.
+func applyPatches(
+	req *runtimehooksv1.GeneratePatchesRequest,
+	resp *runtimehooksv1.GeneratePatchesResponse,
+) ([]byte, error) {
+	type item struct {
+		HolderRef runtimehooksv1.HolderReference `json:"holderRef"`
+		Object    map[string]any                 `json:"object"`
+	}
+	items := make([]item, len(req.Items))
+	byUID := map[types.UID]int{}
+	for i, reqItem := range req.Items {
+		byUID[reqItem.UID] = i
+		items[i].HolderRef = reqItem.HolderReference
+		if err := json.Unmarshal(reqItem.Object.Raw, &items[i].Object); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, p := range resp.Items {
+		i, ok := byUID[p.UID]
+		if !ok {
+			return nil, fmt.Errorf("patch for unknown request item %q", p.UID)
+		}
+		original, err := json.Marshal(items[i].Object)
+		if err != nil {
+			return nil, err
+		}
+		var patched []byte
+		switch p.PatchType {
+		case runtimehooksv1.JSONPatchType:
+			decoded, err := jsonpatch.DecodePatch(p.Patch)
+			if err != nil {
+				return nil, fmt.Errorf("decoding JSON patch for %q: %w", p.UID, err)
+			}
+			if len(decoded) == 0 {
+				continue
+			}
+			if patched, err = decoded.Apply(original); err != nil {
+				return nil, fmt.Errorf("applying JSON patch for %q: %w", p.UID, err)
+			}
+		case runtimehooksv1.JSONMergePatchType:
+			if len(p.Patch) == 0 || bytes.Equal(p.Patch, []byte("{}")) {
+				continue
+			}
+			if patched, err = jsonpatch.MergePatch(original, p.Patch); err != nil {
+				return nil, fmt.Errorf("applying merge patch for %q: %w", p.UID, err)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported patch type %q for %q", p.PatchType, p.UID)
+		}
+		var obj map[string]any
+		if err := json.Unmarshal(patched, &obj); err != nil {
+			return nil, err
+		}
+		items[i].Object["spec"] = obj["spec"]
+	}
+
+	return yaml.Marshal(items)
 }
 
 func builtinVariable(b runtimehooksv1.Builtins) runtimehooksv1.Variable {

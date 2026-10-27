@@ -252,9 +252,9 @@ Each handler runs in isolation, not chained after the other patch as CAPI does, 
 
 **Files:** Modify `harness.go`, `harness_test.go`; `go.mod` via `make mod-tidy`.
 
-- [ ] Write a failing test: running a meta handler with a single fake mutator that sets one field produces a golden document whose object contains that field and whose other items are unchanged.
-- [ ] Implement `func Run(ctx, c client.Client, h handlers.Named, in *Input, vars DefaultedVariables) ([]byte, error)`: create a namespace and the Cluster and fixtures in envtest, call `GeneratePatches`, apply patches, marshal YAML.
-- [ ] Re-run; expect PASS. Run `devbox run -- make mod-tidy`; confirm only `require` promotions in `go.mod`.
+- [x] Write a failing test: running a meta handler with a single fake mutator that sets one field produces a golden document whose object contains that field and whose other items are unchanged.
+- [x] Implement `func Run(ctx, c client.Client, h mutation.GeneratePatches, in *Input, patch string, discovery map[string]mutation.DiscoverVariables) ([]byte, error)`: default (validation errors become the output), create a generated namespace with the Cluster and fixtures, wait for the manager cache to see them, call `GeneratePatches` (a failure response becomes the output), apply patches spec-only as CAPI does, marshal YAML, and replace the generated namespace and Cluster UID with fixed strings so output is comparable across versions. `TestMain` starts envtest with the `cmd/main.go` scheme.
+- [x] Re-run; expect PASS. Run `devbox run -- make mod-tidy`; confirm only `require` promotions in `go.mod`.
 
 #### T1.6 — Golden compare and update flag
 
