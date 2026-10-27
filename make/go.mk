@@ -159,18 +159,17 @@ lint.%: ## Runs golangci-lint run for a specific module
 lint.%: hack/tools/golangci-lint-kube-api-linter fmt.% ; $(info $(M) linting $* module)
 	$(if $(filter-out root,$*),cd $* && )$(PWD)/hack/tools/golangci-lint-kube-api-linter run --fix --config=$(GOLANGCI_CONFIG_FILE)
 
-# Ensure that the golangci-lint-kube-api-linter tool is using the same version of Go as the golangci-lint tool, which
-# should in turn be the same language version as the project.
-GOLANGCI_LINT_GO_VERSION := $(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.goVersion')
+# Compile and run the custom linter with the toolchain from the root go.mod. The linter's
+# export reader and the compiler that typechecks packages have to agree.
+ROOT_GO_TOOLCHAIN := $(shell go mod edit -json | gojq --raw-output '.Toolchain // ("go" + .Go)')
 GOLANGCI_LINT_KUBE_API_LINTER_GO_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.goVersion')
 GOLANGCI_LINT_VERSION := v$(shell golangci-lint version --json 2>/dev/null | gojq --raw-output '.version')
 GOLANGCI_LINT_KUBE_API_LINTER_VERSION := $(shell hack/tools/golangci-lint-kube-api-linter version --json 2>/dev/null | gojq --raw-output '.version | split("-") | .[0]')
-ifneq ($(GOLANGCI_LINT_VERSION)_$(GOLANGCI_LINT_GO_VERSION),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION)_$(GOLANGCI_LINT_KUBE_API_LINTER_GO_VERSION))
+ifneq ($(GOLANGCI_LINT_VERSION)_$(ROOT_GO_TOOLCHAIN),$(GOLANGCI_LINT_KUBE_API_LINTER_VERSION)_$(GOLANGCI_LINT_KUBE_API_LINTER_GO_VERSION))
 .PHONY: hack/tools/golangci-lint-kube-api-linter
 endif
-# Explicitly set the GOTOOLCHAIN environment variable to the same version of Go as the golangci-lint tool
-# to ensure that the go version is the same as the golangci-lint tool.
-hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(GOLANGCI_LINT_GO_VERSION)
+lint.%: export GOTOOLCHAIN := $(ROOT_GO_TOOLCHAIN)
+hack/tools/golangci-lint-kube-api-linter: export GOTOOLCHAIN := $(ROOT_GO_TOOLCHAIN)
 hack/tools/golangci-lint-kube-api-linter: hack/tools/.custom-gcl.yml
 hack/tools/golangci-lint-kube-api-linter: ; $(info $(M) installing golangci-lint-kube-api-linter tool)
 	cd hack/tools && golangci-lint custom --verbose --version=$(GOLANGCI_LINT_VERSION)
