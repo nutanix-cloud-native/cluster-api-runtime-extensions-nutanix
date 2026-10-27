@@ -4,13 +4,18 @@
 package golden
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
@@ -97,6 +102,52 @@ func TestDefaultVariables(t *testing.T) {
 	errs, err = DefaultVariables(t.Context(), in, discovery)
 	require.NoError(t, err)
 	assert.NotEmpty(t, errs)
+}
+
+type setField struct{}
+
+func (setField) Mutate(
+	_ context.Context,
+	obj *unstructured.Unstructured,
+	_ map[string]apiextensionsv1.JSON,
+	holderRef runtimehooksv1.HolderReference,
+	_ client.ObjectKey,
+	_ mutation.ClusterGetter,
+) error {
+	if holderRef.FieldPath != "spec.infrastructureRef" {
+		return nil
+	}
+	return unstructured.SetNestedField(obj.Object, "set", "spec", "template", "spec", "goldenTest")
+}
+
+func TestRun(t *testing.T) {
+	t.Parallel()
+
+	in, err := LoadInput("testdata/corpus/docker/docker-cluster-cilium-helm-addon.yaml")
+	require.NoError(t, err)
+	h := mutation.NewMetaGeneratePatchesHandler("test", testEnv.Client, setField{})
+	out, err := Run(t.Context(), testEnv.Client, h.(mutation.GeneratePatches), in, "cluster-config",
+		map[string]mutation.DiscoverVariables{
+			"cluster-config": dockerclusterconfig.NewVariable(),
+			"worker-config":  dockerworkerconfig.NewVariable(),
+		})
+	require.NoError(t, err)
+
+	var items []struct {
+		HolderRef runtimehooksv1.HolderReference `json:"holderRef"`
+		Object    map[string]any                 `json:"object"`
+	}
+	require.NoError(t, yaml.Unmarshal(out, &items))
+	require.Len(t, items, 5)
+
+	assert.Equal(t, Namespace, items[0].HolderRef.Namespace)
+	value, _, _ := unstructured.NestedString(items[0].Object, "spec", "template", "spec", "goldenTest")
+	assert.Equal(t, "set", value)
+
+	unchanged := in.Templates[TemplateKey{Kind: "KubeadmControlPlaneTemplate", Name: "docker-quick-start-control-plane"}]
+	unchanged = unchanged.DeepCopy()
+	unchanged.SetNamespace(Namespace)
+	assert.Equal(t, unchanged.Object, items[1].Object)
 }
 
 func variableNames(vars []runtimehooksv1.Variable) []string {
