@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Writes golden test inputs that do not exist yet: one per example Cluster and per file in corpus-minimal and
-# corpus-features, each combined with its provider's default ClusterClass and the shared corpus-fixtures. Existing inputs
-# are never overwritten because released golden files depend on them.
+# corpus-features, each combined with its provider's default ClusterClass and the shared corpus-fixtures, and one per
+# filter in corpus-custom. Existing inputs are never overwritten because released golden files depend on them.
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -44,11 +44,16 @@ export NUTANIX_FLOW_DOCKER_HUB_USERNAME=golden-user
 export NUTANIX_FLOW_DOCKER_HUB_TOKEN=golden-token
 
 seed() {
-  local -r provider="${1}" cluster="${2}" out="${CORPUS_DIR}/${1}/${3}.yaml"
+  local -r provider="${1}" cluster="${2}" out="${CORPUS_DIR}/${1}/${3}.yaml" filter="${4:-}"
+  local -r clusterclass="${CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
   [ -e "${out}" ] && return
   mkdir -p "$(dirname "${out}")"
   {
-    cat "${CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
+    if [ -n "${filter}" ]; then
+      gojq --yaml-input --yaml-output --from-file "${filter}" "${clusterclass}"
+    else
+      cat "${clusterclass}"
+    fi
     for f in "${cluster}" "${SCRIPT_DIR}"/corpus-fixtures/*.yaml; do
       echo "---"
       envsubst -no-unset -no-empty -i "${f}"
@@ -68,4 +73,10 @@ done
 
 for f in "${SCRIPT_DIR}"/corpus-features/*.yaml; do
   seed "$(basename "${f}" .yaml)" "${f}" features
+done
+
+# Custom ClusterClasses: the provider's default ClusterClass transformed by the filter, with the features Cluster.
+for f in "${SCRIPT_DIR}"/corpus-custom/*.jq; do
+  name="$(basename "${f}" .jq)"
+  seed "${name%%-*}" "${SCRIPT_DIR}/corpus-features/${name%%-*}.yaml" "${name#*-}" "${f}"
 done

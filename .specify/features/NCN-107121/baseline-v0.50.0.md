@@ -12,7 +12,7 @@
 ## Method
 
 1. `git worktree add --detach .worktrees/baseline-v0.50.0 v0.50.0`.
-2. Copied `pkg/handlers/golden/` (harness, tests, all 24 corpus inputs) and the `Mutators()` accessor in
+2. Copied `pkg/handlers/golden/` (harness, tests, all 27 corpus inputs) and the `Mutators()` accessor in
    `common/pkg/capi/clustertopology/handlers/mutation/meta.go` into it. Golden files were not copied.
 3. Adapted the copy to CAPI v1.12.5. These changes only affect how the harness builds requests, not handler code:
    - builtin `metadata` is `clusterv1beta1.ObjectMeta` (same JSON as v1.13's `runtimehooksv1.ObjectMeta`);
@@ -27,7 +27,7 @@
 
 | Golden files | Count | Byte-identical |
 | --- | --- | --- |
-| `v6` patch output, all providers, cluster and worker | 96 | 96 |
+| `v6` patch output, all providers, cluster and worker | 108 | 108 |
 | Discovery (`*ConfigVars/variables.yaml`) | 9 | 0 |
 
 The discovery files differ only in serialization. CAPI v1.13 changed the `DiscoverVariablesResponse` schema fields to
