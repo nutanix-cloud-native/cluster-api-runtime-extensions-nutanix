@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
+        uses: DeterminateSystems/nix-installer-action@v23
         if: inputs.runs-on != 'ubuntu-24.04'
         with:
           logger: pretty
