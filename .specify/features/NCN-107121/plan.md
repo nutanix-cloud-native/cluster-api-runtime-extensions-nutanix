@@ -166,7 +166,7 @@ Each branch is based on the previous one; on GitHub each PR's base is the branch
 | 02 | `NCN-107121-02-freeze-checks` | PR 3 |
 | 03 | `NCN-107121-03-versioned-layout` | PR 4 |
 | 04 | `NCN-107121-04-versioned-discovery` | PR 5 |
-| 05 | `NCN-107121-05-align-v6` | PR 6 (dropped if the baseline shows no drift) |
+| 05 | `NCN-107121-05-align-v6` | PR 6 (dropped: the baseline shows no drift) |
 | 06 | `NCN-107121-06-import-lint` | PR 7 |
 | 07 | `NCN-107121-07-new-version` | PR 8 |
 | 08 | `NCN-107121-08-upgrade-e2e` | PR 9 |
@@ -292,16 +292,16 @@ Not merged as code; produces `.specify/features/NCN-107121/baseline-v0.50.0.md` 
 
 #### T2.1 — Run the harness on `v0.50.0`
 
-- [ ] `git worktree add .worktrees/baseline-v0.50.0 v0.50.0`.
-- [ ] Copy `pkg/handlers/golden/` (harness, tests, corpus) into it. Fix compile differences only (CAPI v1.12.5, handler names are `v6` current and `v5` previous there).
-- [ ] Run with `-update-golden=v6`; copy the `v6` and unversioned discovery golden files to `/tmp/caren-baseline-v0.50.0/`.
-- [ ] Inputs rejected by the `v0.50.0` schema produce error-list golden files; keep them.
+- [x] `git worktree add .worktrees/baseline-v0.50.0 v0.50.0`.
+- [x] Copy `pkg/handlers/golden/` (harness, tests, corpus) into it. Fix compile differences only (CAPI v1.12.5, handler names are `v6` current and `v5` previous there).
+- [x] Run with `-update-golden=v6`; copy the `v6` and unversioned discovery golden files to `/tmp/caren-baseline-v0.50.0/`.
+- [x] Inputs rejected by the `v0.50.0` schema produce error-list golden files; keep them. (None were rejected.)
 
 #### T2.2 — Diff and report
 
-- [ ] `diff -ru /tmp/caren-baseline-v0.50.0 pkg/handlers/golden/testdata/golden` limited to `v6` and discovery directories.
-- [ ] Write `baseline-v0.50.0.md`: one section per differing file, the mutator responsible (bisect with `git log v0.50.0..origin/main -- <mutator dir>`), and whether the difference would roll Machines.
-- [ ] STOP and review with the user if any difference exists. Each is a rollout for `v6` Clusters on the next release.
+- [x] `diff -ru /tmp/caren-baseline-v0.50.0 pkg/handlers/golden/testdata/golden` limited to `v6` and discovery directories.
+- [x] Write `baseline-v0.50.0.md`: one section per differing file, the mutator responsible (bisect with `git log v0.50.0..origin/main -- <mutator dir>`), and whether the difference would roll Machines.
+- [x] STOP and review with the user if any difference exists. Each is a rollout for `v6` Clusters on the next release. (No `v6` patch differences; discovery differs only in serialization.)
 
 ---
 
@@ -403,7 +403,7 @@ Title: `feat: [NCN-107121] Version variable discovery with handlers`
 
 - [ ] `git show v0.50.0:api/v1alpha1/crds/<file>` into `pkg/handlers/v6/variables/crds/` for every CRD file.
 - [ ] `v6/variables` registers the existing unversioned names (`AWSClusterConfigVars`, and so on).
-- [ ] Replace the unversioned discovery golden files with the PR 2 baseline. Verify they match.
+- [ ] Verify the unversioned discovery golden files still match the PR 2 baseline after dropping `false` and `{}` values on both sides (the baseline was serialized with CAPI v1.12 types, so bytes differ; see `baseline-v0.50.0.md`).
 - [ ] Switch harness pairing: `vN` patch handlers use `vN` discovery, `v6` uses the unversioned names.
 - [ ] `v6` patch output can change here because its defaults now come from the `v0.50.0` schema. `v6` golden files are not yet released, so regenerate them with `-update-golden=v6` to keep `main` green, and list every changed file in the PR description. Compare them to the PR 2 baseline; remaining differences are the input to PR 6.
 
