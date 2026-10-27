@@ -117,13 +117,12 @@ export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.5.0
 
 # Nutanix CCM
 #   Chart name:    nutanix-cloud-provider
-#   Chart repo:    https://nutanix.github.io/helm/index.yaml
-#   Chart version: 0.6.2
-#   App version:   v0.6.1
+#   Chart repo:    oci://ghcr.io/nutanix-cloud-native/chart
+#   Chart version: 0.8.0-dev.1
+#   App version:   v0.8.0-dev.1
 #   Repo:          https://github.com/nutanix-cloud-native/cloud-provider-nutanix
-#   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.6.1
-# Latest app releases (v0.6.3 / v0.7.0) publish Helm charts to OCI only; classic helm index still tops at 0.6.2.
-export NUTANIX_CCM_CHART_VERSION := 0.6.2
+#   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.8.0-dev.1
+export NUTANIX_CCM_CHART_VERSION := 0.8.0-dev.1
 
 # MetalLB
 #   Chart name:    metallb
