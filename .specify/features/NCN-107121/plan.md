@@ -216,9 +216,10 @@ Title: `test: [NCN-107121] Add golden output tests for mutation handlers`
 
 - [x] Write `seed-corpus.sh`: for each example in `examples/capi-quick-start/` and each Cluster in `hack/handlers/corpus-minimal/` and `hack/handlers/corpus-features/`, concatenates the provider's ClusterClass and templates from `charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/<provider>-cluster-class.yaml` with the Cluster, the Secrets in the same file, and the shared Secrets in `hack/handlers/corpus-fixtures/` (the registry addon CA, which the registry lifecycle hook creates before topology mutation), substituting `${...}` placeholders with fixed values. Never overwrites an existing input.
 - [x] Seed one input per example file (16), one minimal-variables input per provider (4), and one input per provider enabling every opt-in feature the examples leave off (4). The features inputs use Kubernetes v1.32 because `externalcloudprovider` only patches versions below 1.33.
+- [x] Seed custom-ClusterClass inputs (3) for mutators the default ClusterClasses give nothing to change: each `hack/handlers/corpus-custom/<provider>-<name>.jq` filter transforms the default ClusterClass with `gojq` and is paired with the features Cluster. `aws-` and `docker-unsorted-extra-args` cover `sortextraargs`; `eks-kube-proxy-enabled` covers `kubeproxymode` on EKS.
 - [x] Verify: `rg -l '\$\{' pkg/handlers/golden/testdata/corpus` returns nothing; every file contains exactly one `ClusterClass` and one `Cluster`.
 
-**Acceptance:** 24 corpus files, no unresolved placeholders.
+**Acceptance:** 27 corpus files, no unresolved placeholders.
 
 #### T1.2 — Corpus loader (TDD)
 
@@ -271,7 +272,7 @@ Each handler runs in isolation, not chained after the other patch as CAPI does, 
 - [x] Use the envtest manager from `TestMain`; collect `AllHandlers(mgr)` from every provider package (later `pkg/handlers/versions.go`).
 - [x] For each handler implementing `GeneratePatches`, run every corpus input of the matching provider (generic handlers: every input); for each handler implementing `DiscoverVariables`, write one golden file of its response.
 - [x] Add a test that fails if a golden directory exists for a name that is not registered and not listed in `removed-handlers.txt` (file created in PR 3; treat a missing file as empty).
-- [x] Add `TestGoldenMutatorCoverage` (FR-004): each mutator of each meta handler, run alone, must change the templates of at least one corpus input. Mutators that cannot change a default ClusterClass template on their own are listed in `uncoverable` with a reason: `sortextraargs`, `calico` outside AWS, and `kubeproxymode` on EKS.
+- [x] Add `TestGoldenMutatorCoverage` (FR-004): each mutator of each meta handler, run alone, must change the templates of at least one corpus input. Only mutators that cannot change any template of their provider are listed in `uncoverable` with a reason: `calico` outside AWS. Verify by removing `sortextraargs` and `kubeproxymode` from the `v6` lists: only `v6` golden cases fail, including the custom-ClusterClass inputs.
 - [x] Generate golden files: `go test ./pkg/handlers/golden/ -run '^TestGolden$' -update-golden=v7` with envtest loaded. `make test.root` cannot pass the flag because it runs every package.
 - [x] Verify: re-run without the flag passes; `git status` shows only new files.
 

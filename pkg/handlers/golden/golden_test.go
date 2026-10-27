@@ -182,15 +182,11 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// uncoverable lists mutators, by type or by provider/type, that cannot change a template of the default ClusterClasses
-// on their own.
-// ponytail: dropping one of these from a handler is only caught if the full handler's golden output changes; covering
-// them needs corpus inputs with custom ClusterClasses.
+// uncoverable lists mutators, by type or by provider/type, that cannot change any template a ClusterClass of that
+// provider can contain.
 var uncoverable = map[string]string{
-	"*sortextraargs.sortExtraArgsPatchHandler": "only reorders extra args, which the default ClusterClasses keep sorted",
-	"docker/*calico.calicoPatchHandler":        "only patches AWSClusterTemplate",
-	"nutanix/*calico.calicoPatchHandler":       "only patches AWSClusterTemplate",
-	"eks/*kubeproxymode.kubeProxyMode":         "the default EKS ClusterClass already disables kube-proxy",
+	"docker/*calico.calicoPatchHandler":  "only patches AWSClusterTemplate",
+	"nutanix/*calico.calicoPatchHandler": "only patches AWSClusterTemplate",
 }
 
 // TestGoldenMutatorCoverage fails if a mutator changes no template for any corpus input on its own, because golden
