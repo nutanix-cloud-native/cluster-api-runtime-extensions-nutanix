@@ -367,7 +367,7 @@ metadata:
 spec:
   template:
     spec:
-      bootType: legacy
+      bootType: uefi
       image:
         name: placeholder-image
         type: name
@@ -385,7 +385,7 @@ metadata:
 spec:
   template:
     spec:
-      bootType: legacy
+      bootType: uefi
       image:
         name: placeholder-image
         type: name
