@@ -147,7 +147,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ${{ github.workspace }}/hack/tools/golangci-lint-kube-api-linter run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
-            devbox run -- reviewdog -f=golangci-lint --fail-level=any ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '-reporter=github-check --filter-mode=nofilter' || '-reporter=github-pr-review --filter-mode=added' }}
+            devbox run -- reviewdog -f=golangci-lint --fail-level=any --filter-mode=nofilter ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '-reporter=github-check' || '-reporter=github-pr-review' }}
         working-directory: ${{ matrix.module }}
 
   lint-gha:
@@ -164,6 +164,7 @@ jobs:
         uses: reviewdog/action-actionlint@v1
         with:
           fail_level: error
+          filter_mode: nofilter
           reporter: github-pr-review
 
   pre-commit:
