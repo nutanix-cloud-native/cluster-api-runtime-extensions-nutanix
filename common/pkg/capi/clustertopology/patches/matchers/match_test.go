@@ -10,7 +10,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -75,7 +74,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 				Kind:       "AzureClusterTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					InfrastructureCluster: ptr.To(true),
+					InfrastructureCluster: new(true),
 				},
 			},
 			match: true,
@@ -121,7 +120,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 				Kind:       "AzureClusterTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					InfrastructureCluster: ptr.To(false),
+					InfrastructureCluster: new(false),
 				},
 			},
 			match: false,
@@ -145,7 +144,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 				Kind:       "ControlPlaneTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(true),
+					ControlPlane: new(true),
 				},
 			},
 			match: true,
@@ -191,7 +190,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 				Kind:       "ControlPlaneTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(false),
+					ControlPlane: new(false),
 				},
 			},
 			match: false,
@@ -215,7 +214,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta2",
 				Kind:       "AzureMachineTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(true),
+					ControlPlane: new(true),
 				},
 			},
 			match: true,
@@ -494,7 +493,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "NutanixMachineTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(true),
+					ControlPlane: new(true),
 				},
 			},
 			match: true,
@@ -518,7 +517,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				Kind:       "NutanixMachineTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(true),
+					ControlPlane: new(true),
 				},
 			},
 			match: true,
@@ -542,7 +541,7 @@ func TestMatchesSelector(t *testing.T) {
 				APIVersion: "controlplane.cluster.x-k8s.io/v1beta2",
 				Kind:       "ControlPlaneTemplate",
 				MatchResources: clusterv1beta2.PatchSelectorMatch{
-					ControlPlane: ptr.To(true),
+					ControlPlane: new(true),
 				},
 			},
 			match: false,

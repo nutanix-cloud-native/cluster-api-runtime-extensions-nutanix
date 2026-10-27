@@ -11,7 +11,6 @@ import (
 	"github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -72,7 +71,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 
 	variable := resp.Variables[0]
 	g.Expect(variable.Name).To(gomega.Equal(variableName))
-	g.Expect(variable.Required).To(gomega.Equal(ptr.To(variableRequired)))
+	g.Expect(variable.Required).To(gomega.Equal(new(variableRequired)))
 	g.Expect(variable.Schema.OpenAPIV3Schema.Type).To(gomega.Equal(variableSchema.OpenAPIV3Schema.Type))
 
 	for _, tt := range variableTestDefs {

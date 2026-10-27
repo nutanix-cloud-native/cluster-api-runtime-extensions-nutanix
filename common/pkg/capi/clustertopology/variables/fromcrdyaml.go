@@ -77,7 +77,7 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 	if schema.Maximum != nil {
 		maximumAsFloat64 := ptr.Deref(schema.Maximum, 0.0)
 		if math.Ceil(maximumAsFloat64) == maximumAsFloat64 {
-			maximumAsInt64Ptr = ptr.To(int64(maximumAsFloat64))
+			maximumAsInt64Ptr = new(int64(maximumAsFloat64))
 		} else {
 			allErrs = append(
 				allErrs,
@@ -92,7 +92,7 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 	if schema.Minimum != nil {
 		minimumAsFloat64 := ptr.Deref(schema.Minimum, 0.0)
 		if math.Ceil(minimumAsFloat64) == minimumAsFloat64 {
-			minimumAsInt64Ptr = ptr.To(int64(minimumAsFloat64))
+			minimumAsInt64Ptr = new(int64(minimumAsFloat64))
 		} else {
 			allErrs = append(
 				allErrs,
@@ -110,16 +110,16 @@ func ConvertAPIExtensionsToJSONSchemaProps(
 		Required:               schema.Required,
 		MaxItems:               schema.MaxItems,
 		MinItems:               schema.MinItems,
-		UniqueItems:            ptr.To(schema.UniqueItems),
+		UniqueItems:            new(schema.UniqueItems),
 		Format:                 schema.Format,
 		MaxLength:              schema.MaxLength,
 		MinLength:              schema.MinLength,
 		Pattern:                schema.Pattern,
 		Maximum:                maximumAsInt64Ptr,
 		Minimum:                minimumAsInt64Ptr,
-		ExclusiveMaximum:       ptr.To(schema.ExclusiveMaximum),
-		ExclusiveMinimum:       ptr.To(schema.ExclusiveMinimum),
-		XPreserveUnknownFields: ptr.To(ptr.Deref(schema.XPreserveUnknownFields, false)),
+		ExclusiveMaximum:       new(schema.ExclusiveMaximum),
+		ExclusiveMinimum:       new(schema.ExclusiveMinimum),
+		XPreserveUnknownFields: new(ptr.Deref(schema.XPreserveUnknownFields, false)),
 		Default:                schema.Default,
 		Enum:                   schema.Enum,
 		Example:                schema.Example,

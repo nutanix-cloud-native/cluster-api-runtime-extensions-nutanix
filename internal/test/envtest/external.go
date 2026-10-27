@@ -9,8 +9,10 @@ import (
 
 func ExternalCRDDirectoryPaths() []string {
 	return []string{
+		// CAPI v1.14 moved core CRDs from config/crd/bases to core/config/crd/bases.
 		filepath.Join(
 			getModulePath("sigs.k8s.io/cluster-api"),
+			"core",
 			"config",
 			"crd",
 			"bases",

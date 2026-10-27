@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -115,7 +114,7 @@ func NewKubeadmConfigTemplateRequest(
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
@@ -147,7 +146,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithKubernetesVersion(
 	version string,
 ) *KubeadmControlPlaneTemplateRequestItemBuilder {
-	b.version = ptr.To(version)
+	b.version = new(version)
 	return b
 }
 
@@ -177,14 +176,14 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 						InitConfiguration: bootstrapv1.InitConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
