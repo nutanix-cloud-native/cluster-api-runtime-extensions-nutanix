@@ -214,11 +214,11 @@ Title: `test: [NCN-107121] Add golden output tests for mutation handlers`
 
 **Files:** Create `hack/handlers/seed-corpus.sh`, `pkg/handlers/golden/testdata/corpus/<provider>/<input>.yaml`.
 
-- [ ] Write `seed-corpus.sh <provider> <example file>`: concatenates the provider's ClusterClass and templates from `charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/<provider>-cluster-class.yaml` with the example Cluster from `examples/capi-quick-start/`, substitutes `${...}` placeholders with fixed values, and appends fixture Secrets the example references.
-- [ ] Seed one input per example file (17), plus one minimal-variables input per provider.
-- [ ] Verify: `rg -l '\$\{' pkg/handlers/golden/testdata/corpus` returns nothing; every file contains exactly one `ClusterClass` and one `Cluster`.
+- [x] Write `seed-corpus.sh`: for each example in `examples/capi-quick-start/` and each minimal Cluster in `hack/handlers/corpus-minimal/`, concatenates the provider's ClusterClass and templates from `charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/<provider>-cluster-class.yaml` with the Cluster and the Secrets in the same file, substituting `${...}` placeholders with fixed values. Never overwrites an existing input.
+- [x] Seed one input per example file (16), plus one minimal-variables input per provider (4).
+- [x] Verify: `rg -l '\$\{' pkg/handlers/golden/testdata/corpus` returns nothing; every file contains exactly one `ClusterClass` and one `Cluster`.
 
-**Acceptance:** 22 corpus files, no unresolved placeholders.
+**Acceptance:** 20 corpus files, no unresolved placeholders.
 
 #### T1.2 — Corpus loader (TDD)
 
