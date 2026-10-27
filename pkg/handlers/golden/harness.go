@@ -7,11 +7,14 @@ package golden
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -19,10 +22,14 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/cluster-api/webhooks"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
 )
 
 // TemplateKey identifies a template referenced by the ClusterClass.
@@ -81,6 +88,44 @@ func LoadInput(path string) (*Input, error) {
 		return nil, fmt.Errorf("%s must contain one ClusterClass and one Cluster", path)
 	}
 	return in, nil
+}
+
+// DefaultVariables sets the ClusterClass variable status from discovery, keyed by the ClusterClass patch name each
+// handler serves, then defaults and validates the Cluster's variables in place exactly as CAPI does on every topology
+// reconcile. Validation failures are returned separately from harness errors so they can be recorded as golden output.
+func DefaultVariables(
+	ctx context.Context,
+	in *Input,
+	discovery map[string]mutation.DiscoverVariables,
+) (field.ErrorList, error) {
+	patches := slices.Sorted(maps.Keys(discovery))
+	index := map[string]int{}
+	in.ClusterClass.Status.Variables = nil
+	for _, patch := range patches {
+		resp := &runtimehooksv1.DiscoverVariablesResponse{}
+		discovery[patch].DiscoverVariables(ctx, &runtimehooksv1.DiscoverVariablesRequest{}, resp)
+		if resp.Status != runtimehooksv1.ResponseStatusSuccess {
+			return nil, fmt.Errorf("discovering variables for patch %s: %s", patch, resp.Message)
+		}
+		for _, v := range resp.Variables {
+			i, ok := index[v.Name]
+			if !ok {
+				i = len(in.ClusterClass.Status.Variables)
+				index[v.Name] = i
+				in.ClusterClass.Status.Variables = append(in.ClusterClass.Status.Variables,
+					clusterv1.ClusterClassStatusVariable{Name: v.Name})
+			}
+			in.ClusterClass.Status.Variables[i].Definitions = append(in.ClusterClass.Status.Variables[i].Definitions,
+				clusterv1.ClusterClassStatusVariableDefinition{
+					From:                      patch,
+					Required:                  v.Required,
+					DeprecatedV1Beta1Metadata: v.DeprecatedV1Beta1Metadata,
+					Schema:                    v.Schema,
+				})
+		}
+	}
+
+	return (&webhooks.Cluster{}).DefaultAndValidateVariables(ctx, in.Cluster, nil, in.ClusterClass), nil
 }
 
 // BuildRequest builds the GeneratePatchesRequest CAPI sends to the external patch named patch in the ClusterClass,

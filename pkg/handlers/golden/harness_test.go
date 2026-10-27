@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
+	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 )
 
 func TestBuildRequest(t *testing.T) {
@@ -59,6 +63,40 @@ func TestBuildRequest(t *testing.T) {
 	req, err = BuildRequest(in, "worker-config")
 	require.NoError(t, err)
 	assert.Equal(t, []string{"workerConfig", "builtin"}, variableNames(req.Variables))
+}
+
+func TestDefaultVariables(t *testing.T) {
+	t.Parallel()
+
+	discovery := map[string]mutation.DiscoverVariables{
+		"cluster-config": dockerclusterconfig.NewVariable(),
+		"worker-config":  dockerworkerconfig.NewVariable(),
+	}
+
+	in, err := LoadInput("testdata/corpus/docker/docker-cluster-cilium-helm-addon.yaml")
+	require.NoError(t, err)
+	errs, err := DefaultVariables(t.Context(), in, discovery)
+	require.NoError(t, err)
+	require.Empty(t, errs)
+
+	var clusterConfig struct {
+		Addons struct {
+			CNI struct{ Strategy string }
+		}
+		ControlPlane struct {
+			NodeRegistration struct{ IgnorePreflightErrors []string }
+		}
+	}
+	require.NoError(t, json.Unmarshal(in.Cluster.Spec.Topology.Variables[0].Value.Raw, &clusterConfig))
+	assert.Equal(t, "HelmAddon", clusterConfig.Addons.CNI.Strategy)
+	assert.Equal(t, []string{"SystemVerification"}, clusterConfig.ControlPlane.NodeRegistration.IgnorePreflightErrors)
+
+	in, err = LoadInput("testdata/corpus/docker/minimal.yaml")
+	require.NoError(t, err)
+	in.Cluster.Spec.Topology.Variables[0].Value.Raw = []byte(`{"addons":{"cni":{"provider":"Bogus"}}}`)
+	errs, err = DefaultVariables(t.Context(), in, discovery)
+	require.NoError(t, err)
+	assert.NotEmpty(t, errs)
 }
 
 func variableNames(vars []runtimehooksv1.Variable) []string {
