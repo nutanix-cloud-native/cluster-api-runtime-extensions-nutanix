@@ -54,7 +54,7 @@ jobs:
         run: devbox run -- make build-snapshot
 
       - name: Set up Java 11
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: "11"
           distribution: "adopt"
