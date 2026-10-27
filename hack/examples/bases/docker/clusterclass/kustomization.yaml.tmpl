@@ -36,10 +36,10 @@ patches:
       path: "/spec/variables"
 # Delete the machinepool related resources.
 - target:
-    kind: DockerMachinePoolTemplate
+    kind: DevMachinePoolTemplate
   patch: |-
     $$patch: delete
-    kind: DockerMachinePoolTemplate
+    kind: DevMachinePoolTemplate
     metadata:
       name: unused
 - target:

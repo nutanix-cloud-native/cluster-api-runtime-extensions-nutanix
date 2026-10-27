@@ -132,8 +132,8 @@ func appendPluginToExistingConfig(file *bootstrapv1.File, plugin Plugin) error {
 }
 
 func addPluginConfigFile(spec *bootstrapv1.KubeadmConfigSpec, plugin Plugin) {
-	for _, f := range spec.Files {
-		if f.Path == plugin.ConfigFilePath {
+	for i := range spec.Files {
+		if spec.Files[i].Path == plugin.ConfigFilePath {
 			return
 		}
 	}

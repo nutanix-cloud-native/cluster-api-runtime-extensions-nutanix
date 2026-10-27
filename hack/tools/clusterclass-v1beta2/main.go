@@ -3,7 +3,7 @@
 
 // clusterclass-v1beta2 reads multi-document YAML from stdin (kustomize-built
 // cluster class manifests), converts ClusterClass, KubeadmControlPlaneTemplate,
-// and KubeadmConfigTemplate to v1beta2 using CAPI's ConvertTo for each kind,
+// and KubeadmConfigTemplate to v1beta2 using CAPI's generated conversion funcs,
 // then writes the result to stdout. Used by hack/examples/sync.sh so that
 // make examples.sync produces chart default cluster classes compatible with CAPI 1.12 (v1beta2).
 package main
@@ -345,8 +345,9 @@ func convertClusterClassCAPI(srcJSON []byte) ([]byte, error) {
 		return nil, fmt.Errorf("clusterclass unmarshal: %w", err)
 	}
 	var dst clusterv1beta2.ClusterClass
-	if err := src.ConvertTo(&dst); err != nil {
-		return nil, fmt.Errorf("clusterclass ConvertTo: %w", err)
+	// CAPI v1.14 dropped the Convertible ConvertTo methods. The generated funcs do not use the scope.
+	if err := clusterv1beta1.Convert_v1beta1_ClusterClass_To_v1beta2_ClusterClass(&src, &dst, nil); err != nil {
+		return nil, fmt.Errorf("clusterclass convert: %w", err)
 	}
 	return json.Marshal(&dst)
 }
@@ -357,8 +358,10 @@ func convertKubeadmControlPlaneTemplateCAPI(srcJSON []byte) ([]byte, error) {
 		return nil, fmt.Errorf("kubeadmcontrolplanetemplate unmarshal: %w", err)
 	}
 	var dst controlplanev1.KubeadmControlPlaneTemplate
-	if err := src.ConvertTo(&dst); err != nil {
-		return nil, fmt.Errorf("kubeadmcontrolplanetemplate ConvertTo: %w", err)
+	if err := controlplanev1beta1.Convert_v1beta1_KubeadmControlPlaneTemplate_To_v1beta2_KubeadmControlPlaneTemplate(
+		&src, &dst, nil,
+	); err != nil {
+		return nil, fmt.Errorf("kubeadmcontrolplanetemplate convert: %w", err)
 	}
 	return json.Marshal(&dst)
 }
@@ -369,8 +372,10 @@ func convertKubeadmConfigTemplateCAPI(srcJSON []byte) ([]byte, error) {
 		return nil, fmt.Errorf("kubeadmconfigtemplate unmarshal: %w", err)
 	}
 	var dst bootstrapv1.KubeadmConfigTemplate
-	if err := src.ConvertTo(&dst); err != nil {
-		return nil, fmt.Errorf("kubeadmconfigtemplate ConvertTo: %w", err)
+	if err := bootstrapv1beta1.Convert_v1beta1_KubeadmConfigTemplate_To_v1beta2_KubeadmConfigTemplate(
+		&src, &dst, nil,
+	); err != nil {
+		return nil, fmt.Errorf("kubeadmconfigtemplate convert: %w", err)
 	}
 	return json.Marshal(&dst)
 }
