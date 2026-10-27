@@ -224,27 +224,29 @@ Title: `test: [NCN-107121] Add golden output tests for mutation handlers`
 
 **Files:** Create `pkg/handlers/golden/harness.go`, `pkg/handlers/golden/harness_test.go`.
 
-- [ ] Write a failing test: loading the Docker Cilium HelmAddon input returns one ClusterClass, one Cluster, the five referenced templates, and N fixtures.
-- [ ] Run `devbox run -- go test ./pkg/handlers/golden/ -run TestLoad -count=1`; expect a compile failure.
-- [ ] Implement `func LoadInput(path string) (*Input, error)`: split documents, decode with the scheme from `test/helpers`, index templates by kind and name.
-- [ ] Re-run; expect PASS.
+- [x] Write a failing test: loading the Docker Cilium HelmAddon input returns one ClusterClass, one Cluster, the five referenced templates, and no fixtures; the Nutanix equivalent has four fixture Secrets.
+- [x] Run `devbox run -- go test ./pkg/handlers/golden/ -run TestLoad -count=1`; expect a compile failure.
+- [x] Implement `func LoadInput(path string) (*Input, error)`: split documents into unstructured objects, convert only the ClusterClass and Cluster to typed objects (no scheme needed), index `*Template` kinds by kind and name, keep the rest as fixtures.
+- [x] Re-run; expect PASS.
 
 #### T1.3 — Request builder (TDD)
 
 **Files:** Modify `harness.go`, `harness_test.go`.
 
-- [ ] Write a failing test asserting holder kind, name, and field path for each item of the Docker input, and the `builtin` JSON for one MD item (`machineDeployment.class`, `.name`, `.topologyName`, `.version`) and the control plane item (`controlPlane.version`).
-- [ ] Read CAPI v1.13.6 `internal/topology/patches/engine.go` and the builtin variable code; implement `func BuildRequest(in *Input, vars DefaultedVariables) *runtimehooksv1.GeneratePatchesRequest`.
-- [ ] Re-run; expect PASS.
+- [x] Write a failing test asserting holder kind, name, and field path for each item of the Docker input, and the `builtin` JSON for one MD item (`machineDeployment.class`, `.name`, `.topologyName`, `.version`) and the control plane item (`controlPlane.version`).
+- [x] Read CAPI v1.13.6 `internal/controllers/topology/cluster/patches/{engine.go,template.go,variables/variables.go}`; implement `func BuildRequest(in *Input, patch string) (*runtimehooksv1.GeneratePatchesRequest, error)`. `patch` is the ClusterClass patch name (`cluster-config` or `worker-config`); like CAPI, only variables whose status definition is `From` that patch are sent. Generated names are fixed: control plane `<cluster>`, MachineDeployment `<cluster>-<topology name>`.
+- [x] Re-run; expect PASS.
+
+Each handler runs in isolation, not chained after the other patch as CAPI does, so a golden diff is attributable to one handler.
 
 #### T1.4 — Defaulting (TDD)
 
 **Files:** Modify `harness.go`, `harness_test.go`.
 
-- [ ] Write a failing test: for the minimal Docker input, defaulted `workerConfig` contains `nodeRegistration.ignorePreflightErrors: [SystemVerification]` (a `+kubebuilder:default` in `nodeconfig_types.go`).
-- [ ] Implement `func DefaultVariables(ctx, in *Input, discovery ...handlers.Named) (DefaultedVariables, field.ErrorList)` using `webhooks.Cluster.DefaultAndValidateVariables`.
-- [ ] Add a test that an invalid value returns a non-empty error list.
-- [ ] Re-run; expect PASS.
+- [x] Write a failing test: for the Docker Cilium input (which sets `controlPlane: {}`), defaulted `clusterConfig` contains `controlPlane.nodeRegistration.ignorePreflightErrors: [SystemVerification]` and `addons.cni.strategy: HelmAddon`. Schema defaults only apply inside objects that exist, so the minimal input gains nothing.
+- [x] Implement `func DefaultVariables(ctx, in *Input, discovery map[string]mutation.DiscoverVariables) (field.ErrorList, error)`: discovery is keyed by ClusterClass patch name; it fills `ClusterClass.Status.Variables`, then defaults `in.Cluster` in place with `webhooks.Cluster.DefaultAndValidateVariables`.
+- [x] Add a test that an invalid value returns a non-empty error list.
+- [x] Re-run; expect PASS.
 
 #### T1.5 — Execute, apply, serialize (TDD)
 
