@@ -8,7 +8,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -95,12 +94,13 @@ func (h *ntpPatchHandler) Mutate(
 			).Info("setting NTP configuration in control plane kubeadm config spec")
 
 			obj.Spec.Template.Spec.KubeadmConfigSpec.NTP = bootstrapv1.NTP{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Servers: ntp.Servers,
 			}
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -113,12 +113,13 @@ func (h *ntpPatchHandler) Mutate(
 			).Info("setting NTP configuration in worker kubeadm config spec")
 
 			obj.Spec.Template.Spec.NTP = bootstrapv1.NTP{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Servers: ntp.Servers,
 			}
 
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 
@@ -131,11 +132,12 @@ func (h *ntpPatchHandler) Mutate(
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
 			).Info("setting users in worker node NodeadmConfig template")
 			obj.Spec.Template.Spec.NTP = &eksbootstrapv1.NTP{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Servers: ntp.Servers,
 			}
 			return nil
-		}); err != nil {
+		},
+	); err != nil {
 		return err
 	}
 

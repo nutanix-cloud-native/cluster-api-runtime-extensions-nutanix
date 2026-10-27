@@ -11,7 +11,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -122,7 +121,7 @@ func (h *etcdPatchHandler) Mutate(
 			for _, k := range keys {
 				v := defaultEtcdExtraArgs[k]
 				if !extraArgsMap[k] {
-					localEtcd.ExtraArgs = append(localEtcd.ExtraArgs, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
+					localEtcd.ExtraArgs = append(localEtcd.ExtraArgs, bootstrapv1.Arg{Name: k, Value: new(v)})
 					extraArgsMap[k] = true
 				}
 			}

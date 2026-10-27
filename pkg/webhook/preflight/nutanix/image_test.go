@@ -14,7 +14,6 @@ import (
 	vmmv4error "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/error"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -33,7 +32,7 @@ func TestVMImageCheck(t *testing.T) {
 			nclient: &clientWrapper{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				ImageLookup: &capxv1.NutanixImageLookup{
-					Format: ptr.To("test-format"),
+					Format: new("test-format"),
 					BaseOS: "test-baseos",
 				},
 			},
@@ -51,8 +50,8 @@ func TestVMImageCheck(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -61,7 +60,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -78,7 +77,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -107,7 +106,7 @@ func TestVMImageCheck(t *testing.T) {
 					resp := &vmmv4.ListImagesApiResponse{}
 					err := resp.SetData([]vmmv4.Image{
 						{
-							Name: ptr.To("test-image-name"),
+							Name: new("test-image-name"),
 						},
 					})
 					require.NoError(t, err)
@@ -117,7 +116,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To("test-image-name"),
+					Name: new("test-image-name"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -143,7 +142,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To("test-non-existent-image"),
+					Name: new("test-non-existent-image"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -172,10 +171,10 @@ func TestVMImageCheck(t *testing.T) {
 					resp := &vmmv4.ListImagesApiResponse{}
 					err := resp.SetData([]vmmv4.Image{
 						{
-							Name: ptr.To("test-duplicate-image"),
+							Name: new("test-duplicate-image"),
 						},
 						{
-							Name: ptr.To("test-duplicate-image"),
+							Name: new("test-duplicate-image"),
 						},
 					})
 					require.NoError(t, err)
@@ -185,7 +184,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To("test-duplicate-image"),
+					Name: new("test-duplicate-image"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -208,7 +207,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -241,7 +240,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To("test-image"),
+					Name: new("test-image"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -277,7 +276,7 @@ func TestVMImageCheck(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierName,
-					Name: ptr.To("test-image"),
+					Name: new("test-image"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -339,8 +338,8 @@ func TestGetVMImages(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -348,12 +347,12 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid"),
+				UUID: new("test-uuid"),
 			},
 			want: []vmmv4.Image{
 				{
-					ObjectType_: ptr.To("vmm.v4.content.Image"),
-					ExtId:       ptr.To("test-uuid"),
+					ObjectType_: new("vmm.v4.content.Image"),
+					ExtId:       new("test-uuid"),
 				},
 			},
 			wantErr: false,
@@ -376,7 +375,7 @@ func TestGetVMImages(t *testing.T) {
 					resp := &vmmv4.ListImagesApiResponse{}
 					err := resp.SetData([]vmmv4.Image{
 						{
-							Name: ptr.To("test-name"),
+							Name: new("test-name"),
 						},
 					})
 					require.NoError(t, err)
@@ -385,11 +384,11 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-name"),
+				Name: new("test-name"),
 			},
 			want: []vmmv4.Image{
 				{
-					Name: ptr.To("test-name"),
+					Name: new("test-name"),
 				},
 			},
 			wantErr: false,
@@ -403,7 +402,7 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid"),
+				UUID: new("test-uuid"),
 			},
 			wantErr:  true,
 			errorMsg: "api error",
@@ -426,7 +425,7 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-name"),
+				Name: new("test-name"),
 			},
 			wantErr:  true,
 			errorMsg: "api error",
@@ -449,7 +448,7 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid"),
+				UUID: new("test-uuid"),
 			},
 			wantErr: false,
 			want:    []vmmv4.Image{}, // No images found
@@ -460,14 +459,14 @@ func TestGetVMImages(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					return &vmmv4.GetImageApiResponse{
 						Data: &vmmv4.OneOfGetImageApiResponseData{
-							ObjectType_: ptr.To("wrong-type"),
+							ObjectType_: new("wrong-type"),
 						},
 					}, nil
 				},
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierUUID,
-				UUID: ptr.To("test-uuid"),
+				UUID: new("test-uuid"),
 			},
 			wantErr:  true,
 			errorMsg: "failed to get data returned by GetImageById",
@@ -492,7 +491,7 @@ func TestGetVMImages(t *testing.T) {
 			},
 			id: &capxv1.NutanixResourceIdentifier{
 				Type: capxv1.NutanixIdentifierName,
-				Name: ptr.To("test-name"),
+				Name: new("test-name"),
 			},
 			want:    []vmmv4.Image{},
 			wantErr: false,
@@ -552,7 +551,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -564,8 +563,8 @@ func TestNewVMImageChecks(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -584,7 +583,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -595,8 +594,8 @@ func TestNewVMImageChecks(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -614,7 +613,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -626,7 +625,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -636,7 +635,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -647,8 +646,8 @@ func TestNewVMImageChecks(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -670,7 +669,7 @@ func TestNewVMImageChecks(t *testing.T) {
 						MachineDetails: carenv1.NutanixMachineDetails{
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierUUID,
-								UUID: ptr.To("test-uuid"),
+								UUID: new("test-uuid"),
 							},
 						},
 					},
@@ -681,8 +680,8 @@ func TestNewVMImageChecks(t *testing.T) {
 					assert.Equal(t, "test-uuid", *uuid)
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 					})
 					require.NoError(t, err)
 					return resp, nil

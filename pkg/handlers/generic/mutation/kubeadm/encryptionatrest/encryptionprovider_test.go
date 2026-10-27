@@ -79,7 +79,8 @@ func Test_encryptionConfigForSecretsAndConfigMaps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, gErr := defaultEncryptionConfiguration(
 				tt.providers,
-				testTokenGenerator)
+				testTokenGenerator,
+			)
 			assert.Equal(t, tt.wantErr, gErr)
 			assert.Equal(t, tt.want, got)
 		})

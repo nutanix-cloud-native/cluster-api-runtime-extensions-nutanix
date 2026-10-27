@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -129,7 +128,8 @@ func (h *encryptionPatchHandler) Mutate(
 			// Create kubeadm config file for encryption config
 			obj.Spec.Template.Spec.KubeadmConfigSpec.Files = append(
 				obj.Spec.Template.Spec.KubeadmConfigSpec.Files,
-				generateEncryptionCredentialsFile(cluster))
+				generateEncryptionCredentialsFile(cluster),
+			)
 
 			// set APIServer args for encryption config
 			apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
@@ -143,12 +143,13 @@ func (h *encryptionPatchHandler) Mutate(
 			if !hasEncryptionConfig {
 				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
 					Name:  apiServerEncryptionConfigArg,
-					Value: ptr.To(encryptionConfigurationOnRemote),
+					Value: new(encryptionConfigurationOnRemote),
 				})
 			}
 
 			return nil
-		})
+		},
+	)
 }
 
 func generateEncryptionCredentialsFile(cluster *clusterv1.Cluster) bootstrapv1.File {

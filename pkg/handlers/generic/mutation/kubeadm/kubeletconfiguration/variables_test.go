@@ -47,13 +47,13 @@ var testDefs = []capitest.VariableTestDef{
 				"cpu":    resource.MustParse("100m"),
 				"memory": resource.MustParse("128Mi"),
 			},
-			ContainerLogMaxSize: ptr.To(resource.MustParse("50Mi")),
+			ContainerLogMaxSize: new(resource.MustParse("50Mi")),
 		}),
 	},
 	{
 		Name: "set with all kubelet fields",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			MaxPods: ptr.To(int32(110)),
+			MaxPods: new(int32(110)),
 			KubeReserved: map[string]resource.Quantity{
 				"cpu": resource.MustParse("500m"),
 			},
@@ -69,19 +69,19 @@ var testDefs = []capitest.VariableTestDef{
 			EvictionSoftGracePeriod: map[string]metav1.Duration{
 				"memory.available": {Duration: 30 * time.Second},
 			},
-			ProtectKernelDefaults: ptr.To(true),
+			ProtectKernelDefaults: new(true),
 			TopologyManagerPolicy: ptr.To(v1alpha1.TopologyManagerPolicyNone),
 			CPUManagerPolicy:      ptr.To(v1alpha1.CPUManagerPolicyStatic),
 			MemoryManagerPolicy:   ptr.To(v1alpha1.MemoryManagerPolicyNone),
-			PodPidsLimit:          ptr.To(int64(4096)),
-			ContainerLogMaxSize:   ptr.To(resource.MustParse("10Mi")),
-			ContainerLogMaxFiles:  ptr.To(int32(5)),
-			MaxParallelImagePulls: ptr.To(int32(5)),
+			PodPidsLimit:          new(int64(4096)),
+			ContainerLogMaxSize:   new(resource.MustParse("10Mi")),
+			ContainerLogMaxFiles:  new(int32(5)),
+			MaxParallelImagePulls: new(int32(5)),
 			ShutdownGracePeriod:   &metav1.Duration{Duration: 60 * time.Second},
 			ShutdownGracePeriodCriticalPods: &metav1.Duration{
 				Duration: 10 * time.Second,
 			},
-			SeccompDefault: ptr.To(true),
+			SeccompDefault: new(true),
 			EnforceNodeAllocatable: []v1alpha1.EnforceNodeAllocatableOption{
 				v1alpha1.EnforceNodeAllocatablePods,
 				v1alpha1.EnforceNodeAllocatableSystemReservedCompressible,
@@ -92,7 +92,7 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "seccompDefault set",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			SeccompDefault: ptr.To(true),
+			SeccompDefault: new(true),
 		}),
 	},
 	{
@@ -106,7 +106,7 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "suffixless string quantity in containerLogMaxSize",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			ContainerLogMaxSize: ptr.To(resource.MustParse("50")),
+			ContainerLogMaxSize: new(resource.MustParse("50")),
 		}),
 	},
 	{
@@ -136,21 +136,21 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "invalid maxPods below minimum",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			MaxPods: ptr.To(int32(10)),
+			MaxPods: new(int32(10)),
 		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid podPidsLimit below minimum",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			PodPidsLimit: ptr.To(int64(500)),
+			PodPidsLimit: new(int64(500)),
 		}),
 		ExpectError: true,
 	},
 	{
 		Name: "invalid podPidsLimit above maximum",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			PodPidsLimit: ptr.To(int64(20000)),
+			PodPidsLimit: new(int64(20000)),
 		}),
 		ExpectError: true,
 	},
@@ -184,8 +184,8 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "imageGCHighThresholdPercent must be greater than low",
 		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
-			ImageGCHighThresholdPercent: ptr.To(int32(70)),
-			ImageGCLowThresholdPercent:  ptr.To(int32(80)),
+			ImageGCHighThresholdPercent: new(int32(70)),
+			ImageGCLowThresholdPercent:  new(int32(80)),
 		}),
 		ExpectError: true,
 	},
@@ -215,7 +215,7 @@ func TestVariableValidation_Docker(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.DockerClusterConfig{}.VariableSchema()),
+		new(v1alpha1.DockerClusterConfig{}.VariableSchema()),
 		true,
 		dockerclusterconfig.NewVariable,
 		testDefs...,
@@ -250,7 +250,7 @@ func TestVariableValidation_AWS(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.AWSClusterConfig{}.VariableSchema()),
+		new(v1alpha1.AWSClusterConfig{}.VariableSchema()),
 		true,
 		awsclusterconfig.NewVariable,
 		awsTestDefs...,
@@ -278,18 +278,18 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 							VCPUsPerSocket: 1,
 							Image: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("fake-image"),
+								Name: new("fake-image"),
 							},
 							Cluster: &capxv1.NutanixResourceIdentifier{
 								Type: capxv1.NutanixIdentifierName,
-								Name: ptr.To("fake-pe-cluster"),
+								Name: new("fake-pe-cluster"),
 							},
 							MemorySize:     resource.MustParse("8Gi"),
 							SystemDiskSize: resource.MustParse("40Gi"),
 							Subnets: []capxv1.NutanixResourceIdentifier{
 								{
 									Type: capxv1.NutanixIdentifierName,
-									Name: ptr.To("fake-subnet"),
+									Name: new("fake-subnet"),
 								},
 							},
 						},
@@ -305,7 +305,7 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
+		new(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
 		nutanixTestDefs...,

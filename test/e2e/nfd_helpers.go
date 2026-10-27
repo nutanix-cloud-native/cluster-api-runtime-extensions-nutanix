@@ -21,6 +21,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
+const nodeFeatureDiscoveryName = "node-feature-discovery"
+
 type WaitForNFDToBeReadyInWorkloadClusterInput struct {
 	NFD                         *v1alpha1.NFD
 	WorkloadCluster             *clusterv1.Cluster
@@ -66,7 +68,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 			WaitForHelmReleaseProxyReadyForClusterInput{
 				GetLister:       input.ClusterProxy.GetClient(),
 				Cluster:         input.WorkloadCluster,
-				HelmReleaseName: "node-feature-discovery",
+				HelmReleaseName: nodeFeatureDiscoveryName,
 			},
 			input.HelmReleaseIntervals...,
 		)
@@ -90,7 +92,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "node-feature-discovery-gc",
-				Namespace: "node-feature-discovery",
+				Namespace: nodeFeatureDiscoveryName,
 			},
 		},
 	}, input.DeploymentIntervals...)
@@ -100,7 +102,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		Deployment: &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "node-feature-discovery-master",
-				Namespace: "node-feature-discovery",
+				Namespace: nodeFeatureDiscoveryName,
 			},
 		},
 	}, input.DeploymentIntervals...)
@@ -110,7 +112,7 @@ func WaitForNFDToBeReadyInWorkloadCluster(
 		DaemonSet: &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "node-feature-discovery-worker",
-				Namespace: "node-feature-discovery",
+				Namespace: nodeFeatureDiscoveryName,
 			},
 		},
 	}, input.DaemonSetIntervals...)

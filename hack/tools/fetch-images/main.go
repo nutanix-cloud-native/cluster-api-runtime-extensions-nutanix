@@ -300,7 +300,8 @@ prismEndPoint: endpoint
 			"trimPrefix": strings.TrimPrefix,
 		}
 		err = template.Must(
-			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f)).Execute(tempFile, &templateInput)
+			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f),
+		).Execute(tempFile, &templateInput)
 		if err != nil {
 			return "", fmt.Errorf("failed to execute helm values template %w", err)
 		}
@@ -497,7 +498,8 @@ prismEndPoint: endpoint
 			"joinQuoted": func(s []string) string { return "" },
 		}
 		err = template.Must(
-			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f)).Execute(tempFile, &templateInput)
+			template.New(defaultHelmAddonFilename).Funcs(funcMap).ParseFiles(f),
+		).Execute(tempFile, &templateInput)
 		if err != nil {
 			return "", fmt.Errorf("failed to execute helm values template %w", err)
 		}

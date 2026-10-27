@@ -19,7 +19,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
-const credentialsSecretDataKey = "credentials"
+const (
+	credentialsSecretDataKey = "credentials"
+
+	prismCentralCredentialsSecretRefField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef" //nolint:gosec,lll // This is not a security sensitive field and is long.
+
+	prismCentralAdditionalTrustBundleField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle" //nolint:lll // Field is long.
+)
 
 type credentialsCheck struct {
 	result preflight.CheckResult
@@ -80,7 +86,8 @@ func newCredentialsCheck(
 				Message: fmt.Sprintf(
 					"Failed to parse the Prism Central endpoint URL %q: %s. Check the URL format and retry.",
 					prismCentralEndpointSpec.URL,
-					err),
+					err,
+				),
 				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.url", ///nolint:lll // Field is long.
 			},
 		)
@@ -105,7 +112,7 @@ func newCredentialsCheck(
 					"Prism Central credentials Secret %q not found. Create the Secret first, then create the Cluster.", ///nolint:lll // Message is long.
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -120,7 +127,7 @@ func newCredentialsCheck(
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -134,7 +141,7 @@ func newCredentialsCheck(
 					"Credentials Secret %q is empty. Review the Secret.", ///nolint:lll // Message is long.
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -150,7 +157,7 @@ func newCredentialsCheck(
 					prismCentralEndpointSpec.Credentials.SecretRef.Name,
 					credentialsSecretDataKey,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -165,7 +172,7 @@ func newCredentialsCheck(
 					"Failed to parse Prism Central credentials: %s. Review the Secret.", ///nolint:lll // Message is long.
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -183,7 +190,7 @@ func newCredentialsCheck(
 						"Failed to decode Prism Central additionalTrustBundle (expected base64 PEM): %s.",
 						err,
 					),
-					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+					Field: prismCentralAdditionalTrustBundleField,
 				},
 			)
 			return credentialsCheck
@@ -218,7 +225,7 @@ func newCredentialsCheck(
 					"Failed to initialize the Nutanix Prism Central API client: %s.", ///nolint:lll // Message is long.",
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 		return credentialsCheck
@@ -242,7 +249,7 @@ func newCredentialsCheck(
 					"Failed to validate credentials: %s. Please check the username and/or password.", ///nolint:lll // Message is long.
 					err,
 				),
-				Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.credentials.secretRef", ///nolint:lll // Field is long.
+				Field: prismCentralCredentialsSecretRefField,
 			},
 		)
 	case strings.Contains(err.Error(), "failed to verify certificate"):
@@ -254,7 +261,7 @@ func newCredentialsCheck(
 						"Failed to verify certificate: %s. If you are using a self-signed certificate, you need to provide the additional trust bundle.", ///nolint:lll // Message is long.
 						err,
 					),
-					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+					Field: prismCentralAdditionalTrustBundleField,
 				},
 			)
 		} else {
@@ -264,7 +271,7 @@ func newCredentialsCheck(
 						"Failed to verify certificate: %s. Please check the additional trust bundle.", ///nolint:lll // Message is long.
 						err,
 					),
-					Field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.nutanix.prismCentralEndpoint.additionalTrustBundle", ///nolint:lll // Field is long.
+					Field: prismCentralAdditionalTrustBundleField,
 				},
 			)
 		}

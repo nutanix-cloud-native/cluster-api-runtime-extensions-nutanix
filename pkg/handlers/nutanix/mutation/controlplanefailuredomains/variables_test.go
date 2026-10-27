@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -24,7 +23,7 @@ func TestVariableValidation(t *testing.T) {
 	capitest.ValidateDiscoverVariables(
 		t,
 		v1alpha1.ClusterConfigVariableName,
-		ptr.To(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
+		new(v1alpha1.NutanixClusterConfig{}.VariableSchema()),
 		true,
 		nutanixclusterconfig.NewVariable,
 		capitest.VariableTestDef{
@@ -48,18 +47,18 @@ func minimumClusterConfigSpec() v1alpha1.NutanixClusterConfigSpec {
 					VCPUsPerSocket: 1,
 					Image: &capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
-						Name: ptr.To("fake-image"),
+						Name: new("fake-image"),
 					},
 					Cluster: &capxv1.NutanixResourceIdentifier{
 						Type: capxv1.NutanixIdentifierName,
-						Name: ptr.To("fake-pe-cluster"),
+						Name: new("fake-pe-cluster"),
 					},
 					MemorySize:     resource.MustParse("8Gi"),
 					SystemDiskSize: resource.MustParse("40Gi"),
 					Subnets: []capxv1.NutanixResourceIdentifier{
 						{
 							Type: capxv1.NutanixIdentifierName,
-							Name: ptr.To("fake-subnet"),
+							Name: new("fake-subnet"),
 						},
 					},
 				},

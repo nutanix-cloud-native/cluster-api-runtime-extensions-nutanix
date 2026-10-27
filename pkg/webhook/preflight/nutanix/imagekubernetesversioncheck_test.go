@@ -12,7 +12,6 @@ import (
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -34,9 +33,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("kubedistro-ubuntu-22.04-vgpu-1.32.3-20250604180644"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
+						Name:        new("kubedistro-ubuntu-22.04-vgpu-1.32.3-20250604180644"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -45,7 +44,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "1.32.3",
@@ -59,9 +58,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
+						Name:        new("kubedistro-ubuntu-22.04-vgpu-1.31.5-20250604180644"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -70,7 +69,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "1.32.3",
@@ -91,9 +90,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
+						Name:        new("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -102,7 +101,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "1.33.1+fips.0",
@@ -116,9 +115,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("my-custom-image-name"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
+						Name:        new("my-custom-image-name"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -127,7 +126,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "1.32.3",
@@ -148,9 +147,9 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
-						Name:        ptr.To("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
+						Name:        new("kubedistro-rhel-8.10-release-fips-1.33.1-20250704023459"),
 					})
 					require.NoError(t, err)
 					return resp, nil
@@ -159,7 +158,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "invalid.version",
@@ -180,8 +179,8 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 				GetImageByIdFunc: func(ctx context.Context, uuid *string, args ...map[string]any) (*vmmv4.GetImageApiResponse, error) {
 					resp := &vmmv4.GetImageApiResponse{}
 					err := resp.SetData(vmmv4.Image{
-						ObjectType_: ptr.To("vmm.v4.content.Image"),
-						ExtId:       ptr.To("test-uuid"),
+						ObjectType_: new("vmm.v4.content.Image"),
+						ExtId:       new("test-uuid"),
 						Name:        nil, // empty name
 					})
 					require.NoError(t, err)
@@ -191,7 +190,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			clusterK8sVersion: "1.32.3",
@@ -211,7 +210,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			nclient: &clientWrapper{},
 			machineDetails: &carenv1.NutanixMachineDetails{
 				ImageLookup: &capxv1.NutanixImageLookup{
-					Format: ptr.To("test-format"),
+					Format: new("test-format"),
 					BaseOS: "test-baseos",
 				},
 			},
@@ -232,7 +231,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -249,7 +248,7 @@ func TestVMImageCheckWithKubernetesVersion(t *testing.T) {
 			machineDetails: &carenv1.NutanixMachineDetails{
 				Image: &capxv1.NutanixResourceIdentifier{
 					Type: capxv1.NutanixIdentifierUUID,
-					UUID: ptr.To("test-uuid"),
+					UUID: new("test-uuid"),
 				},
 			},
 			want: preflight.CheckResult{
@@ -353,7 +352,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 							MachineDetails: carenv1.NutanixMachineDetails{
 								Image: &capxv1.NutanixResourceIdentifier{
 									Type: capxv1.NutanixIdentifierUUID,
-									UUID: ptr.To("test-uuid"),
+									UUID: new("test-uuid"),
 								},
 							},
 						},
@@ -365,7 +364,7 @@ func TestNewVMImageChecksWithKubernetesVersion(t *testing.T) {
 							MachineDetails: carenv1.NutanixMachineDetails{
 								Image: &capxv1.NutanixResourceIdentifier{
 									Type: capxv1.NutanixIdentifierUUID,
-									UUID: ptr.To("test-uuid"),
+									UUID: new("test-uuid"),
 								},
 							},
 						},

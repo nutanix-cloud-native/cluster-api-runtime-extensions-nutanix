@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -181,6 +180,6 @@ func applyDeprecatedMaxParallelImagePulls(
 	if cfg == nil {
 		cfg = &v1alpha1.KubeletConfiguration{}
 	}
-	cfg.MaxParallelImagePulls = ptr.To(deprecatedVal)
+	cfg.MaxParallelImagePulls = new(deprecatedVal)
 	return cfg, nil
 }

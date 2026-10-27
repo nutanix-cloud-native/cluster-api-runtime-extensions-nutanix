@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -196,12 +195,12 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 		It("should allow with warning", func() {
 			clusterConfig := &variables.ClusterConfigSpec{
 				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-					MaxParallelImagePullsPerNode: ptr.To(int32(4)), //nolint:staticcheck // testing deprecated field
+					MaxParallelImagePullsPerNode: new(int32(4)), //nolint:staticcheck // testing deprecated field
 				},
 				ControlPlane: &variables.ControlPlaneSpec{
 					KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
 						KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-							MaxParallelImagePulls: ptr.To(int32(8)),
+							MaxParallelImagePulls: new(int32(8)),
 						},
 					},
 				},
@@ -415,13 +414,13 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 		It("should allow with warning when maxParallelImagePullsPerNode conflicts with worker override", func() {
 			clusterConfig := &variables.ClusterConfigSpec{
 				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-					MaxParallelImagePullsPerNode: ptr.To(int32(4)), //nolint:staticcheck // testing deprecated field
+					MaxParallelImagePullsPerNode: new(int32(4)), //nolint:staticcheck // testing deprecated field
 				},
 			}
 			workerConfig := &variables.WorkerNodeConfigSpec{
 				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
 					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
-						MaxParallelImagePulls: ptr.To(int32(8)),
+						MaxParallelImagePulls: new(int32(8)),
 					},
 				},
 			}
@@ -446,8 +445,9 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 	})
 })
 
+//go:fix inline
 func ptrOf[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 func createClusterWithKubeletConfig(cfg *v1alpha1.KubeletConfiguration) *clusterv1beta2.Cluster {

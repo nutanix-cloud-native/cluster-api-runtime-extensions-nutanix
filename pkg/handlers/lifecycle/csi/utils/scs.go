@@ -10,7 +10,6 @@ import (
 
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,7 +56,7 @@ func CreateStorageClass(
 		Parameters:           parameters,
 		VolumeBindingMode:    storageClassConfig.VolumeBindingMode,
 		ReclaimPolicy:        storageClassConfig.ReclaimPolicy,
-		AllowVolumeExpansion: ptr.To(storageClassConfig.AllowExpansion),
+		AllowVolumeExpansion: new(storageClassConfig.AllowExpansion),
 	}
 	if isDefault {
 		sc.Annotations = defaultStorageClassMap

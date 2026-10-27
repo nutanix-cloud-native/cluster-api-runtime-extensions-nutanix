@@ -278,20 +278,24 @@ func initBootstrapCluster(
 			),
 			InfrastructureProviders: config.GetProviderLatestVersionsByContract(
 				"*",
-				config.InfrastructureProviders()...),
+				config.InfrastructureProviders()...,
+			),
 			AddonProviders: config.GetProviderLatestVersionsByContract(
 				"*",
-				config.AddonProviders()...),
+				config.AddonProviders()...,
+			),
 			RuntimeExtensionProviders: config.GetProviderLatestVersionsByContract(
 				"*",
-				config.RuntimeExtensionProviders()...),
+				config.RuntimeExtensionProviders()...,
+			),
 			LogFolder: filepath.Join(
 				artifactFolder,
 				"clusters",
 				bootstrapClusterProxy.GetName(),
 			),
 		},
-		config.GetIntervals(bootstrapClusterProxy.GetName(), "wait-controllers")...)
+		config.GetIntervals(bootstrapClusterProxy.GetName(), "wait-controllers")...,
+	)
 }
 
 func tearDown(

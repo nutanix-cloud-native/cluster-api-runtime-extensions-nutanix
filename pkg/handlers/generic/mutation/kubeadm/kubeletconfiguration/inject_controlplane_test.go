@@ -6,7 +6,6 @@ package kubeletconfiguration
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	"k8s.io/utils/ptr"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -33,7 +32,7 @@ var _ = Describe("Generate KubeletConfiguration patches for Control Plane", func
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						PodPidsLimit: ptr.To(int64(4096)),
+						PodPidsLimit: new(int64(4096)),
 					},
 					VariableName,
 				),
@@ -46,7 +45,7 @@ var _ = Describe("Generate KubeletConfiguration patches for Control Plane", func
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						MaxPods: ptr.To(int32(250)),
+						MaxPods: new(int32(250)),
 					},
 					v1alpha1.ControlPlaneConfigVariableName,
 					VariableName,
@@ -110,7 +109,7 @@ maxPods: 250
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.KubeletConfiguration{
-						SeccompDefault: ptr.To(true),
+						SeccompDefault: new(true),
 					},
 					v1alpha1.ControlPlaneConfigVariableName,
 					VariableName,
