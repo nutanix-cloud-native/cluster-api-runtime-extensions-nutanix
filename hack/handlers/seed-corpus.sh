@@ -48,8 +48,10 @@ seed() {
   mkdir -p "$(dirname "${out}")"
   {
     cat "${CLUSTERCLASSES_DIR}/${provider}-cluster-class.yaml"
-    echo "---"
-    envsubst -no-unset -no-empty -i "${cluster}"
+    for f in "${cluster}" "${SCRIPT_DIR}"/corpus-fixtures/*.yaml; do
+      echo "---"
+      envsubst -no-unset -no-empty -i "${f}"
+    done
   } >"${out}"
   echo "seeded ${out}"
 }

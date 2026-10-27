@@ -28,7 +28,10 @@ func TestBuildRequest(t *testing.T) {
 	in, err := LoadInput("testdata/corpus/docker/docker-cluster-cilium-helm-addon.yaml")
 	require.NoError(t, err)
 	in.ClusterClass.Status.Variables = []clusterv1.ClusterClassStatusVariable{
-		{Name: "clusterConfig", Definitions: []clusterv1.ClusterClassStatusVariableDefinition{{From: "cluster-config"}}},
+		{
+			Name:        "clusterConfig",
+			Definitions: []clusterv1.ClusterClassStatusVariableDefinition{{From: "cluster-config"}},
+		},
 		{Name: "workerConfig", Definitions: []clusterv1.ClusterClassStatusVariableDefinition{{From: "worker-config"}}},
 	}
 
@@ -180,10 +183,10 @@ func TestLoadInput(t *testing.T) {
 	assert.Equal(t, "golden", in.Cluster.Name)
 	assert.Len(t, in.Templates, 5)
 	assert.Contains(t, in.Templates, TemplateKey{Kind: "DockerClusterTemplate", Name: "docker-quick-start-cluster"})
-	assert.Empty(t, in.Fixtures)
+	assert.Len(t, in.Fixtures, 1, "the shared registry addon CA fixture")
 
 	in, err = LoadInput("testdata/corpus/nutanix/nutanix-cluster-cilium-helm-addon.yaml")
 	require.NoError(t, err)
 	assert.Len(t, in.Templates, 5)
-	assert.Len(t, in.Fixtures, 4)
+	assert.Len(t, in.Fixtures, 5, "four example Secrets and the shared fixture")
 }

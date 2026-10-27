@@ -432,6 +432,9 @@ spec:
         controlPlane:
           nutanix:
             machineDetails:
+              imageLookup:
+                baseOS: rocky-9.7
+                format: nkp-{{.BaseOS}}-release-cis-{{.K8sVersion}}-*
               memorySize: 4Gi
               systemDiskSize: 40Gi
               vcpuSockets: 2
@@ -451,3 +454,17 @@ spec:
       - class: default-worker
         name: md-0
         replicas: 1
+---
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Created by the registry lifecycle hook before topology mutation runs.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: golden-registry-addon-ca
+stringData:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    Z29sZGVuLXJlZ2lzdHJ5LWFkZG9uLWNh
+    -----END CERTIFICATE-----
