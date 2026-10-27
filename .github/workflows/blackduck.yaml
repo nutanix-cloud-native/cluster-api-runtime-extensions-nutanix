@@ -42,7 +42,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -54,10 +54,10 @@ jobs:
         run: devbox run -- make build-snapshot
 
       - name: Set up Java 11
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: "11"
-          distribution: "adopt"
+          distribution: "temurin"
 
       - name: Setup go
         uses: actions/setup-go@v7

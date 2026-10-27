@@ -42,7 +42,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -146,6 +146,8 @@ jobs:
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          toolchain="$(devbox run -- go -C "${{ github.workspace }}" mod edit -json | devbox run -- gojq --raw-output '.Toolchain // ("go" + .Go)')"
+          export GOTOOLCHAIN="$toolchain"
           ${{ github.workspace }}/hack/tools/golangci-lint-kube-api-linter run --config=${{ github.workspace }}/.golangci.yml --output.text.path=stdout ./... | \
             devbox run -- reviewdog -f=golangci-lint --fail-level=any ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '-reporter=github-check --filter-mode=nofilter' || '-reporter=github-pr-review --filter-mode=added' }}
         working-directory: ${{ matrix.module }}
@@ -184,7 +186,7 @@ jobs:
           echo mod-cache-path="$(devbox run -- go env GOMODCACHE)" >>"${GITHUB_OUTPUT}"
 
       - name: Go cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ${{ steps.export-go-version-and-mod-cache-path.outputs.mod-cache-path }}
@@ -193,7 +195,7 @@ jobs:
             ${{ runner.os }}-${{ steps.export-go-version-and-mod-cache-path.outputs.go-version }}-
 
       - name: Set up prek cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/prek
           key: prek-1|${{ hashFiles('.pre-commit-config.yaml') }}
