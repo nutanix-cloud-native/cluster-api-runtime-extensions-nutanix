@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/webhooks"
@@ -114,7 +113,8 @@ func DefaultVariables(
 		if resp.Status != runtimehooksv1.ResponseStatusSuccess {
 			return nil, fmt.Errorf("discovering variables for patch %s: %s", patch, resp.Message)
 		}
-		for _, v := range resp.Variables {
+		for j := range resp.Variables {
+			v := &resp.Variables[j]
 			i, ok := index[v.Name]
 			if !ok {
 				i = len(in.ClusterClass.Status.Variables)
@@ -144,9 +144,10 @@ func BuildRequest(in *Input, patch string) (*runtimehooksv1.GeneratePatchesReque
 	topology := cluster.Spec.Topology
 
 	definitions := map[string]bool{}
-	for _, v := range cc.Status.Variables {
-		for _, d := range v.Definitions {
-			if d.From == patch {
+	for i := range cc.Status.Variables {
+		v := &cc.Status.Variables[i]
+		for j := range v.Definitions {
+			if v.Definitions[j].From == patch {
 				definitions[v.Name] = true
 			}
 		}
@@ -288,7 +289,7 @@ func BuildRequest(in *Input, patch string) (*runtimehooksv1.GeneratePatchesReque
 			InfrastructureRef: &runtimehooksv1.MachineInfrastructureRefBuiltins{Name: name + "-infra"},
 		}}
 		if r := mdTopology.Replicas; r != nil {
-			mdBuiltin.MachineDeployment.Replicas = ptr.To(int64(*r))
+			mdBuiltin.MachineDeployment.Replicas = new(int64(*r))
 		}
 		mdVars := append(filter(mdTopology.Variables.Overrides), builtinVariable(mdBuiltin))
 
@@ -355,12 +356,19 @@ func Run(
 			return nil, fmt.Errorf("creating %T %s: %w", o, o.GetName(), err)
 		}
 	}
-	// Handlers read through the manager's cache, which lags behind writes.
+	// Handlers read typed objects through the manager's cache, which lags behind writes. Unstructured reads bypass the
+	// cache, so wait using the typed object.
 	for _, o := range objs {
 		key := client.ObjectKeyFromObject(o)
+		typed := o.DeepCopyObject().(client.Object)
+		if gvk, err := c.GroupVersionKindFor(o); err == nil {
+			if obj, err := c.Scheme().New(gvk); err == nil {
+				typed = obj.(client.Object)
+			}
+		}
 		if err := wait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true,
 			func(ctx context.Context) (bool, error) {
-				return c.Get(ctx, key, o.DeepCopyObject().(client.Object)) == nil, nil
+				return c.Get(ctx, key, typed) == nil, nil
 			}); err != nil {
 			return nil, fmt.Errorf("waiting for cache to see %s: %w", key, err)
 		}
@@ -400,7 +408,8 @@ func applyPatches(
 	}
 	items := make([]item, len(req.Items))
 	byUID := map[types.UID]int{}
-	for i, reqItem := range req.Items {
+	for i := range req.Items {
+		reqItem := &req.Items[i]
 		byUID[reqItem.UID] = i
 		items[i].HolderRef = reqItem.HolderReference
 		if err := json.Unmarshal(reqItem.Object.Raw, &items[i].Object); err != nil {
@@ -451,10 +460,7 @@ func applyPatches(
 }
 
 func builtinVariable(b runtimehooksv1.Builtins) runtimehooksv1.Variable {
-	raw, err := json.Marshal(b)
-	if err != nil {
-		panic(err) // Builtins only contains marshalable fields.
-	}
+	raw, _ := json.Marshal(b)
 	return runtimehooksv1.Variable{Name: runtimehooksv1.BuiltinsName, Value: apiextensionsv1.JSON{Raw: raw}}
 }
 
@@ -476,9 +482,9 @@ func topologyLabels(cluster *clusterv1.Cluster, fromClass, fromTopology map[stri
 	return labels
 }
 
-func merge(maps ...map[string]string) map[string]string {
+func merge(ms ...map[string]string) map[string]string {
 	var out map[string]string
-	for _, m := range maps {
+	for _, m := range ms {
 		for k, v := range m {
 			if out == nil {
 				out = map[string]string{}
