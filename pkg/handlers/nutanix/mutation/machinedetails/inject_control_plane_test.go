@@ -99,12 +99,12 @@ var (
 			),
 		},
 		{
-			Operation:    "replace",
+			Operation:    "add",
 			Path:         "/spec/template/spec/vcpuSockets",
 			ValueMatcher: gomega.BeEquivalentTo(2),
 		},
 		{
-			Operation:    "replace",
+			Operation:    "add",
 			Path:         "/spec/template/spec/vcpusPerSocket",
 			ValueMatcher: gomega.BeEquivalentTo(1),
 		},
@@ -166,12 +166,12 @@ var (
 			),
 		},
 		{
-			Operation:    "replace",
+			Operation:    "add",
 			Path:         "/spec/template/spec/vcpuSockets",
 			ValueMatcher: gomega.BeEquivalentTo(2),
 		},
 		{
-			Operation:    "replace",
+			Operation:    "add",
 			Path:         "/spec/template/spec/vcpusPerSocket",
 			ValueMatcher: gomega.BeEquivalentTo(1),
 		},
