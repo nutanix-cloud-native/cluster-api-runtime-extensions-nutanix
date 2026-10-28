@@ -721,10 +721,10 @@ func TestNutanixClusterName(t *testing.T) {
 
 func TestMetroVHACategoryNameCheck(t *testing.T) {
 	// k8s-vha-capx-{nutanixCluster}-{metro}-default-0 is 24 + len(nutanixCluster) + len(metro).
-	// 24 + 20 + 20 = 64; 24 + 21 + 20 = 65.
+	// 24 + 19 + 20 = 63; 24 + 20 + 20 = 64.
 	shortCluster := "cluster-1"
-	atLimitCluster := strings.Repeat("a", 20)
-	overLimitCluster := strings.Repeat("a", 21)
+	atLimitCluster := strings.Repeat("a", 19)
+	overLimitCluster := strings.Repeat("a", 20)
 	metroAtLimit := strings.Repeat("b", 20)
 
 	testCases := []struct {
@@ -741,17 +741,17 @@ func TestMetroVHACategoryNameCheck(t *testing.T) {
 			expectedAllowed:    true,
 		},
 		{
-			name:               "category value of exactly 64 characters is allowed",
+			name:               "category value of exactly 63 characters is allowed",
 			nutanixClusterName: atLimitCluster,
 			metroNames:         []string{metroAtLimit},
 			expectedAllowed:    true,
 		},
 		{
-			name:                 "category value longer than 64 characters is rejected",
+			name:                 "category value longer than 63 characters is rejected",
 			nutanixClusterName:   overLimitCluster,
 			metroNames:           []string{metroAtLimit},
 			expectedAllowed:      false,
-			expectedCauseMessage: "Prism Central limits category values to 64",
+			expectedCauseMessage: "Kubernetes limits label values to 63",
 		},
 	}
 
