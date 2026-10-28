@@ -705,62 +705,49 @@ func TestMetroSitesIdentityCheck(t *testing.T) {
 	}
 }
 
-func TestNutanixClusterName(t *testing.T) {
-	t.Parallel()
-
-	withRef := &clusterv1beta2.Cluster{}
-	withRef.Name = "capi-cluster"
-	withRef.Spec.InfrastructureRef.Name = "ntnx-cluster"
-	assert.Equal(t, "ntnx-cluster", nutanixClusterName(withRef))
-
-	withoutRef := &clusterv1beta2.Cluster{}
-	withoutRef.Name = "capi-cluster"
-	assert.Equal(t, "capi-cluster", nutanixClusterName(withoutRef))
-	assert.Equal(t, "", nutanixClusterName(nil))
-}
-
 func TestMetroVHACategoryNameCheck(t *testing.T) {
-	// k8s-vha-capx-{nutanixCluster}-{metro}-default-0 is 24 + len(nutanixCluster) + len(metro).
-	// 24 + 19 + 20 = 63; 24 + 20 + 20 = 64.
+	// The generated category value is k8s-vha-capx-{clusterName}{suffix}-{metro}-default-0,
+	// which is 24 (fixed overhead) + 6 (CAPI-generated name suffix) + len(clusterName) +
+	// len(metro). 30 + 13 + 20 = 63; 30 + 14 + 20 = 64.
 	shortCluster := "cluster-1"
-	atLimitCluster := strings.Repeat("a", 19)
-	overLimitCluster := strings.Repeat("a", 20)
+	atLimitCluster := strings.Repeat("a", 13)
+	overLimitCluster := strings.Repeat("a", 14)
 	metroAtLimit := strings.Repeat("b", 20)
 
 	testCases := []struct {
 		name                 string
-		nutanixClusterName   string
+		clusterName          string
 		metroNames           []string
 		expectedAllowed      bool
 		expectedCauseMessage string
 	}{
 		{
-			name:               "short cluster and metro names are allowed",
-			nutanixClusterName: shortCluster,
-			metroNames:         []string{metroName},
-			expectedAllowed:    true,
+			name:            "short cluster and metro names are allowed",
+			clusterName:     shortCluster,
+			metroNames:      []string{metroName},
+			expectedAllowed: true,
 		},
 		{
-			name:               "category value of exactly 63 characters is allowed",
-			nutanixClusterName: atLimitCluster,
-			metroNames:         []string{metroAtLimit},
-			expectedAllowed:    true,
+			name:            "category value of exactly 63 characters is allowed",
+			clusterName:     atLimitCluster,
+			metroNames:      []string{metroAtLimit},
+			expectedAllowed: true,
 		},
 		{
 			name:                 "category value longer than 63 characters is rejected",
-			nutanixClusterName:   overLimitCluster,
+			clusterName:          overLimitCluster,
 			metroNames:           []string{metroAtLimit},
 			expectedAllowed:      false,
-			expectedCauseMessage: "Kubernetes limits label values to 63",
+			expectedCauseMessage: "Cluster name must not exceed 13 characters",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			check := &metroVHACategoryNameCheck{
-				nutanixClusterName: tc.nutanixClusterName,
-				metroNames:         tc.metroNames,
-				field:              field,
+				clusterName: tc.clusterName,
+				metroNames:  tc.metroNames,
+				field:       field,
 			}
 			result := check.Run(context.TODO())
 
