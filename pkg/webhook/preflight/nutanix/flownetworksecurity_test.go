@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	remotefake "sigs.k8s.io/cluster-api/controllers/remote/fake"
@@ -697,22 +696,22 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 		{
 			name: "nil kubernetes client",
 			cd: &checkDependencies{
-				cluster:    cluster(newVersion, ptr.To(true), ciliumClusterConfig),
-				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
+				cluster:    cluster(newVersion, new(true), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, new(true), ciliumClusterConfig),
 			},
 		},
 		{
 			name: "nil cluster",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, new(true), ciliumClusterConfig),
 			},
 		},
 		{
 			name: "cluster is being created",
 			cd: &checkDependencies{
 				kclient: kclient,
-				cluster: cluster(newVersion, ptr.To(true), ciliumClusterConfig),
+				cluster: cluster(newVersion, new(true), ciliumClusterConfig),
 			},
 		},
 		{
@@ -727,40 +726,40 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 			name: "control plane is not initialized",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(false), ciliumClusterConfig),
-				oldCluster: cluster(oldVersion, ptr.To(false), ciliumClusterConfig),
+				cluster:    cluster(newVersion, new(false), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, new(false), ciliumClusterConfig),
 			},
 		},
 		{
 			name: "cluster config variable is not set",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(true), ""),
-				oldCluster: cluster(oldVersion, ptr.To(true), ""),
+				cluster:    cluster(newVersion, new(true), ""),
+				oldCluster: cluster(oldVersion, new(true), ""),
 			},
 		},
 		{
 			name: "cni addon is not set",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{}}`),
-				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{}}`),
+				cluster:    cluster(newVersion, new(true), `{"addons":{}}`),
+				oldCluster: cluster(oldVersion, new(true), `{"addons":{}}`),
 			},
 		},
 		{
 			name: "cni provider is not cilium",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
-				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
+				cluster:    cluster(newVersion, new(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
+				oldCluster: cluster(oldVersion, new(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
 			},
 		},
 		{
 			name: "cni provider cannot be read",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{"cni":{"provider":1}}}`),
-				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{"cni":{"provider":1}}}`),
+				cluster:    cluster(newVersion, new(true), `{"addons":{"cni":{"provider":1}}}`),
+				oldCluster: cluster(oldVersion, new(true), `{"addons":{"cni":{"provider":1}}}`),
 			},
 			wantInternalErrorMessage: "failed to determine the CNI provider of the cluster, " +
 				"which is needed to decide whether the Cilium loadBalancer mode change affects " +
@@ -770,8 +769,8 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 			name: "cilium cluster is being upgraded",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, ptr.To(true), ciliumClusterConfig),
-				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
+				cluster:    cluster(newVersion, new(true), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, new(true), ciliumClusterConfig),
 			},
 			wantCheck: true,
 		},
