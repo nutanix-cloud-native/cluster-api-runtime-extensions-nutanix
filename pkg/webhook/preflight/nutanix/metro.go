@@ -14,7 +14,6 @@ import (
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/apimachinery/pkg/api/errors"
-	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
@@ -35,8 +34,21 @@ const (
 	// NutanixVirtualHADomain has none. See cluster-api-provider-nutanix
 	// controllers/nutanixvirtualhadomain_controller.go.
 	vhaDefaultMovementGroup = "default"
-	// prismCategoryValueMaxLen is Prism Central's maximum length for category values.
-	prismCategoryValueMaxLen = 64
+	// vhaCategoryValueMaxLen is the maximum length of a generated vHA category value.
+	// CAPX stamps this value onto Kubernetes Node objects as a label value (for example
+	// the ha-native-site label). Kubernetes limits label values to 63 characters, which
+	// is stricter than Prism Central's 64-character category value limit, so 63 is the
+	// binding constraint. A value that exceeds it is rejected by the Kubernetes API,
+	// which panics the Nutanix CSI node driver and leaves it in CrashLoopBackOff.
+	vhaCategoryValueMaxLen = 63
+
+	// generatedNameSuffixLen is the number of characters CAPI appends to the Cluster
+	// name when the topology controller generates the NutanixCluster object name. The
+	// default infrastructure naming template is "{{ .cluster.name }}-{{ .random }}",
+	// where .random is a 5-character string, so the suffix is "-" plus 5 characters.
+	// CAPX derives the vHA category value from that generated name, so this suffix must
+	// be reserved when validating the user-provided Cluster name.
+	generatedNameSuffixLen = 6
 
 	// metroVMImageCheckName is the name of the metro unsupported-OS VM image preflight check.
 	metroVMImageCheckName = "NutanixMetroVMImage"
@@ -183,13 +195,14 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 				field:      firstField,
 				kclient:    cd.kclient,
 			},
-			// CAPX generates Prism Central category values as
-			// k8s-vha-capx-{nutanixCluster}-{metro}-{group}-{idx} and fails if the
-			// result exceeds 64 characters. Catch that before admission.
+			// CAPX generates vHA category values as
+			// k8s-vha-capx-{nutanixCluster}-{metro}-{group}-{idx} and stamps them
+			// onto Kubernetes Nodes as label values, which are limited to 63
+			// characters. Catch that before admission.
 			&metroVHACategoryNameCheck{
-				nutanixClusterName: nutanixClusterName(cd.cluster),
-				metroNames:         metroNames,
-				field:              firstField,
+				clusterName: cd.cluster.Name,
+				metroNames:  metroNames,
+				field:       firstField,
 			},
 		)
 	}
@@ -395,28 +408,20 @@ func reportDuplicateSiteField(
 	}
 }
 
-// nutanixClusterName is the name CAPX uses for vHA categories, recovery plans, and
-// protection policies. That is the NutanixCluster object name. Before the topology
-// controller sets spec.infrastructureRef, CAPI names that object after the Cluster.
-func nutanixClusterName(cluster *clusterv1.Cluster) string {
-	if cluster == nil {
-		return ""
-	}
-	if name := cluster.Spec.InfrastructureRef.Name; name != "" {
-		return name
-	}
-	return cluster.Name
-}
-
-// metroVHACategoryNameCheck enforces that the Prism Central category values CAPX
-// will generate for the default metro movement group stay within
-// prismCategoryValueMaxLen. CAPX names them
-// k8s-vha-capx-{nutanixCluster}-{metro}-default-{idx} and fails immediately if the
-// result is longer than 64 characters.
+// metroVHACategoryNameCheck enforces that the vHA category values CAPX will
+// generate for the default metro movement group stay within
+// vhaCategoryValueMaxLen. CAPX names them
+// k8s-vha-capx-{nutanixCluster}-{metro}-default-{idx}, where {nutanixCluster} is
+// the Cluster name plus CAPI's generated suffix, and stamps them onto Kubernetes
+// Node objects as label values. A value longer than 63 characters is rejected by
+// the Kubernetes API, which panics the Nutanix CSI node driver. The NutanixMetro
+// already exists when this check runs, so its name is fixed; the only input the
+// user can still change is the Cluster name, and the check is expressed in terms
+// of that.
 type metroVHACategoryNameCheck struct {
-	nutanixClusterName string
-	metroNames         []string
-	field              string
+	clusterName string
+	metroNames  []string
+	field       string
 }
 
 func (c *metroVHACategoryNameCheck) Name() string {
@@ -438,18 +443,28 @@ func (c *metroVHACategoryNameCheck) Run(_ context.Context) preflight.CheckResult
 	// metro failure domain. Indexes 0 and 1 are single-digit, so length is the
 	// same; check idx 0 only to avoid duplicate causes.
 	for _, metroName := range c.metroNames {
-		domainName := vhaDomainName(c.nutanixClusterName, metroName)
+		// CAPX derives the category value from the generated NutanixCluster name,
+		// which is the Cluster name plus CAPI's generated suffix. Reserve that
+		// suffix so the user-provided Cluster name is validated against the name
+		// CAPX will actually use.
+		generatedClusterName := c.clusterName + strings.Repeat("x", generatedNameSuffixLen)
+		domainName := vhaDomainName(generatedClusterName, metroName)
 		value := vhaCategoryValue(domainName, vhaDefaultMovementGroup, 0)
-		if len(value) <= prismCategoryValueMaxLen {
+		if len(value) <= vhaCategoryValueMaxLen {
 			continue
 		}
+		// The NutanixMetro already exists when this check runs, so its name is
+		// fixed; the only input the user can still change is the Cluster name.
+		// Report the maximum Cluster name length for this NutanixMetro: everything
+		// else in the value (fixed overhead, generated suffix, metro name) is not
+		// under the user's control at this point.
+		clusterNameBudget := vhaCategoryValueMaxLen - (len(value) - len(c.clusterName))
 		failCheck(&result, c.field, fmt.Sprintf(
-			"Generated Prism Central category value %q is %d characters; Prism Central limits category values to %d. CAPX names metro categories k8s-vha-capx-{nutanixCluster}-{metro}-default-{idx} and does not hash or truncate them. Shorten the NutanixCluster name %q or NutanixMetro name %q and retry.", //nolint:lll // Message is long.
-			value,
-			len(value),
-			prismCategoryValueMaxLen,
-			c.nutanixClusterName,
+			"The Cluster name %q (%d characters) is too long for a metro cluster that uses NutanixMetro %q. The Cluster name must not exceed %d characters. Shorten the Cluster name and retry.", //nolint:lll // Message is long.
+			c.clusterName,
+			len(c.clusterName),
 			metroName,
+			clusterNameBudget,
 		))
 	}
 
