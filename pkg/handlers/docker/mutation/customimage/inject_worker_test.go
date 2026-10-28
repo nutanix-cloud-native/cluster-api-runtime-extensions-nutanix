@@ -83,6 +83,46 @@ var _ = Describe("Docker CustomImage patches for workers", func() {
 				ValueMatcher: gomega.Equal("a-specific-image"),
 			}},
 		},
+		{
+			Name: "image unset for workers DevMachineTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker", "version": "v1.35.3"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewWorkerDevMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/backend/docker/customImage",
+				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.35.3"),
+			}},
+		},
+		{
+			Name: "image set for workers DevMachineTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.WorkerConfigVariableName,
+					"a-specific-image",
+					v1alpha1.DockerVariableName,
+					VariableName,
+				),
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{
+						Raw: []byte(`{"machineDeployment": {"class": "a-worker"}}`),
+					},
+				),
+			},
+			RequestItem: request.NewWorkerDevMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/backend/docker/customImage",
+				ValueMatcher: gomega.Equal("a-specific-image"),
+			}},
+		},
 	}
 
 	// create test node for each case

@@ -30,6 +30,7 @@ const (
 	kubeadmConfigTemplateKind  = "KubeadmConfigTemplate"
 	machineDeploymentKind      = "MachineDeployment"
 	infrastructureRefFieldPath = "spec.template.spec.infrastructureRef"
+	dockerClusterNamespace     = "docker-cluster"
 	cloudProviderArgName       = "cloud-provider"
 	externalCloudProvider      = "external"
 )
@@ -245,7 +246,7 @@ func NewCPDockerMachineTemplateRequestItem(
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "docker-machine-template",
-				Namespace: "docker-cluster",
+				Namespace: dockerClusterNamespace,
 			},
 		},
 		&runtimehooksv1.HolderReference{
@@ -268,9 +269,59 @@ func NewWorkerDockerMachineTemplateRequestItem(
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "docker-machine-template",
-				Namespace: "docker-cluster",
+				Namespace: dockerClusterNamespace,
 			},
 		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       machineDeploymentKind,
+			FieldPath:  infrastructureRefFieldPath,
+		},
+		uid,
+	)
+}
+
+func newDevMachineTemplateWithDockerBackend() *capdv1beta2.DevMachineTemplate {
+	return &capdv1beta2.DevMachineTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: capdv1beta2.GroupVersion.String(),
+			Kind:       "DevMachineTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dev-machine-template",
+			Namespace: dockerClusterNamespace,
+		},
+		Spec: capdv1beta2.DevMachineTemplateSpec{
+			Template: capdv1beta2.DevMachineTemplateResource{
+				Spec: capdv1beta2.DevMachineSpec{
+					Backend: capdv1beta2.DevMachineBackendSpec{
+						Docker: &capdv1beta2.DockerMachineBackendSpec{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewCPDevMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		newDevMachineTemplateWithDockerBackend(),
+		&runtimehooksv1.HolderReference{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
+			FieldPath:  "spec.machineTemplate.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewWorkerDevMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		newDevMachineTemplateWithDockerBackend(),
 		&runtimehooksv1.HolderReference{
 			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       machineDeploymentKind,
