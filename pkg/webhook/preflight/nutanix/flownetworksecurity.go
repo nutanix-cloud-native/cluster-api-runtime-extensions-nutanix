@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
@@ -299,6 +300,10 @@ func serviceHasCiliumDSRAnnotations(
 	service := &corev1.Service{}
 	err := remoteClient.Get(ctx, key, service)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// The Service does not exist, so it is not relevant to the check.
+			return false, nil
+		}
 		return false, fmt.Errorf("error getting service %s: %w", key.String(), err)
 	}
 	val, ok := service.Annotations[CiliumForwardingModeAnnotationKey]
