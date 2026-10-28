@@ -100,7 +100,7 @@ metadata:
 ```
 
 Earlier versions used DSR mode for all Services. Existing clusters change to SNAT mode when their Kubernetes version is
-upgraded. If the cluster has LoadBalancer Services that are enrolled in Flow Network Security, the
+upgraded. If the cluster has NodePort or LoadBalancer Services that are enrolled in Flow Network Security, the
 `NutanixFlowNetworkSecurityDSRToSNAT` preflight check blocks the upgrade until every one of these Services has the
 annotation.
 

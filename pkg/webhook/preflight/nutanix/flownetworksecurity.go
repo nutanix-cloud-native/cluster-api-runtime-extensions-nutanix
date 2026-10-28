@@ -95,14 +95,17 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 		}
 	}
 
-	allKeys, err := getKeysOfLoadBalancerServicesInFNSEntityGroups(ctx, remoteClient)
+	allKeys, err := getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(ctx, remoteClient)
 	if err != nil {
 		return preflight.CheckResult{
 			Allowed:       false,
 			InternalError: true,
 			Causes: []preflight.Cause{
 				{
-					Message: fmt.Sprintf("error getting LoadBalancer Services in FNS entity groups: %s", err),
+					Message: fmt.Sprintf(
+						"error getting NodePort and LoadBalancer Services in FNS entity groups: %s",
+						err,
+					),
 				},
 			},
 		}
@@ -118,7 +121,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf(
-							"error checking if LoadBalancer Service %s requires Cilium DSR annotation: %s",
+							"error checking if Service %s requires Cilium DSR annotation: %s",
 							service.String(),
 							err,
 						),
@@ -132,7 +135,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 	}
 
 	if len(requiresCiliumDSRAnnotationsKeys) == 0 {
-		// All LoadBalancer Services have the DSR annotation.
+		// All NodePort and LoadBalancer Services have the DSR annotation.
 		// Therefore, changing the mode from DSR to SNAT
 		// will not impact Flow Network Security,
 		// so the check passes.
@@ -263,7 +266,7 @@ func getCiliumLoadBalancerMode(
 	return mode, nil
 }
 
-func getKeysOfLoadBalancerServicesInFNSEntityGroups(
+func getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(
 	ctx context.Context,
 	remoteClient ctrlclient.Client,
 ) (
@@ -284,7 +287,7 @@ func getKeysOfLoadBalancerServicesInFNSEntityGroups(
 		}
 		return nil, fmt.Errorf("error listing entity groups: %w", err)
 	}
-	// When multiple EntityGroups reference the same LoadBalancer Service,
+	// When multiple EntityGroups reference the same Service,
 	// we only need to check the annotations of the Service once.
 	// Therefore, we only record the ObjectKey of the Service once.
 	uniqueObjectKeys := map[string]ctrlclient.ObjectKey{}
@@ -333,7 +336,7 @@ func getKeysOfLoadBalancerServicesInFNSEntityGroups(
 					err,
 				)
 			}
-			if corev1.ServiceType(serviceType) != corev1.ServiceTypeLoadBalancer {
+			if !isServiceTypeAffectedByCiliumLoadBalancerMode(corev1.ServiceType(serviceType)) {
 				continue
 			}
 
@@ -384,20 +387,26 @@ func serviceRequiresCiliumDSRAnnotation(
 		}
 		return false, fmt.Errorf("error getting service %s: %w", key.String(), err)
 	}
-	if service.Spec.Type != corev1.ServiceTypeLoadBalancer {
+	if !isServiceTypeAffectedByCiliumLoadBalancerMode(service.Spec.Type) {
 		return false, nil
 	}
 	return service.Annotations[CiliumForwardingModeAnnotationKey] != CiliumForwardingModeAnnotationValueDSR, nil
+}
+
+// isServiceTypeAffectedByCiliumLoadBalancerMode returns true for the Service types that Cilium
+// forwards using its loadBalancer mode.
+func isServiceTypeAffectedByCiliumLoadBalancerMode(serviceType corev1.ServiceType) bool {
+	return serviceType == corev1.ServiceTypeNodePort || serviceType == corev1.ServiceTypeLoadBalancer
 }
 
 func buildFailureMessage(requiresCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey) string {
 	messageBuilder := strings.Builder{}
 	//nolint:lll // This is a long message
 	messageBuilder.WriteString(
-		"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) for these LoadBalancer Services: ",
+		"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) for these NodePort and LoadBalancer Services: ",
 	)
 
-	// List the LoadBalancer Services that require the DSR annotation.
+	// List the NodePort and LoadBalancer Services that require the DSR annotation.
 	serviceNamesAndNamespaces := make([]string, 0, len(requiresCiliumDSRAnnotationsKeys))
 	for _, service := range requiresCiliumDSRAnnotationsKeys {
 		serviceNamesAndNamespaces = append(

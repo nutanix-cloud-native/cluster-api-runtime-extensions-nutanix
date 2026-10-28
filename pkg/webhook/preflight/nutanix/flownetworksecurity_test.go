@@ -112,7 +112,7 @@ func TestGetCiliumLoadBalancerMode(t *testing.T) {
 	}
 }
 
-func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
+func TestGetKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -154,29 +154,31 @@ func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 			},
 		},
 		{
-			name: "ignores non-loadbalancer services",
+			name: "ignores services that are not NodePort or LoadBalancer",
 			objects: []ctrlclient.Object{
 				testEntityGroup("other-types", map[string]any{
 					"serviceDetails": []any{
 						serviceDetail("ClusterIP", "clusterip", "default"),
-						serviceDetail("NodePort", "nodeport", "default"),
+						serviceDetail("ExternalName", "externalname", "default"),
 					},
 				}),
 			},
 		},
 		{
-			name: "skips loadbalancer services missing name or namespace",
+			name: "skips services missing name or namespace",
 			objects: []ctrlclient.Object{
 				testEntityGroup("incomplete", map[string]any{
 					"serviceDetails": []any{
 						serviceDetail("LoadBalancer", "", "default"),
 						serviceDetail("LoadBalancer", "missing-namespace", ""),
+						serviceDetail("NodePort", "", "default"),
+						serviceDetail("NodePort", "missing-namespace", ""),
 					},
 				}),
 			},
 		},
 		{
-			name: "returns loadbalancer services from every entity group",
+			name: "returns nodeport and loadbalancer services from every entity group",
 			objects: []ctrlclient.Object{
 				testEntityGroup("group-a", map[string]any{
 					"serviceDetails": []any{
@@ -187,12 +189,14 @@ func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 				testEntityGroup("group-b", map[string]any{
 					"serviceDetails": []any{
 						serviceDetail("LoadBalancer", "gateway", "istio-system"),
+						serviceDetail("NodePort", "metrics", "monitoring"),
 					},
 				}),
 			},
 			want: []ctrlclient.ObjectKey{
 				{Namespace: "istio-system", Name: "gateway"},
 				{Namespace: "kube-system", Name: "ingress"},
+				{Namespace: "monitoring", Name: "metrics"},
 			},
 		},
 		{
@@ -306,7 +310,7 @@ func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 			}
 			remoteClient := builder.Build()
 
-			got, err := getKeysOfLoadBalancerServicesInFNSEntityGroups(t.Context(), remoteClient)
+			got, err := getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t.Context(), remoteClient)
 			if tt.wantErr != "" {
 				require.ErrorContains(t, err, tt.wantErr)
 				assert.Nil(t, got)
@@ -401,7 +405,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "service referenced as LoadBalancer by entity group is no longer a LoadBalancer",
+			name: "service referenced as LoadBalancer by entity group is now a ClusterIP",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
 				testEntityGroup("stale-type", map[string]any{
@@ -442,7 +446,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					return fmt.Errorf("injected list failure")
 				},
 			},
-			internalErrorPrefix: "error getting LoadBalancer Services in FNS entity groups: " +
+			internalErrorPrefix: "error getting NodePort and LoadBalancer Services in FNS entity groups: " +
 				"error listing entity groups: injected list failure",
 		},
 		{
@@ -453,7 +457,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					"serviceDetails": "not-a-list",
 				}),
 			},
-			internalErrorPrefix: "error getting LoadBalancer Services in FNS entity groups: " +
+			internalErrorPrefix: "error getting NodePort and LoadBalancer Services in FNS entity groups: " +
 				`getting serviceDetails from entity group "bad-services": `,
 		},
 		{
@@ -480,7 +484,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 				testService("kube-system", "ingress", dsrAnnotations),
 			},
 			interceptors: failGetWhen(isService),
-			internalErrorPrefix: "error checking if LoadBalancer Service kube-system/ingress requires Cilium DSR annotation: " +
+			internalErrorPrefix: "error checking if Service kube-system/ingress requires Cilium DSR annotation: " +
 				"error getting service kube-system/ingress: injected get failure",
 		},
 		{
@@ -524,35 +528,50 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "entity groups do not reference load balancer services",
+			name: "entity groups do not reference nodeport or load balancer services",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
 				testEntityGroup("other-types", map[string]any{
 					"serviceDetails": []any{
 						serviceDetail("ClusterIP", "clusterip", "default"),
-						serviceDetail("NodePort", "nodeport", "default"),
+						serviceDetail("ExternalName", "externalname", "default"),
 					},
 				}),
 			},
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "entity groups reference load balancer services with cilium dsr annotations",
+			name: "entity groups reference nodeport and load balancer services with cilium dsr annotations",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
 				testEntityGroup("annotated", map[string]any{
 					"serviceDetails": []any{
 						serviceDetail("LoadBalancer", "ingress", "kube-system"),
 						serviceDetail("LoadBalancer", "gateway", "istio-system"),
+						serviceDetail("NodePort", "metrics", "monitoring"),
 					},
 				}),
 				testService("kube-system", "ingress", dsrAnnotations),
 				testService("istio-system", "gateway", dsrAnnotations),
+				testServiceOfType(corev1.ServiceTypeNodePort, "monitoring", "metrics", dsrAnnotations),
 			},
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "entity groups reference load balancer services missing cilium dsr annotations",
+			name: "service referenced as NodePort by entity group is now a ClusterIP",
+			objects: []ctrlclient.Object{
+				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
+				testEntityGroup("stale-type", map[string]any{
+					"serviceDetails": []any{
+						serviceDetail("NodePort", "metrics", "monitoring"),
+					},
+				}),
+				testServiceOfType(corev1.ServiceTypeClusterIP, "monitoring", "metrics", nil),
+			},
+			want: preflight.CheckResult{Allowed: true},
+		},
+		{
+			name: "entity groups reference nodeport and load balancer services missing cilium dsr annotations",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
 				testEntityGroup("missing-annotations", map[string]any{
@@ -560,6 +579,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 						serviceDetail("ClusterIP", "ignored", "default"),
 						serviceDetail("LoadBalancer", "ingress", "kube-system"),
 						serviceDetail("LoadBalancer", "gateway", "istio-system"),
+						serviceDetail("NodePort", "metrics", "monitoring"),
 					},
 				}),
 				testEntityGroup("same-ingress", map[string]any{
@@ -570,10 +590,12 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 				testService("kube-system", "ingress", nil),
 				testService("istio-system", "gateway", nil),
 				testService("default", "ignored", nil),
+				testServiceOfType(corev1.ServiceTypeNodePort, "monitoring", "metrics", nil),
 			},
 			messageContains: []string{
 				"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) " +
-					"for these LoadBalancer Services: istio-system/gateway, kube-system/ingress. " +
+					"for these NodePort and LoadBalancer Services: " +
+					"istio-system/gateway, kube-system/ingress, monitoring/metrics. " +
 					"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the Service resources.",
 			},
 		},
@@ -824,6 +846,14 @@ func testCiliumConfigMap(mode string) *corev1.ConfigMap {
 }
 
 func testService(namespace, name string, annotations map[string]string) *corev1.Service {
+	return testServiceOfType(corev1.ServiceTypeLoadBalancer, namespace, name, annotations)
+}
+
+func testServiceOfType(
+	serviceType corev1.ServiceType,
+	namespace, name string,
+	annotations map[string]string,
+) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -831,7 +861,7 @@ func testService(namespace, name string, annotations map[string]string) *corev1.
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeLoadBalancer,
+			Type: serviceType,
 		},
 	}
 }
