@@ -118,11 +118,11 @@ export AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION := 3.5.0
 # Nutanix CCM
 #   Chart name:    nutanix-cloud-provider
 #   Chart repo:    oci://ghcr.io/nutanix-cloud-native/chart
-#   Chart version: 0.8.0-dev.1
-#   App version:   v0.8.0-dev.1
+#   Chart version: 0.8.0-dev.2
+#   App version:   v0.8.0-dev.2
 #   Repo:          https://github.com/nutanix-cloud-native/cloud-provider-nutanix
-#   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.8.0-dev.1
-export NUTANIX_CCM_CHART_VERSION := 0.8.0-dev.1
+#   Release:       https://github.com/nutanix-cloud-native/cloud-provider-nutanix/releases/tag/v0.8.0-dev.2
+export NUTANIX_CCM_CHART_VERSION := 0.8.0-dev.2
 
 # MetalLB
 #   Chart name:    metallb

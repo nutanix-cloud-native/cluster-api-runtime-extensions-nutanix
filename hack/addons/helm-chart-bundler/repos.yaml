@@ -92,4 +92,4 @@ repositories:
       tigera-operator:
       - v3.32.2
 chartURLs:
-- oci://ghcr.io/nutanix-cloud-native/chart/nutanix-cloud-provider:0.8.0-dev.1
+- oci://ghcr.io/nutanix-cloud-native/chart/nutanix-cloud-provider:0.8.0-dev.2
