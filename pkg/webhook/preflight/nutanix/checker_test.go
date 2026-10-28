@@ -78,17 +78,18 @@ func TestNutanixChecker_Init(t *testing.T) {
 					Nutanix: &carenv1.NutanixControlPlaneNodeSpec{},
 				},
 			},
-			workerNodeConfigs:                  nil,
-			expectedCheckCount:                 9, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check, 1 control plane endpoint check
-			expectedFirstCheckName:             "NutanixConfiguration",
-			expectedSecondCheckName:            "NutanixCredentials",
-			expectedThirdCheckName:             "NutanixPrismCentralVersion",
-			vmImageCheckCount:                  1,
-			vmImageKubernetesVersionCheckCount: 1,
-			cidrValidationCheckCount:           1,
-			storageContainerCheckCount:         1,
-			failureDomainCheckCount:            1,
-			controlPlaneEndpointCheckCount:     1,
+			workerNodeConfigs:                        nil,
+			expectedCheckCount:                       10, //nolint:lll // config check, credentials check, Prism Central version check, 1 VM image check, 1 VM image Kubernetes version check, 1 CIDR validation check, 1 storage container check, 1 failure domain check, 1 control plane endpoint check, 1 Flow Network Security DSR to SNAT check
+			expectedFirstCheckName:                   "NutanixConfiguration",
+			expectedSecondCheckName:                  "NutanixCredentials",
+			expectedThirdCheckName:                   "NutanixPrismCentralVersion",
+			vmImageCheckCount:                        1,
+			vmImageKubernetesVersionCheckCount:       1,
+			cidrValidationCheckCount:                 1,
+			storageContainerCheckCount:               1,
+			failureDomainCheckCount:                  1,
+			controlPlaneEndpointCheckCount:           1,
+			flowNetworkSecurityDSRToSNATCheckerCount: 1,
 		},
 		{
 			name: "initialization with worker node configs",
@@ -163,6 +164,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			failureDomainCheckCount := 0
 			controlPlaneEndpointCheckCount := 0
 			metroCheckCount := 0
+			flowNetworkSecurityDSRToSNATCheckerCount := 0
 
 			checker.configurationCheckFactory = func(cd *checkDependencies) preflight.Check {
 				configCheckCalled = true
@@ -308,7 +310,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 			checker.flowNetworkSecurityDSRToSNATCheckerFactory = func(cd *checkDependencies) []preflight.Check {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.flowNetworkSecurityDSRToSNATCheckerCount; i++ {
-					tt.flowNetworkSecurityDSRToSNATCheckerCount++
+					flowNetworkSecurityDSRToSNATCheckerCount++
 					checks = append(checks,
 						&mockCheck{
 							name: fmt.Sprintf("NutanixFlowNetworkSecurityDSRToSNATChecker-%d", i),
@@ -361,6 +363,12 @@ func TestNutanixChecker_Init(t *testing.T) {
 				tt.metroCheckCount,
 				metroCheckCount,
 				"Wrong number of metro checks",
+			)
+			assert.Equal(
+				t,
+				tt.flowNetworkSecurityDSRToSNATCheckerCount,
+				flowNetworkSecurityDSRToSNATCheckerCount,
+				"Wrong number of Flow Network Security DSR to SNAT checks",
 			)
 
 			// Verify the first three checks when we have results

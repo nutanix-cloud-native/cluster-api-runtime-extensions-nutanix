@@ -1,4 +1,4 @@
-// Copyright 2024 Nutanix. All rights reserved.
+// Copyright 2026 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package nutanix
@@ -12,6 +12,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
@@ -19,14 +20,17 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
 const (
-	CiliumConfigMapName            = "cilium-config"
-	CiliumConfigMapNamespace       = "kube-system"
-	CiliumLoadBalancerModeKey      = "bpf-lb-mode"
-	CiliumLoadBalancerModeValueDSR = "dsr"
+	CiliumConfigMapName             = "cilium-config"
+	CiliumConfigMapNamespace        = "kube-system"
+	CiliumLoadBalancerModeKey       = "bpf-lb-mode"
+	CiliumLoadBalancerModeValueDSR  = "dsr"
+	CiliumLoadBalancerModeValueSNAT = "snat"
 
 	CiliumForwardingModeAnnotationKey      = "service.cilium.io/forwarding-mode"
 	CiliumForwardingModeAnnotationValueDSR = "dsr"
@@ -43,8 +47,10 @@ type FlowNetworkSecurityDSRToSNATChecker struct {
 	clusterClientGetter remote.ClusterClientGetter
 }
 
+const flowNetworkSecurityDSRToSNATCheckName = "NutanixFlowNetworkSecurityDSRToSNAT"
+
 func (c *FlowNetworkSecurityDSRToSNATChecker) Name() string {
-	return "NutanixFlowNetworkSecurityDSRToSNAT"
+	return flowNetworkSecurityDSRToSNATCheckName
 }
 
 func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight.CheckResult {
@@ -102,9 +108,9 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 		}
 	}
 
-	missingCiliumDSRAnnotationsKeys := []ctrlclient.ObjectKey{}
+	requiresCiliumDSRAnnotationsKeys := []ctrlclient.ObjectKey{}
 	for _, service := range allKeys {
-		hasCiliumDSRAnnotations, err := serviceHasCiliumDSRAnnotations(ctx, service, remoteClient)
+		requiresCiliumDSRAnnotation, err := serviceRequiresCiliumDSRAnnotation(ctx, service, remoteClient)
 		if err != nil {
 			return preflight.CheckResult{
 				Allowed:       false,
@@ -112,7 +118,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 				Causes: []preflight.Cause{
 					{
 						Message: fmt.Sprintf(
-							"error checking if LoadBalancer Service %s has Cilium DSR annotations: %s",
+							"error checking if LoadBalancer Service %s requires Cilium DSR annotation: %s",
 							service.String(),
 							err,
 						),
@@ -120,12 +126,12 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 				},
 			}
 		}
-		if !hasCiliumDSRAnnotations {
-			missingCiliumDSRAnnotationsKeys = append(missingCiliumDSRAnnotationsKeys, service)
+		if requiresCiliumDSRAnnotation {
+			requiresCiliumDSRAnnotationsKeys = append(requiresCiliumDSRAnnotationsKeys, service)
 		}
 	}
 
-	if len(missingCiliumDSRAnnotationsKeys) == 0 {
+	if len(requiresCiliumDSRAnnotationsKeys) == 0 {
 		// All LoadBalancer Services have the DSR annotation.
 		// Therefore, changing the mode from DSR to SNAT
 		// will not impact Flow Network Security,
@@ -139,7 +145,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 		Allowed: false,
 		Causes: []preflight.Cause{
 			{
-				Message: buildFailureMessage(missingCiliumDSRAnnotationsKeys),
+				Message: buildFailureMessage(requiresCiliumDSRAnnotationsKeys),
 			},
 		},
 	}
@@ -152,9 +158,30 @@ func newFlowNetworkSecurityDSRToSNATChecker(cd *checkDependencies) []preflight.C
 		return checks
 	}
 
+	if cd.oldCluster == nil {
+		// This cluster is being created. This check is only relevant for updates to existing clusters.
+		return checks
+	}
+
 	if !ptr.Deref(cd.cluster.Status.Initialization.ControlPlaneInitialized, false) {
 		// If the control plane is not initialized, then this cluster is not
 		// currently enrolled in Flow Network Security, so the check is not relevant.
+		return checks
+	}
+
+	cniProvider, err := getCNIProvider(cd.cluster)
+	if err != nil {
+		return []preflight.Check{
+			&flowNetworkSecurityDSRToSNATErrorCheck{
+				err: fmt.Errorf(
+					"failed to determine the CNI provider of the cluster, which is needed to decide whether "+
+						"the Cilium loadBalancer mode change affects Flow Network Security: %w",
+					err,
+				),
+			},
+		}
+	}
+	if cniProvider != carenv1.CNIProviderCilium {
 		return checks
 	}
 
@@ -165,6 +192,46 @@ func newFlowNetworkSecurityDSRToSNATChecker(cd *checkDependencies) []preflight.C
 			clusterClientGetter: remote.NewClusterClient,
 		},
 	}
+}
+
+// flowNetworkSecurityDSRToSNATErrorCheck shares the name of FlowNetworkSecurityDSRToSNATChecker, so that
+// the same skip annotation applies to both.
+type flowNetworkSecurityDSRToSNATErrorCheck struct {
+	err error
+}
+
+func (c *flowNetworkSecurityDSRToSNATErrorCheck) Name() string {
+	return flowNetworkSecurityDSRToSNATCheckName
+}
+
+func (c *flowNetworkSecurityDSRToSNATErrorCheck) Run(_ context.Context) preflight.CheckResult {
+	return preflight.CheckResult{
+		Allowed:       false,
+		InternalError: true,
+		Causes: []preflight.Cause{
+			{
+				Message: c.err.Error(),
+			},
+		},
+	}
+}
+
+func getCNIProvider(cluster *clusterv1.Cluster) (string, error) {
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+
+	cniVar, err := variables.Get[carenv1.NutanixCNI](
+		varMap,
+		carenv1.ClusterConfigVariableName,
+		"addons",
+		carenv1.CNIVariableName,
+	)
+	if err != nil {
+		if variables.IsNotFoundError(err) {
+			return "", nil // The CNI provider is not specified, so we assume it is not Cilium.
+		}
+		return "", fmt.Errorf("error getting CNI provider from Cluster Addons configuration: %w", err)
+	}
+	return cniVar.Provider, nil
 }
 
 func getCiliumLoadBalancerMode(
@@ -183,11 +250,15 @@ func getCiliumLoadBalancerMode(
 		ciliumConfigMap,
 	)
 	if err != nil {
+		// This check only runs if the CNI provider is Cilium. Therefore, the
+		// ConfigMap must exist. A missing ConfigMap means an error, not that
+		// the check does not apply
 		return "", fmt.Errorf("error getting cilium config map: %w", err)
 	}
 	mode, ok := ciliumConfigMap.Data[CiliumLoadBalancerModeKey]
 	if !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", CiliumLoadBalancerModeKey, CiliumConfigMapName)
+		// SNAT is the mode Cilium uses when bpf-lb-mode is not set.
+		return CiliumLoadBalancerModeValueSNAT, nil
 	}
 	return mode, nil
 }
@@ -207,6 +278,10 @@ func getKeysOfLoadBalancerServicesInFNSEntityGroups(
 	})
 	err := remoteClient.List(ctx, entityGroups)
 	if err != nil {
+		if meta.IsNoMatchError(err) {
+			// The EntityGroup CRD is not installed, so the cluster is not enrolled in Flow Network Security.
+			return nil, nil
+		}
 		return nil, fmt.Errorf("error listing entity groups: %w", err)
 	}
 	// When multiple EntityGroups reference the same LoadBalancer Service,
@@ -289,10 +364,14 @@ func getKeysOfLoadBalancerServicesInFNSEntityGroups(
 			uniqueObjectKeys[key.String()] = key
 		}
 	}
-	return slices.Collect(maps.Values(uniqueObjectKeys)), nil
+	return slices.SortedFunc(maps.Values(uniqueObjectKeys), func(a, b ctrlclient.ObjectKey) int {
+		return strings.Compare(a.String(), b.String())
+	}), nil
 }
 
-func serviceHasCiliumDSRAnnotations(
+// serviceRequiresCiliumDSRAnnotation reads the Service, rather than trusting the EntityGroup status,
+// because the status can be out of date.
+func serviceRequiresCiliumDSRAnnotation(
 	ctx context.Context,
 	key ctrlclient.ObjectKey,
 	remoteClient ctrlclient.Client,
@@ -301,35 +380,33 @@ func serviceHasCiliumDSRAnnotations(
 	err := remoteClient.Get(ctx, key, service)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// The Service does not exist, so it is not relevant to the check.
 			return false, nil
 		}
 		return false, fmt.Errorf("error getting service %s: %w", key.String(), err)
 	}
-	val, ok := service.Annotations[CiliumForwardingModeAnnotationKey]
-	if !ok || val != CiliumForwardingModeAnnotationValueDSR {
+	if service.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return false, nil
 	}
-	return true, nil
+	return service.Annotations[CiliumForwardingModeAnnotationKey] != CiliumForwardingModeAnnotationValueDSR, nil
 }
 
-func buildFailureMessage(missingCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey) string {
+func buildFailureMessage(requiresCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey) string {
 	messageBuilder := strings.Builder{}
 	//nolint:lll // This is a long message
 	messageBuilder.WriteString(
-		"This cluster is enrolled in Flow Network Security, and must use Direct Service Return (DSR) for these LoadBalancer Services: ",
+		"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) for these LoadBalancer Services: ",
 	)
 
-	// List the LoadBalancer Services that are missing the DSR annotation.
-	serviceNamesAndNamespaces := make([]string, 0, len(missingCiliumDSRAnnotationsKeys))
-	for _, service := range missingCiliumDSRAnnotationsKeys {
+	// List the LoadBalancer Services that require the DSR annotation.
+	serviceNamesAndNamespaces := make([]string, 0, len(requiresCiliumDSRAnnotationsKeys))
+	for _, service := range requiresCiliumDSRAnnotationsKeys {
 		serviceNamesAndNamespaces = append(
 			serviceNamesAndNamespaces,
 			fmt.Sprintf("%s/%s", service.Namespace, service.Name),
 		)
 	}
 	messageBuilder.WriteString(strings.Join(serviceNamesAndNamespaces, ", "))
-	messageBuilder.WriteString(".")
+	messageBuilder.WriteString(". ")
 
 	// Explain the annotation to add.
 	fmt.Fprintf(&messageBuilder, "Add the annotation '%s: %s' to the Service resources.",

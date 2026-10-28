@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -65,31 +68,14 @@ func TestGetCiliumLoadBalancerMode(t *testing.T) {
 			objects: []ctrlclient.Object{
 				ciliumConfigMap(map[string]string{"some-other-key": "value"}),
 			},
-			expectedError: CiliumLoadBalancerModeKey + " is not set in " + CiliumConfigMapName + " config map",
+			expected: CiliumLoadBalancerModeValueSNAT,
 		},
 		{
 			name: "config map has no data",
 			objects: []ctrlclient.Object{
 				ciliumConfigMap(nil),
 			},
-			expectedError: CiliumLoadBalancerModeKey + " is not set in " + CiliumConfigMapName + " config map",
-		},
-		{
-			name: "config map is in a different namespace",
-			objects: []ctrlclient.Object{
-				&corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      CiliumConfigMapName,
-						Namespace: "default",
-					},
-					Data: map[string]string{CiliumLoadBalancerModeKey: CiliumLoadBalancerModeValueDSR},
-				},
-			},
-			expectedError: "error getting cilium config map",
-		},
-		{
-			name:          "config map does not exist",
-			expectedError: "error getting cilium config map",
+			expected: CiliumLoadBalancerModeValueSNAT,
 		},
 		{
 			name: "error getting config map",
@@ -205,8 +191,21 @@ func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 				}),
 			},
 			want: []ctrlclient.ObjectKey{
-				{Namespace: "kube-system", Name: "ingress"},
 				{Namespace: "istio-system", Name: "gateway"},
+				{Namespace: "kube-system", Name: "ingress"},
+			},
+		},
+		{
+			name: "entity group CRD is not installed",
+			interceptors: interceptor.Funcs{
+				List: func(
+					_ context.Context,
+					_ ctrlclient.WithWatch,
+					_ ctrlclient.ObjectList,
+					_ ...ctrlclient.ListOption,
+				) error {
+					return entityGroupNoKindMatchError()
+				},
 			},
 		},
 		{
@@ -315,7 +314,11 @@ func TestGetKeysOfLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.ElementsMatch(t, tt.want, got)
+			if len(tt.want) == 0 {
+				assert.Empty(t, got)
+				return
+			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -362,10 +365,6 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 		internalErrorPrefix string
 	}{
 		{
-			name:                "cilium config map does not exist",
-			internalErrorPrefix: "error checking Cilium loadBalancer mode configuration: error getting cilium config map: ",
-		},
-		{
 			name: "cilium config map does not set loadBalancer mode",
 			objects: []ctrlclient.Object{
 				&corev1.ConfigMap{
@@ -375,9 +374,52 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					},
 					Data: map[string]string{"some-other-key": "value"},
 				},
+				testEntityGroup("missing-annotations", map[string]any{
+					"serviceDetails": []any{
+						serviceDetail("LoadBalancer", "ingress", "kube-system"),
+					},
+				}),
+				testService("kube-system", "ingress", nil),
 			},
-			internalErrorPrefix: "error checking Cilium loadBalancer mode configuration: " +
-				"bpf-lb-mode is not set in cilium-config config map",
+			want: preflight.CheckResult{Allowed: true},
+		},
+		{
+			name: "entity group CRD is not installed",
+			objects: []ctrlclient.Object{
+				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
+			},
+			interceptors: interceptor.Funcs{
+				List: func(
+					_ context.Context,
+					_ ctrlclient.WithWatch,
+					_ ctrlclient.ObjectList,
+					_ ...ctrlclient.ListOption,
+				) error {
+					return entityGroupNoKindMatchError()
+				},
+			},
+			want: preflight.CheckResult{Allowed: true},
+		},
+		{
+			name: "service referenced as LoadBalancer by entity group is no longer a LoadBalancer",
+			objects: []ctrlclient.Object{
+				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
+				testEntityGroup("stale-type", map[string]any{
+					"serviceDetails": []any{
+						serviceDetail("LoadBalancer", "ingress", "kube-system"),
+					},
+				}),
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ingress",
+						Namespace: "kube-system",
+					},
+					Spec: corev1.ServiceSpec{
+						Type: corev1.ServiceTypeClusterIP,
+					},
+				},
+			},
+			want: preflight.CheckResult{Allowed: true},
 		},
 		{
 			name:         "error getting cilium config map",
@@ -424,8 +466,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					},
 				}),
 			},
-			internalErrorPrefix: "error checking if LoadBalancer Service kube-system/ingress has Cilium DSR annotations: " +
-				"error getting service kube-system/ingress: ",
+			want: preflight.CheckResult{Allowed: true},
 		},
 		{
 			name: "error getting load balancer service",
@@ -439,7 +480,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 				testService("kube-system", "ingress", dsrAnnotations),
 			},
 			interceptors: failGetWhen(isService),
-			internalErrorPrefix: "error checking if LoadBalancer Service kube-system/ingress has Cilium DSR annotations: " +
+			internalErrorPrefix: "error checking if LoadBalancer Service kube-system/ingress requires Cilium DSR annotation: " +
 				"error getting service kube-system/ingress: injected get failure",
 		},
 		{
@@ -531,9 +572,9 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 				testService("default", "ignored", nil),
 			},
 			messageContains: []string{
-				"kube-system/ingress",
-				"istio-system/gateway",
-				"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the Service resources.",
+				"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) " +
+					"for these LoadBalancer Services: istio-system/gateway, kube-system/ingress. " +
+					"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the Service resources.",
 			},
 		},
 	}
@@ -600,16 +641,33 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 
 	kclient := fake.NewClientBuilder().Build()
 
-	clusterWithControlPlaneInitialized := func(initialized *bool) *clusterv1.Cluster {
-		cluster := workloadCluster()
-		cluster.Status.Initialization.ControlPlaneInitialized = initialized
-		return cluster
+	const (
+		oldVersion = "v1.33.0"
+		newVersion = "v1.34.0"
+	)
+
+	ciliumClusterConfig := `{"addons":{"cni":{"provider":"Cilium"}}}`
+
+	cluster := func(version string, initialized *bool, clusterConfig string) *clusterv1.Cluster {
+		c := workloadCluster()
+		c.Spec.Topology.Version = version
+		c.Status.Initialization.ControlPlaneInitialized = initialized
+		if clusterConfig != "" {
+			c.Spec.Topology.Variables = []clusterv1.ClusterVariable{
+				{
+					Name:  carenv1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{Raw: []byte(clusterConfig)},
+				},
+			}
+		}
+		return c
 	}
 
 	testCases := []struct {
-		name      string
-		cd        *checkDependencies
-		wantCheck bool
+		name                     string
+		cd                       *checkDependencies
+		wantCheck                bool
+		wantInternalErrorMessage string
 	}{
 		{
 			name: "nil dependencies",
@@ -617,34 +675,81 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 		{
 			name: "nil kubernetes client",
 			cd: &checkDependencies{
-				cluster: clusterWithControlPlaneInitialized(ptr.To(true)),
+				cluster:    cluster(newVersion, ptr.To(true), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
 			},
 		},
 		{
 			name: "nil cluster",
 			cd: &checkDependencies{
+				kclient:    kclient,
+				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
+			},
+		},
+		{
+			name: "cluster is being created",
+			cd: &checkDependencies{
 				kclient: kclient,
+				cluster: cluster(newVersion, ptr.To(true), ciliumClusterConfig),
 			},
 		},
 		{
 			name: "control plane initialized is not set",
 			cd: &checkDependencies{
-				kclient: kclient,
-				cluster: clusterWithControlPlaneInitialized(nil),
+				kclient:    kclient,
+				cluster:    cluster(newVersion, nil, ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, nil, ciliumClusterConfig),
 			},
 		},
 		{
 			name: "control plane is not initialized",
 			cd: &checkDependencies{
-				kclient: kclient,
-				cluster: clusterWithControlPlaneInitialized(ptr.To(false)),
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(false), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, ptr.To(false), ciliumClusterConfig),
 			},
 		},
 		{
-			name: "control plane is initialized",
+			name: "cluster config variable is not set",
 			cd: &checkDependencies{
-				kclient: kclient,
-				cluster: clusterWithControlPlaneInitialized(ptr.To(true)),
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(true), ""),
+				oldCluster: cluster(oldVersion, ptr.To(true), ""),
+			},
+		},
+		{
+			name: "cni addon is not set",
+			cd: &checkDependencies{
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{}}`),
+				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{}}`),
+			},
+		},
+		{
+			name: "cni provider is not cilium",
+			cd: &checkDependencies{
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
+				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{"cni":{"provider":"Calico"}}}`),
+			},
+		},
+		{
+			name: "cni provider cannot be read",
+			cd: &checkDependencies{
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(true), `{"addons":{"cni":{"provider":1}}}`),
+				oldCluster: cluster(oldVersion, ptr.To(true), `{"addons":{"cni":{"provider":1}}}`),
+			},
+			wantInternalErrorMessage: "failed to determine the CNI provider of the cluster, " +
+				"which is needed to decide whether the Cilium loadBalancer mode change affects " +
+				"Flow Network Security: error getting CNI provider from Cluster Addons configuration: ",
+		},
+		{
+			name: "cilium cluster is being upgraded",
+			cd: &checkDependencies{
+				kclient:    kclient,
+				cluster:    cluster(newVersion, ptr.To(true), ciliumClusterConfig),
+				oldCluster: cluster(oldVersion, ptr.To(true), ciliumClusterConfig),
 			},
 			wantCheck: true,
 		},
@@ -655,6 +760,22 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 			t.Parallel()
 
 			checks := newFlowNetworkSecurityDSRToSNATChecker(tt.cd)
+			if tt.wantInternalErrorMessage != "" {
+				require.Len(t, checks, 1)
+				assert.Equal(t, "NutanixFlowNetworkSecurityDSRToSNAT", checks[0].Name())
+				got := checks[0].Run(t.Context())
+				assert.False(t, got.Allowed)
+				assert.True(t, got.InternalError)
+				require.Len(t, got.Causes, 1)
+				assert.True(
+					t,
+					strings.HasPrefix(got.Causes[0].Message, tt.wantInternalErrorMessage),
+					"message %q does not start with %q",
+					got.Causes[0].Message,
+					tt.wantInternalErrorMessage,
+				)
+				return
+			}
 			if !tt.wantCheck {
 				assert.Empty(t, checks)
 				return
@@ -668,6 +789,16 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 			assert.Same(t, tt.cd.cluster, checker.cluster)
 			assert.NotNil(t, checker.clusterClientGetter)
 		})
+	}
+}
+
+func entityGroupNoKindMatchError() error {
+	return &meta.NoKindMatchError{
+		GroupKind: schema.GroupKind{
+			Group: FlowNetworkSecurityGroupVersion.Group,
+			Kind:  "EntityGroup",
+		},
+		SearchedVersions: []string{FlowNetworkSecurityGroupVersion.Version},
 	}
 }
 
