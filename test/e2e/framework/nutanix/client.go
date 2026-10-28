@@ -25,14 +25,17 @@ const (
 	prismPortVariableName     = "NUTANIX_PORT"
 	prismUsernameVariableName = "NUTANIX_USER"
 	prismPasswordVariableName = "NUTANIX_PASSWORD"
+	//nolint:gosec // This is a test environment variable
+	prismAPIKeyVariableName = "NUTANIX_API_KEY"
 )
 
 func CredentialsFromCAPIE2EConfig(e2eConfig *clusterctl.E2EConfig) *prismgoclient.Credentials {
 	return &prismgoclient.Credentials{
 		Endpoint: e2eConfig.MustGetVariable(prismEndpointVariableName),
 		Port:     e2eConfig.MustGetVariable(prismPortVariableName),
-		Username: e2eConfig.MustGetVariable(prismUsernameVariableName),
-		Password: e2eConfig.MustGetVariable(prismPasswordVariableName),
+		Username: e2eConfig.GetVariableOrEmpty(prismUsernameVariableName),
+		Password: e2eConfig.GetVariableOrEmpty(prismPasswordVariableName),
+		APIKey:   e2eConfig.GetVariableOrEmpty(prismAPIKeyVariableName),
 		Insecure: false,
 	}
 }

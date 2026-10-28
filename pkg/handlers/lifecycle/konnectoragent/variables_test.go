@@ -6,6 +6,10 @@ package konnectoragent
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -18,7 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/yaml"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -513,6 +520,304 @@ categoryMappings: ""
 		expectedResult := "\ncategoryMappings: " + expectedCategoryMappings
 		assert.Equal(t, expectedResult, result, "categoryMappings should match exactly")
 	})
+}
+
+func TestTemplateValuesFunc_Project(t *testing.T) {
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	// Mirrors the project block in addons/konnector-agent/values-template.yaml.
+	valuesTemplate := `{{- if .ProjectID }}
+projectId: "{{ .ProjectID }}"
+{{- end }}
+{{- if .ProjectName }}
+projectName: "{{ .ProjectName }}"
+{{- end }}`
+
+	clusterWithProject := func(projectJSON string) *clusterv1beta2.Cluster {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+		}
+		if projectJSON == "" {
+			return cluster
+		}
+		cluster.Spec.Topology = clusterv1beta2.Topology{
+			ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+			Variables: []clusterv1beta2.ClusterVariable{
+				{
+					Name: v1alpha1.ClusterConfigVariableName,
+					Value: apiextensionsv1.JSON{
+						Raw: fmt.Appendf(nil,
+							`{"controlPlane":{"nutanix":{"machineDetails":{"project":%s}}}}`,
+							projectJSON,
+						),
+					},
+				},
+			},
+		}
+		return cluster
+	}
+
+	t.Run("omits both when no project is referenced", func(t *testing.T) {
+		cluster := clusterWithProject("")
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+
+		result, err := templateFunc(cluster, valuesTemplate)
+
+		require.NoError(t, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("omits both when machineDetails has no project", func(t *testing.T) {
+		cluster := &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+					Variables: []clusterv1beta2.ClusterVariable{
+						{
+							Name: v1alpha1.ClusterConfigVariableName,
+							Value: apiextensionsv1.JSON{
+								Raw: []byte(`{"controlPlane":{"nutanix":{"machineDetails":{}}}}`),
+							},
+						},
+					},
+				},
+			},
+		}
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+
+		result, err := templateFunc(cluster, valuesTemplate)
+
+		require.NoError(t, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("renders projectId for a uuid reference", func(t *testing.T) {
+		cluster := clusterWithProject(
+			`{"type":"uuid","uuid":"7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b"}`,
+		)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+
+		result, err := templateFunc(cluster, valuesTemplate)
+
+		require.NoError(t, err)
+		assert.Equal(t, "\nprojectId: \"7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b\"", result)
+		assert.NotContains(t, result, "projectName")
+	})
+
+	t.Run("renders projectName for a name reference", func(t *testing.T) {
+		cluster := clusterWithProject(`{"type":"name","name":"my-project"}`)
+		templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+
+		result, err := templateFunc(cluster, valuesTemplate)
+
+		require.NoError(t, err)
+		assert.Equal(t, "\nprojectName: \"my-project\"", result)
+		assert.NotContains(t, result, "projectId")
+	})
+}
+
+// TestTemplateValuesFunc_RendersChartValuesTemplate renders the values template shipped in the Helm
+// chart, so that a field added to the handler's template input but missing from the chart file (or
+// vice versa) fails here instead of at addon apply time.
+func TestTemplateValuesFunc_RendersChartValuesTemplate(t *testing.T) {
+	valuesTemplate := readValuesTemplateFromProjectHelmChart(t)
+
+	nutanixConfig := &v1alpha1.NutanixSpec{
+		PrismCentralEndpoint: v1alpha1.NutanixPrismCentralEndpointSpec{
+			URL:      "https://prism-central.example.com:9440",
+			Insecure: true,
+		},
+	}
+
+	tests := []struct {
+		name            string
+		projectJSON     string
+		wantProjectID   string
+		wantProjectName string
+	}{
+		{
+			name: "without a project",
+		},
+		{
+			name:          "with a uuid project",
+			projectJSON:   `{"type":"uuid","uuid":"7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b"}`,
+			wantProjectID: "7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
+		},
+		{
+			name:            "with a named project",
+			projectJSON:     `{"type":"name","name":"my-project"}`,
+			wantProjectName: "my-project",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cluster := &clusterv1beta2.Cluster{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+			}
+			if tt.projectJSON != "" {
+				cluster.Spec.Topology = clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+					Variables: []clusterv1beta2.ClusterVariable{
+						{
+							Name: v1alpha1.ClusterConfigVariableName,
+							Value: apiextensionsv1.JSON{
+								Raw: fmt.Appendf(nil,
+									`{"controlPlane":{"nutanix":{"machineDetails":{"project":%s}}}}`,
+									tt.projectJSON,
+								),
+							},
+						},
+					},
+				}
+			}
+
+			templateFunc := templateValuesFunc(nutanixConfig, cluster, apivariables.NutanixKonnectorAgent{})
+			result, err := templateFunc(cluster, valuesTemplate)
+			require.NoError(t, err)
+
+			values := map[string]any{}
+			require.NoError(t, yaml.Unmarshal([]byte(result), &values), "rendered values must be valid YAML")
+
+			if tt.wantProjectID == "" {
+				assert.NotContains(t, values, "projectId")
+			} else {
+				assert.Equal(t, tt.wantProjectID, values["projectId"])
+			}
+
+			if tt.wantProjectName == "" {
+				assert.NotContains(t, values, "projectName")
+			} else {
+				assert.Equal(t, tt.wantProjectName, values["projectName"])
+			}
+		})
+	}
+}
+
+func readValuesTemplateFromProjectHelmChart(t *testing.T) string {
+	t.Helper()
+
+	dir, err := moduleRootDir()
+	require.NoError(t, err)
+
+	bs, err := os.ReadFile(filepath.Join(
+		dir,
+		"charts",
+		"cluster-api-runtime-extensions-nutanix",
+		"addons",
+		"konnector-agent",
+		"values-template.yaml",
+	))
+	require.NoError(t, err)
+
+	return string(bs)
+}
+
+func moduleRootDir() (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{ .Dir }}")
+	out, err := cmd.CombinedOutput()
+	if err != nil || len(out) == 0 {
+		// We include the combined output because the error is usually
+		// an exit code, which does not explain why the command failed.
+		return "", fmt.Errorf("cmd.Dir=%q, cmd.Env=%q, cmd.Args=%q, err=%q, output=%q",
+			cmd.Dir,
+			cmd.Env,
+			cmd.Args,
+			err,
+			out)
+	}
+	// The first line is the module root directory. When go workspaces are used,
+	// the first line is the "root" module root directory.
+	dir, _, _ := strings.Cut(string(out), "\n")
+	return dir, nil
+}
+
+func TestExtractRegistrationProject(t *testing.T) {
+	clusterWithClusterConfig := func(raw string) *clusterv1beta2.Cluster {
+		return &clusterv1beta2.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"},
+			Spec: clusterv1beta2.ClusterSpec{
+				Topology: clusterv1beta2.Topology{
+					ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
+					Variables: []clusterv1beta2.ClusterVariable{
+						{
+							Name:  v1alpha1.ClusterConfigVariableName,
+							Value: apiextensionsv1.JSON{Raw: []byte(raw)},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name            string
+		cluster         *clusterv1beta2.Cluster
+		wantProjectID   string
+		wantProjectName string
+	}{
+		{
+			name:    "no topology",
+			cluster: &clusterv1beta2.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}},
+		},
+		{
+			name:    "no control plane config",
+			cluster: clusterWithClusterConfig(`{"addons":{"konnectorAgent":{}}}`),
+		},
+		{
+			name:    "control plane without nutanix config",
+			cluster: clusterWithClusterConfig(`{"controlPlane":{}}`),
+		},
+		{
+			name: "uuid reference",
+			cluster: clusterWithClusterConfig(
+				`{"controlPlane":{"nutanix":{"machineDetails":{"project":` +
+					`{"type":"uuid","uuid":"7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b"}}}}}`,
+			),
+			wantProjectID: "7e2f8a1c-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
+		},
+		{
+			name: "name reference",
+			cluster: clusterWithClusterConfig(
+				`{"controlPlane":{"nutanix":{"machineDetails":{"project":{"type":"name","name":"my-project"}}}}}`,
+			),
+			wantProjectName: "my-project",
+		},
+		{
+			name: "name reference is trimmed",
+			cluster: clusterWithClusterConfig(
+				`{"controlPlane":{"nutanix":{"machineDetails":{"project":{"type":"name","name":"  my-project  "}}}}}`,
+			),
+			wantProjectName: "my-project",
+		},
+		{
+			name: "uuid type without uuid value",
+			cluster: clusterWithClusterConfig(
+				`{"controlPlane":{"nutanix":{"machineDetails":{"project":{"type":"uuid"}}}}}`,
+			),
+		},
+		{
+			name: "name type without name value",
+			cluster: clusterWithClusterConfig(
+				`{"controlPlane":{"nutanix":{"machineDetails":{"project":{"type":"name"}}}}}`,
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			projectID, projectName := extractRegistrationProject(tt.cluster)
+
+			assert.Equal(t, tt.wantProjectID, projectID)
+			assert.Equal(t, tt.wantProjectName, projectName)
+		})
+	}
 }
 
 func TestTemplateValuesFunc_PrismCredentialsSecretName(t *testing.T) {
@@ -1288,148 +1593,86 @@ func TestFormatCategoriesFromSlice(t *testing.T) {
 	}
 }
 
-// Test isClusterRegisteredInPC function
-func TestIsClusterRegisteredInPC_MissingClusterConfig(t *testing.T) {
-	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	cluster := &clusterv1beta2.Cluster{
+func testCluster() *clusterv1beta2.Cluster {
+	return &clusterv1beta2.Cluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1beta2.ClusterSpec{
-			Topology: clusterv1beta2.Topology{
-				ClassRef:  clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1beta2.ClusterVariable{},
-			},
-		},
 	}
-
-	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
-
-	assert.Error(t, err)
-	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "failed to read clusterConfig variable")
 }
 
-func TestIsClusterRegisteredInPC_MissingCredentialsSecret(t *testing.T) {
+func TestIsClusterRegisteredInPC_ConfigMapNotFound(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	cluster := &clusterv1beta2.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1beta2.ClusterSpec{
-			Topology: clusterv1beta2.Topology{
-				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1beta2.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"nutanix": {
-							"prismCentralEndpoint": {
-								"url": "https://prism-central.example.com:9440",
-								"insecure": true
-							}
-						},
-						"addons": {
-							"konnectorAgent": {
-								"credentials": { "secretRef": {"name":"missing-secret"} }
-							}
-						}
-					}`)},
-				}},
-			},
-		},
-	}
 
-	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+	registered, err := isClusterRegisteredInPC(context.Background(), client, testCluster(), logr.Discard())
 
-	assert.Error(t, err)
+	require.NoError(t, err)
 	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "failed to get credentials secret")
 }
 
-func TestIsClusterRegisteredInPC_MissingUsernameInSecret(t *testing.T) {
+func TestIsClusterRegisteredInPC_ConfigMapExists(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	secret := &corev1.Secret{
+	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"password": []byte("testpass"),
+			Name:      "konnector-cluster-registration-status",
+			Namespace: defaultHelmReleaseNamespace,
 		},
 	}
-	require.NoError(t, client.Create(context.Background(), secret))
+	require.NoError(t, client.Create(context.Background(), configMap))
 
-	cluster := &clusterv1beta2.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1beta2.ClusterSpec{
-			Topology: clusterv1beta2.Topology{
-				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1beta2.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"nutanix": {
-							"prismCentralEndpoint": {
-								"url": "https://prism-central.example.com:9440",
-								"insecure": true
-							}
-						},
-						"addons": {
-							"konnectorAgent": {
-								"credentials": { "secretRef": {"name":"test-secret"} }
-							}
-						}
-					}`)},
-				}},
-			},
-		},
-	}
+	registered, err := isClusterRegisteredInPC(context.Background(), client, testCluster(), logr.Discard())
 
-	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
-
-	assert.Error(t, err)
-	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "credentials secret does not contain 'username' key")
+	require.NoError(t, err)
+	assert.True(t, registered)
 }
 
-func TestIsClusterRegisteredInPC_MissingPasswordInSecret(t *testing.T) {
-	client := fake.NewClientBuilder().WithScheme(testScheme).Build()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"username": []byte("testuser"),
-		},
-	}
-	require.NoError(t, client.Create(context.Background(), secret))
-
-	cluster := &clusterv1beta2.Cluster{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-		Spec: clusterv1beta2.ClusterSpec{
-			Topology: clusterv1beta2.Topology{
-				ClassRef: clusterv1beta2.ClusterClassRef{Name: "dummy-class"},
-				Variables: []clusterv1beta2.ClusterVariable{{
-					Name: v1alpha1.ClusterConfigVariableName,
-					Value: apiextensionsv1.JSON{Raw: []byte(`{
-						"nutanix": {
-							"prismCentralEndpoint": {
-								"url": "https://prism-central.example.com:9440",
-								"insecure": true
-							}
-						},
-						"addons": {
-							"konnectorAgent": {
-								"credentials": { "secretRef": {"name":"test-secret"} }
-							}
-						}
-					}`)},
-				}},
+func TestIsClusterRegisteredInPC_ConfigMapGetError(t *testing.T) {
+	client := fake.NewClientBuilder().
+		WithScheme(testScheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(
+				context.Context,
+				client.WithWatch,
+				client.ObjectKey,
+				client.Object,
+				...client.GetOption,
+			) error {
+				return fmt.Errorf("temporary api failure")
 			},
-		},
-	}
+		}).
+		Build()
 
-	registered, err := isClusterRegisteredInPC(context.Background(), client, cluster, logr.Discard())
+	registered, err := isClusterRegisteredInPC(context.Background(), client, testCluster(), logr.Discard())
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.False(t, registered)
-	assert.Contains(t, err.Error(), "credentials secret does not contain 'password' key")
+	assert.Contains(t, err.Error(), "failed to get cluster registration config map")
+	assert.Contains(t, err.Error(), "temporary api failure")
+}
+
+func TestCredentialsFromSecretData_APIKey(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{
+		"apiKey": []byte("test-api-key"),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "test-api-key", credentials.APIKey)
+	assert.Empty(t, credentials.Username)
+	assert.Empty(t, credentials.Password)
+}
+
+func TestCredentialsFromSecretData_BasicAuthPrecedenceOverAPIKey(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{
+		"username": []byte("test-user"),
+		"password": []byte("test-pass"),
+		"apiKey":   []byte("test-api-key"),
+	})
+	require.Error(t, err)
+	assert.Nil(t, credentials)
+	assert.Contains(t, err.Error(), "basic auth (username/password) and API key cannot be set simultaneously")
+}
+
+func TestCredentialsFromSecretData_MissingAllCredentials(t *testing.T) {
+	credentials, err := credentialsFromSecretData(map[string][]byte{})
+	require.Error(t, err)
+	assert.Nil(t, credentials)
 }
 
 func TestTemplateValuesFunc_TrustBundleConfiguration(t *testing.T) {

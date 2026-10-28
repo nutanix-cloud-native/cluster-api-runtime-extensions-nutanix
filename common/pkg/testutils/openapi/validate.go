@@ -4,6 +4,7 @@
 package openapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -65,7 +66,9 @@ func unmarshalAndDefaultVariableValue[T any](
 	// Only try to unmarshal the clusterVariable if it is not nil, otherwise the variableValue is nil.
 	// Note: A clusterVariable with a nil value is the result of setting the variable value to "null" via YAML.
 	if value.Value.Raw != nil {
-		if err := json.Unmarshal(value.Value.Raw, &variableValue); err != nil {
+		dec := json.NewDecoder(bytes.NewReader(value.Value.Raw))
+		dec.UseNumber()
+		if err := dec.Decode(&variableValue); err != nil {
 			return variableValue, field.Invalid(
 				fldPath.Child("value"), string(value.Value.Raw),
 				fmt.Sprintf("variable %q could not be parsed: %v", value.Name, err),
@@ -73,9 +76,55 @@ func unmarshalAndDefaultVariableValue[T any](
 		}
 	}
 
+	// When decoding into interface{} / any, encoding/json produces json.Number (due to UseNumber()).
+	// Convert json.Number values into int64/float64 so that CEL validation (which is schema-aware)
+	// sees numeric values with compatible Go types.
+	//
+	// Note: We only need this for untyped values. For typed structs, the decoder already coerces
+	// numbers into the correct field types (int32, etc.).
+	switch reflect.TypeFor[T]().Kind() {
+	case reflect.Interface, reflect.Map, reflect.Slice:
+		if converted, didConvert := convertJSONNumbers(any(variableValue)); didConvert {
+			variableValue = converted.(T)
+		}
+	}
+
 	defaulting.Default(variableValue, s)
 
 	return variableValue, nil
+}
+
+func convertJSONNumbers(v any) (any, bool) {
+	switch x := v.(type) {
+	case map[string]any:
+		converted := false
+		for k, vv := range x {
+			if cv, ok := convertJSONNumbers(vv); ok {
+				x[k] = cv
+				converted = true
+			}
+		}
+		return x, converted
+	case []any:
+		converted := false
+		for i, vv := range x {
+			if cv, ok := convertJSONNumbers(vv); ok {
+				x[i] = cv
+				converted = true
+			}
+		}
+		return x, converted
+	case json.Number:
+		if i, err := x.Int64(); err == nil {
+			return i, true
+		}
+		if f, err := x.Float64(); err == nil {
+			return f, true
+		}
+		return v, false
+	default:
+		return v, false
+	}
 }
 
 func validatorAndSchemas(

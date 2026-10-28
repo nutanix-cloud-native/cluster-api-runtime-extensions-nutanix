@@ -161,10 +161,10 @@ func newVMImageKubernetesVersionChecks(
 			checks = append(checks,
 				&imageKubernetesVersionCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					//nolint:lll // The field is long.
 					field: fmt.Sprintf(
-						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix.machineDetails",
 						mdName,
+						carenv1.WorkerConfigVariableName,
 					),
 					nclient:           cd.nclient,
 					clusterK8sVersion: clusterK8sVersion,

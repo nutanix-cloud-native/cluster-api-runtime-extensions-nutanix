@@ -57,6 +57,10 @@ func TestNutanixChecker_Init(t *testing.T) {
 			calls = append(calls, "prismCentralVersion")
 			return &mockCheck{name: "prismCentralVersion"}
 		},
+		projectConsistencyCheckFactory: func(ctx context.Context, cd *checkDependencies) preflight.Check {
+			calls = append(calls, "projectConsistency")
+			return &mockCheck{name: "projectConsistency"}
+		},
 		failureDomainCheckFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("failureDomain")
 		},
@@ -72,29 +76,68 @@ func TestNutanixChecker_Init(t *testing.T) {
 		storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("storageContainer")
 		},
+		gpuChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("gpu")
+		},
+		vmProfileChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("vmProfile")
+		},
 		controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("controlPlaneEndpoint")
 		},
 		metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("metro")
 		},
+		csiChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("csi")
+		},
+		additionalCategoriesChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("additionalCategories")
+		},
+		aosVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("aosVersion")
+		},
+		projectScopedAOSVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("projectScopedAOSVersion")
+		},
+		metroAOSVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("metroAOSVersion")
+		},
+		subnetChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("subnet")
+		},
 	}
 
 	checker.Init(context.Background(), nil, &clusterv1beta2.Cluster{}, nil)
 
-	if !assert.Len(t, calls, 10) {
+	if !assert.Len(t, calls, 19) {
 		return
 	}
-	assert.Equal(t, []string{"configuration", "credentials", "prismCentralVersion"}, calls[:3])
+	// The first four run in a fixed order: configuration and credentials initialize state used by
+	// every later check, and the project consistency check runs before the provider checks.
+	assert.Equal(t, []string{
+		"configuration",
+		"credentials",
+		"prismCentralVersion",
+		"projectConsistency",
+	}, calls[:4])
 	assert.ElementsMatch(t, []string{
 		"failureDomain",
 		"vmImage",
 		"vmImageKubernetesVersion",
 		"cidrValidation",
 		"storageContainer",
+		"gpu",
+		"vmProfile",
 		"controlPlaneEndpoint",
 		"metro",
-	}, calls[3:])
+		"csi",
+		"additionalCategories",
+		"aosVersion",
+		"projectScopedAOSVersion",
+		"metroAOSVersion",
+		"subnet",
+	}, calls[4:])
 }
 
 func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
@@ -205,6 +248,36 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				projectConsistencyCheckFactory: func(ctx context.Context, cd *checkDependencies) preflight.Check {
+					return &mockCheck{
+						name:   "projectConsistency",
+						result: preflight.CheckResult{Allowed: true},
+					}
+				},
+				gpuChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				vmProfileChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				csiChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				additionalCategoriesChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				aosVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				projectScopedAOSVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				metroAOSVersionChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				subnetChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 			}

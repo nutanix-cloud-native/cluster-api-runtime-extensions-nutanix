@@ -75,4 +75,8 @@ const (
 	// the Cilium preflight Helm addon (e.g. during BeforeClusterUpgrade). When set (e.g. "true", "1"),
 	// the preflight release is not applied before Cilium upgrade.
 	SkipCiliumPreflightAnnotationKey = APIGroup + "/skip-cilium-preflight"
+
+	// ExperimentalNutanixCSIBaremetalMode is the annotation key on Cluster to opt into
+	// bare-metal mode for the Nutanix CSI driver regardless of the provider label.
+	ExperimentalNutanixCSIBaremetalMode = APIGroup + "/experimental-nutanix-csi-baremetal-mode"
 )

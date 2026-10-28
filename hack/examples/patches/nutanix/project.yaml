@@ -1,0 +1,13 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+- op: "add"
+  path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/project"
+  value:
+    type: name
+    name: ${NUTANIX_PROJECT_NAME}
+- op: "add"
+  path: "/spec/topology/variables/1/value/nutanix/machineDetails/project"
+  value:
+    type: name
+    name: ${NUTANIX_PROJECT_NAME}

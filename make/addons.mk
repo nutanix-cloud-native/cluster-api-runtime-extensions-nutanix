@@ -44,9 +44,13 @@ export NODE_FEATURE_DISCOVERY_VERSION := 0.19.0
 #   Chart repo: https://kubernetes.github.io/autoscaler/index.yaml
 #   Chart version:   9.59.0
 #   App version:     1.35.0
+#   Deployed image:  v1.36.1 (image.tag override in
+#                    charts/cluster-api-runtime-extensions-nutanix/addons/cluster-autoscaler/values-template.yaml)
 #   Repo:            https://github.com/kubernetes/autoscaler
-#   Release:         https://github.com/kubernetes/autoscaler/releases/tag/cluster-autoscaler-1.35.0
-# TODO: Remove tag override once https://github.com/kubernetes/autoscaler/issues/9439 is resolved.
+#   Release:         https://github.com/kubernetes/autoscaler/releases/tag/cluster-autoscaler-1.36.1
+# The chart's appVersion 1.35.0 is affected by https://github.com/kubernetes/autoscaler/issues/9439,
+# so the image tag is overridden. Keep both pins in sync, and drop the override only once a chart
+# ships appVersion >= 1.35.1.
 export CLUSTER_AUTOSCALER_CHART_VERSION := 9.59.0
 
 # AWS EBS CSI

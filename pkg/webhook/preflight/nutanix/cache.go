@@ -21,6 +21,11 @@ var NutanixClientCache = v3.NewClientCache(v3.WithSessionAuth(true))
 //nolint:gochecknoglobals // Client cache must be a package-level singleton for connection pooling
 var NutanixConvergedClientV4Cache = v4Converged.NewClientCache()
 
+// getOrCreateConvergedClient returns the cached converged client for cacheParams.
+func getOrCreateConvergedClient(cacheParams *CacheParams) (*v4Converged.Client, error) {
+	return NutanixConvergedClientV4Cache.GetOrCreate(cacheParams)
+}
+
 // CacheParams is the struct that implements ClientCacheParams interface from prism-go-client.
 type CacheParams struct {
 	ClusterNamespacedName   types.NamespacedName // Optional: cluster namespaced name for user-queryable cache key

@@ -29,12 +29,18 @@ type storageContainerCheck struct {
 	namespace         string
 	kclient           ctrlclient.Client
 	// Common fields
-	field   string
-	csiSpec *carenv1.CSIProvider
-	nclient client
+	field string
+	// projectField is the JSONPath to the originating machineDetails.project, used for project-scope
+	// resolution errors. It differs from field when field points at a failure-domain reference instead of
+	// machineDetails directly (field then targets the failureDomain-specific causes, e.g. FD not found).
+	projectField string
+	csiSpec      *carenv1.CSIProvider
+	nclient      client
 
 	// The error message set if error hit when adding the check
 	errMessage *string
+	pcVersion  string
+	projectRef *capxv1.NutanixResourceIdentifier
 }
 
 func (c *storageContainerCheck) Name() string {
@@ -122,6 +128,54 @@ func (c *storageContainerCheck) Run(ctx context.Context) preflight.CheckResult {
 
 		storageContainerName, ok := storageClassConfig.Parameters[csiParameterKeyStorageContainer]
 		if !ok {
+			continue
+		}
+
+		scopeCtx, err := resolveProjectScopeContext(ctx, c.nclient, c.pcVersion, c.projectRef)
+		if err != nil {
+			result.Allowed = false
+			result.InternalError = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf(
+					"Failed to resolve project scope for storage container check: %s. Please retry.",
+					err,
+				),
+				Field: c.projectField,
+			})
+			continue
+		}
+		if scopeCtx != nil && scopeCtx.scope == userScopeProjectScoped {
+			allowed, err := projectScopeAllowsStorageContainerInSameResourceGroup(
+				ctx,
+				c.nclient,
+				scopeCtx.projectUUID,
+				clusterIdentifier,
+				storageContainerName,
+			)
+			if err != nil {
+				result.Allowed = false
+				result.InternalError = true
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Failed to resolve project resource-group capabilities for storage container %q: %s. Please retry.",
+						storageContainerName,
+						err,
+					),
+					Field: c.field + ".cluster",
+				})
+				continue
+			}
+			if !allowed {
+				result.Allowed = false
+				result.Causes = append(result.Causes, preflight.Cause{
+					Message: fmt.Sprintf(
+						"Storage Container %q is not available in selected project scope for cluster %q.",
+						storageContainerName,
+						clusterIdentifier,
+					),
+					Field: c.field + ".cluster",
+				})
+			}
 			continue
 		}
 
@@ -244,6 +298,8 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 							field:             cpFailureDomainsField,
 							kclient:           cd.kclient,
 							nclient:           cd.nclient,
+							pcVersion:         cd.pcVersion,
+							projectRef:        controlPlaneNutanix.MachineDetails.Project,
 						}
 						check.errMessage = new(err.Error())
 
@@ -257,21 +313,28 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 								failureDomainName: fdName,
 								namespace:         cd.cluster.Namespace,
 								kclient:           cd.kclient,
-								field:             cpFailureDomainsField,
+								field:             "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains",         //nolint:lll // The field is long.
+								projectField:      "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.project", //nolint:lll // The field is long.
 								csiSpec:           &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
 								nclient:           cd.nclient,
+								pcVersion:         cd.pcVersion,
+								projectRef:        controlPlaneNutanix.MachineDetails.Project,
 							},
 						)
 					}
 				}
 			}
 		} else {
+			field := controlPlaneMachineDetailsField
 			checks = append(checks,
 				&storageContainerCheck{
-					machineSpec: &controlPlaneNutanix.MachineDetails,
-					field:       controlPlaneMachineDetailsField,
-					csiSpec:     &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-					nclient:     cd.nclient,
+					machineSpec:  &controlPlaneNutanix.MachineDetails,
+					field:        field,
+					projectField: field + ".project",
+					csiSpec:      &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+					nclient:      cd.nclient,
+					pcVersion:    cd.pcVersion,
+					projectRef:   controlPlaneNutanix.MachineDetails.Project,
 				},
 			)
 		}
@@ -301,6 +364,11 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 					continue
 				}
 
+				workerMachineDetailsField := fmt.Sprintf(
+					"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix.machineDetails", //nolint:lll // The field is long.
+					mdName,
+					carenv1.WorkerConfigVariableName,
+				)
 				for _, fdName := range fdNames {
 					// Use failure domain for cluster information
 					checks = append(checks,
@@ -313,23 +381,30 @@ func newStorageContainerChecks(cd *checkDependencies) []preflight.Check {
 								"$.spec.topology.workers.machineDeployments[?@.name==%q].failureDomain",
 								mdName,
 							),
-							csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-							nclient: cd.nclient,
+							projectField: workerMachineDetailsField + ".project",
+							csiSpec:      &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+							nclient:      cd.nclient,
+							pcVersion:    cd.pcVersion,
+							projectRef:   nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails.Project,
 						},
 					)
 				}
 			} else {
 				// Use machine details for cluster information
+				field := fmt.Sprintf(
+					"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix.machineDetails", //nolint:lll // The field is long.
+					mdName,
+					carenv1.WorkerConfigVariableName,
+				)
 				checks = append(checks,
 					&storageContainerCheck{
-						machineSpec: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-						//nolint:lll // The field is long.
-						field: fmt.Sprintf(
-							"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
-							mdName,
-						),
-						csiSpec: &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
-						nclient: cd.nclient,
+						machineSpec:  &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
+						field:        field,
+						projectField: field + ".project",
+						csiSpec:      &cd.nutanixClusterConfigSpec.Addons.CSI.Providers.NutanixCSI,
+						nclient:      cd.nclient,
+						pcVersion:    cd.pcVersion,
+						projectRef:   nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails.Project,
 					},
 				)
 			}
