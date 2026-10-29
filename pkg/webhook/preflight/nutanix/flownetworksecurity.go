@@ -421,5 +421,10 @@ func buildFailureMessage(requiresCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey
 	fmt.Fprintf(&messageBuilder, "Add the annotation '%s: %s' to the above Service resources.",
 		CiliumForwardingModeAnnotationKey,
 		CiliumForwardingModeAnnotationValueDSR)
+	//nolint:lll // This is a long message
+	messageBuilder.WriteString(
+		"See the Flow Network Security documentation page titled 'Enabling Flow Network Security for Kubernetes Cluster' for more information.",
+	)
+
 	return messageBuilder.String()
 }
