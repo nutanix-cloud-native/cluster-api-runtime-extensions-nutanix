@@ -8,35 +8,33 @@ import (
 )
 
 func ExternalCRDDirectoryPaths() []string {
+	capiRoot := getModulePath("sigs.k8s.io/cluster-api")
+	// CAPI v1.14+ splits CRDs across core / bootstrap / controlplane packages.
 	return []string{
-		// CAPI v1.14 moved core CRDs from config/crd/bases to core/config/crd/bases.
-		filepath.Join(
-			getModulePath("sigs.k8s.io/cluster-api"),
-			"core",
-			"config",
-			"crd",
-			"bases",
-		),
-		filepath.Join(
-			getModulePath("sigs.k8s.io/cluster-api"),
-			"controlplane",
-			"kubeadm",
-			"config",
-			"crd",
-			"bases",
-		),
-		filepath.Join(
-			getModulePath("sigs.k8s.io/cluster-api"),
-			"bootstrap",
-			"kubeadm",
-			"config",
-			"crd",
-			"bases",
-		),
+		filepath.Join(capiRoot, "core", "config", "crd", "bases"),
+		filepath.Join(capiRoot, "controlplane", "kubeadm", "config", "crd", "bases"),
+		filepath.Join(capiRoot, "bootstrap", "kubeadm", "config", "crd", "bases"),
 	}
 }
 
 func getModulePath(moduleName string) string {
+	dir := moduleDirFromGoList(moduleName)
+	if dir != "" {
+		return dir
+	}
+	// go list can return an empty Dir before the module is in the module cache.
+	download := exec.Command("go", "mod", "download", moduleName)
+	if out, err := download.CombinedOutput(); err != nil {
+		panic(fmt.Sprintf("go mod download %q failed: %v\n%s", moduleName, err, out))
+	}
+	dir = moduleDirFromGoList(moduleName)
+	if dir == "" {
+		panic(fmt.Sprintf("module %q has empty Dir after download", moduleName))
+	}
+	return dir
+}
+
+func moduleDirFromGoList(moduleName string) string {
 	cmd := exec.Command("go", "list", "-m", "-f", "{{ .Dir }}", moduleName)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
