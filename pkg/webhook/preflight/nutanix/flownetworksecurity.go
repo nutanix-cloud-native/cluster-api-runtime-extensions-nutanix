@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -166,9 +165,9 @@ func newFlowNetworkSecurityDSRToSNATChecker(cd *checkDependencies) []preflight.C
 		return checks
 	}
 
-	if !ptr.Deref(cd.cluster.Status.Initialization.ControlPlaneInitialized, false) {
-		// If the control plane is not initialized, then this cluster is not
-		// currently enrolled in Flow Network Security, so the check is not relevant.
+	if cd.oldCluster.Spec.Topology.Version == cd.cluster.Spec.Topology.Version {
+		// The CNI configuration only changes when the cluster version changes.
+		// The cluster version has not changed, so this check is not relevant.
 		return checks
 	}
 
@@ -185,6 +184,7 @@ func newFlowNetworkSecurityDSRToSNATChecker(cd *checkDependencies) []preflight.C
 		}
 	}
 	if cniProvider != carenv1.CNIProviderCilium {
+		// This cluster is not using Cilium, so the check is not relevant.
 		return checks
 	}
 

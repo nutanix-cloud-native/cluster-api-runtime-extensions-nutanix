@@ -715,19 +715,11 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 			},
 		},
 		{
-			name: "control plane initialized is not set",
+			name: "cluster version has not changed",
 			cd: &checkDependencies{
 				kclient:    kclient,
-				cluster:    cluster(newVersion, nil, ciliumClusterConfig),
-				oldCluster: cluster(oldVersion, nil, ciliumClusterConfig),
-			},
-		},
-		{
-			name: "control plane is not initialized",
-			cd: &checkDependencies{
-				kclient:    kclient,
-				cluster:    cluster(newVersion, new(false), ciliumClusterConfig),
-				oldCluster: cluster(oldVersion, new(false), ciliumClusterConfig),
+				cluster:    cluster(newVersion, new(true), ciliumClusterConfig),
+				oldCluster: cluster(newVersion, new(true), ciliumClusterConfig),
 			},
 		},
 		{
