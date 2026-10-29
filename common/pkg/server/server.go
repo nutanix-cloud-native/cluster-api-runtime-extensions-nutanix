@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+	runtimecatalog "sigs.k8s.io/cluster-api/api/runtime/catalog"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
-	runtimecatalog "sigs.k8s.io/cluster-api/exp/runtime/catalog"
 	runtimeserver "sigs.k8s.io/cluster-api/exp/runtime/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 

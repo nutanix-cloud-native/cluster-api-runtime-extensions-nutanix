@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 nameReference:
-  - kind: DockerMachineTemplate
+  - kind: DevMachineTemplate
     fieldSpecs:
     - kind: ClusterClass
       path: spec/controlPlane/machineInfrastructure/templateRef/name
@@ -12,7 +12,7 @@ nameReference:
     fieldSpecs:
     - kind: ClusterClass
       path: spec/controlPlane/templateRef/name
-  - kind: DockerClusterTemplate
+  - kind: DevClusterTemplate
     fieldSpecs:
     - kind: ClusterClass
       path: spec/infrastructure/templateRef/name

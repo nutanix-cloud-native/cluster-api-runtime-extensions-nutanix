@@ -51,20 +51,27 @@ spec:
 
 Applying this configuration will result in the following value being set:
 
-- control-plane `DockerMachineTemplate`:
+- control-plane `DevMachineTemplate`:
 
   - ```yaml
     spec:
       template:
         spec:
-          customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
+          backend:
+            docker:
+              customImage: ghcr.io/mesosphere/kind-node:v1.2.3-cp
     ```
 
-- worker `DockerMachineTemplate`:
+- worker `DevMachineTemplate`:
 
   - ```yaml
     spec:
       template:
         spec:
-          customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
+          backend:
+            docker:
+              customImage: ghcr.io/mesosphere/kind-node:v1.2.3-worker
     ```
+
+`ClusterClass`es that still use the deprecated `DockerMachineTemplate` get the same value set at
+`spec.template.spec.customImage`.

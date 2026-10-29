@@ -79,6 +79,39 @@ var _ = Describe("Docker CustomImage patches for ControlPlane", func() {
 				ValueMatcher: gomega.Equal("a-specific-image"),
 			}},
 		},
+		{
+			Name: "image unset for control plane DevMachineTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					runtimehooksv1.BuiltinsName,
+					apiextensionsv1.JSON{Raw: []byte(`{"controlPlane": {"version": "v1.35.3"}}`)},
+				),
+			},
+			RequestItem: request.NewCPDevMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/backend/docker/customImage",
+				ValueMatcher: gomega.Equal("ghcr.io/mesosphere/kind-node:v1.35.3"),
+			}},
+		},
+		{
+			Name: "image set for control plane DevMachineTemplate",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					"a-specific-image",
+					v1alpha1.ControlPlaneConfigVariableName,
+					v1alpha1.DockerVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewCPDevMachineTemplateRequestItem("1234"),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation:    "add",
+				Path:         "/spec/template/spec/backend/docker/customImage",
+				ValueMatcher: gomega.Equal("a-specific-image"),
+			}},
+		},
 	}
 
 	// create test node for each case

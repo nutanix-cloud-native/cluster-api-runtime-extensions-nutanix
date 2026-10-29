@@ -9,7 +9,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	bootstrapv1beta1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1beta1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta1"
@@ -75,7 +74,7 @@ func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) WithFiles(
 func (b *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder) WithKubernetesVersion(
 	version string,
 ) *KubeadmControlPlaneTemplateV1Beta1RequestItemBuilder {
-	b.version = ptr.To(version)
+	b.version = new(version)
 	return b
 }
 
@@ -171,7 +170,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithAPIServerExtraV1Beta
 ) *KubeadmControlPlaneTemplateRequestItemBuilder {
 	args := make([]bootstrapv1.Arg, 0, len(extraArgs))
 	for k, v := range extraArgs {
-		args = append(args, bootstrapv1.Arg{Name: k, Value: ptr.To(v)})
+		args = append(args, bootstrapv1.Arg{Name: k, Value: new(v)})
 	}
 	return b.WithAPIServerExtraArgs(args)
 }

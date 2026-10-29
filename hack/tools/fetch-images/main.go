@@ -160,6 +160,13 @@ func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]strin
 			version: settings.Version,
 			repo:    settings.Repository,
 		}
+		// helm-list-images resolves `repo` as a classic HTTP chart repository (index.yaml lookup),
+		// which does not work for OCI registries. For OCI charts, pull by the fully-qualified chart
+		// reference (repo/chart) with no separate repo URL instead.
+		if strings.HasPrefix(settings.Repository, "oci://") {
+			info.name = strings.TrimSuffix(settings.Repository, "/") + "/" + settings.ChartName
+			info.repo = ""
+		}
 		valuesFile, err := getValuesFileForChartIfNeeded(settings.ChartName, carenChartDirectory)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get values file for %s: %w", settings.ChartName, err)
