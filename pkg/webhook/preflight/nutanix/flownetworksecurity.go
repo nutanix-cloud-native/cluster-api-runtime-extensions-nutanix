@@ -418,7 +418,7 @@ func buildFailureMessage(requiresCiliumDSRAnnotationsKeys []ctrlclient.ObjectKey
 	messageBuilder.WriteString(". ")
 
 	// Explain the annotation to add.
-	fmt.Fprintf(&messageBuilder, "Add the annotation '%s: %s' to the Service resources.",
+	fmt.Fprintf(&messageBuilder, "Add the annotation '%s: %s' to the above Service resources.",
 		CiliumForwardingModeAnnotationKey,
 		CiliumForwardingModeAnnotationValueDSR)
 	return messageBuilder.String()

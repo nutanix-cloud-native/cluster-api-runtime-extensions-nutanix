@@ -595,7 +595,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 				"This cluster is enrolled in Flow Network Security, and must use Direct Server Return (DSR) " +
 					"for these NodePort and LoadBalancer Services: " +
 					"istio-system/gateway, kube-system/ingress, monitoring/metrics. " +
-					"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the Service resources.",
+					"Add the annotation 'service.cilium.io/forwarding-mode: dsr' to the above Service resources.",
 			},
 		},
 	}
