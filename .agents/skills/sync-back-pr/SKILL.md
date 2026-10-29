@@ -62,7 +62,7 @@ first would leave the other with a `go.mod` conflict.
 
 The root `go.mod` on `internal/main` carries
 
-```
+```text
 replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/internal-prism-go-client vX.Y.Z
 ```
 
@@ -238,7 +238,7 @@ Strip host-agent, rewrite dependencies and strip internal-only files (below), th
 
 Rewrite every internal SDK import to its public equivalent:
 
-```
+```text
 github.com/nutanix-core/ntnx-api-golang-sdk-internal/<mod>-go-client/v17
   ->  github.com/nutanix/ntnx-api-golang-clients/<mod>-go-client/v4
 ```
