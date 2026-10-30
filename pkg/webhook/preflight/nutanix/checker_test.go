@@ -78,11 +78,14 @@ func TestNutanixChecker_Init(t *testing.T) {
 		metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("metro")
 		},
+		flowNetworkSecurityDSRToSNATCheckerFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("flowNetworkSecurityDSRToSNAT")
+		},
 	}
 
 	checker.Init(context.Background(), nil, &clusterv1beta2.Cluster{}, nil)
 
-	if !assert.Len(t, calls, 10) {
+	if !assert.Len(t, calls, 11) {
 		return
 	}
 	assert.Equal(t, []string{"configuration", "credentials", "prismCentralVersion"}, calls[:3])
@@ -94,6 +97,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		"storageContainer",
 		"controlPlaneEndpoint",
 		"metro",
+		"flowNetworkSecurityDSRToSNAT",
 	}, calls[3:])
 }
 
@@ -205,6 +209,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				metroChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				flowNetworkSecurityDSRToSNATCheckerFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 			}

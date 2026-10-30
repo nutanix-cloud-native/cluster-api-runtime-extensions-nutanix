@@ -85,6 +85,25 @@ NOTE: ConfigMap should contain complete helm values for Cilium as same will be a
 
 Please check the [default Cilium configuration].
 
+### Cilium Load Balancer Mode
+
+When kube-proxy is disabled, Cilium replaces it, and forwards traffic for LoadBalancer and NodePort Services using SNAT
+mode. Direct Server Return (DSR) mode is not the default, because it is incompatible with some underlay networks. To
+use DSR for a specific Service, add the following annotation to the Service:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.cilium.io/forwarding-mode: dsr
+```
+
+Earlier versions used DSR mode for all Services. Existing clusters change to SNAT mode when their Kubernetes version is
+upgraded. If the cluster has NodePort or LoadBalancer Services that are enrolled in Flow Network Security, the
+`NutanixFlowNetworkSecurityDSRToSNAT` preflight check blocks the upgrade until every one of these Services has the
+annotation.
+
 ## Select Deployment Strategy
 
 To deploy the addon via `ClusterResourceSet` replace the value of `strategy` with `ClusterResourceSet`.
