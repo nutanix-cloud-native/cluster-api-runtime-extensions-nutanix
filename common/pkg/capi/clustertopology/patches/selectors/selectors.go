@@ -5,7 +5,6 @@ package selectors
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -18,7 +17,7 @@ func ControlPlane() clusterv1.PatchSelector {
 		APIVersion: controlplanev1.GroupVersion.String(),
 		Kind:       "KubeadmControlPlaneTemplate",
 		MatchResources: clusterv1.PatchSelectorMatch{
-			ControlPlane: ptr.To(true),
+			ControlPlane: new(true),
 		},
 	}
 }
@@ -62,7 +61,7 @@ func InfrastructureCluster(capiInfrastructureAPIVersion, kind string) clusterv1.
 		}.String(),
 		Kind: kind,
 		MatchResources: clusterv1.PatchSelectorMatch{
-			InfrastructureCluster: ptr.To(true),
+			InfrastructureCluster: new(true),
 		},
 	}
 }
@@ -100,7 +99,7 @@ func InfrastructureControlPlaneMachines(
 		}.String(),
 		Kind: kind,
 		MatchResources: clusterv1.PatchSelectorMatch{
-			ControlPlane: ptr.To(true),
+			ControlPlane: new(true),
 		},
 	}
 }

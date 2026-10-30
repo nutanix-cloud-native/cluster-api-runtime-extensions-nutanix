@@ -142,9 +142,10 @@ func (e missingTemplateError) Error() string {
 }
 
 func getTemplate(kcp *controlplanev1.KubeadmControlPlaneTemplate) (string, error) {
-	for _, file := range kcp.Spec.Template.Spec.KubeadmConfigSpec.Files {
-		if file.Path == kubeVIPFilePath && file.Content != "" {
-			return file.Content, nil
+	files := kcp.Spec.Template.Spec.KubeadmConfigSpec.Files
+	for i := range files {
+		if files[i].Path == kubeVIPFilePath && files[i].Content != "" {
+			return files[i].Content, nil
 		}
 	}
 

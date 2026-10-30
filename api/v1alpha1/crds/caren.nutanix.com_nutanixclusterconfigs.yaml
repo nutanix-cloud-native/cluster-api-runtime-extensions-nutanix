@@ -699,6 +699,9 @@ spec:
                             gpus:
                               description: List of GPU devices that need to be added to the machines.
                               items:
+                                description: |-
+                                  NutanixGPU identifies a GPU to attach to a VM, either by device (name/deviceID) or
+                                  by an AHV GPU profile.
                                 properties:
                                   deviceID:
                                     description: deviceID is the id of the GPU entity.
@@ -706,16 +709,54 @@ spec:
                                     type: integer
                                   name:
                                     description: name is the GPU name
+                                    minLength: 1
                                     type: string
+                                  profile:
+                                    description: |-
+                                      profile identifies the AHV GPU profile to assign by name or UUID. Profile-based GPU
+                                      assignment uses the named GPU profile APIs and is only supported on PC 7.6 or later.
+                                    properties:
+                                      name:
+                                        description: name is the resource name in the PC
+                                        minLength: 1
+                                        type: string
+                                      type:
+                                        description: Type is the identifier type to use for this resource.
+                                        enum:
+                                          - uuid
+                                          - name
+                                        type: string
+                                      uuid:
+                                        description: uuid is the UUID of the resource in the PC.
+                                        format: uuid
+                                        maxLength: 36
+                                        minLength: 36
+                                        type: string
+                                    required:
+                                      - type
+                                    type: object
+                                    x-kubernetes-validations:
+                                      - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                                        rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                                      - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                                        rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                                   type:
                                     description: Type is the identifier type to use for this resource.
                                     enum:
                                       - deviceID
                                       - name
+                                      - profile
                                     type: string
                                 required:
                                   - type
                                 type: object
+                                x-kubernetes-validations:
+                                  - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                                    rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                                  - message: '''deviceID'' must be set when type is ''deviceID'', and forbidden otherwise'
+                                    rule: 'self.type == ''deviceID'' ? has(self.deviceID) : !has(self.deviceID)'
+                                  - message: '''profile'' must be set when type is ''profile'', and forbidden otherwise'
+                                    rule: 'self.type == ''profile'' ? has(self.profile) : !has(self.profile)'
                               maxItems: 32
                               type: array
                             image:

@@ -200,7 +200,7 @@ var _ = Describe("Quick start", func() {
 															clusterName,
 														),
 														capiframework.CoreOwnerReferenceAssertion,
-														capiframework.DockerInfraOwnerReferenceAssertions(true),
+														capiframework.DevInfraOwnerReferenceAssertions(true),
 														capiframework.KubeadmBootstrapOwnerReferenceAssertions,
 														capiframework.KubeadmControlPlaneOwnerReferenceAssertions(true),
 														AWSInfraOwnerReferenceAssertions,

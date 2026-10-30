@@ -470,7 +470,6 @@ func dumpAllResources(
 		capie2eframework.DumpResourcesForCluster(ctx, capie2eframework.DumpResourcesForClusterInput{
 			Lister: clusterProxy.GetWorkloadCluster(ctx, cluster.Namespace, cluster.Name).
 				GetClient(),
-			Cluster: cluster,
 			LogPath: filepath.Join(artifactFolder, "clusters", cluster.Name, "resources"),
 			Resources: []capie2eframework.DumpNamespaceAndGVK{
 				{

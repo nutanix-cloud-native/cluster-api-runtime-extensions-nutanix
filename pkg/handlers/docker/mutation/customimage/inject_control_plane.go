@@ -83,39 +83,70 @@ func (h *customImageControlPlanePatchHandler) Mutate(
 		customImageVar,
 	)
 
+	resolveImage := func() (string, error) {
+		if customImageVar != "" {
+			return customImageVar, nil
+		}
+		variablePath := []string{runtimehooksv1.BuiltinsName, "controlPlane", "version"}
+		kubernetesVersion, err := variables.Get[string](
+			vars,
+			variablePath[0],
+			variablePath[1:]...,
+		)
+		if err != nil && !variables.IsNotFoundError(err) {
+			return "", err
+		}
+		return defaultKinDImage(kubernetesVersion), nil
+	}
+
+	// CAPD serves both the deprecated DockerMachineTemplate and its replacement
+	// DevMachineTemplate, so support ClusterClasses that use either.
+	if err := patches.MutateIfApplicable(
+		obj,
+		vars,
+		&holderRef,
+		selectors.InfrastructureControlPlaneMachines(
+			capdv1beta2.GroupVersion.Version,
+			dockerMachineTemplateKind,
+		),
+		log,
+		func(obj *capdv1beta2.DockerMachineTemplate) error {
+			image, err := resolveImage()
+			if err != nil {
+				return err
+			}
+			log.WithValues(
+				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
+				"patchedObjectName", client.ObjectKeyFromObject(obj),
+				"customImage", image,
+			).Info("setting customImage in control plane DockerMachineTemplate spec")
+			obj.Spec.Template.Spec.CustomImage = image
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+
 	return patches.MutateIfApplicable(
 		obj,
 		vars,
 		&holderRef,
 		selectors.InfrastructureControlPlaneMachines(
 			capdv1beta2.GroupVersion.Version,
-			"DockerMachineTemplate",
+			devMachineTemplateKind,
 		),
 		log,
-		func(obj *capdv1beta2.DockerMachineTemplate) error {
-			variablePath := []string{runtimehooksv1.BuiltinsName, "controlPlane", "version"}
-
-			if customImageVar == "" {
-				kubernetesVersion, err := variables.Get[string](
-					vars,
-					variablePath[0],
-					variablePath[1:]...,
-				)
-				if err != nil && !variables.IsNotFoundError(err) {
-					return err
-				}
-
-				customImageVar = defaultKinDImage(kubernetesVersion)
+		func(obj *capdv1beta2.DevMachineTemplate) error {
+			image, err := resolveImage()
+			if err != nil {
+				return err
 			}
-
 			log.WithValues(
 				"patchedObjectKind", obj.GetObjectKind().GroupVersionKind().String(),
 				"patchedObjectName", client.ObjectKeyFromObject(obj),
-				"customImage", customImageVar,
-			).Info("setting customImage in control plane DockerMachineTemplate spec")
-
-			obj.Spec.Template.Spec.CustomImage = customImageVar
-
+				"customImage", image,
+			).Info("setting customImage in control plane DevMachineTemplate docker backend spec")
+			setDevMachineTemplateCustomImage(obj, image)
 			return nil
 		},
 	)

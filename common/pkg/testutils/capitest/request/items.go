@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"k8s.io/utils/ptr"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -31,6 +30,7 @@ const (
 	kubeadmConfigTemplateKind  = "KubeadmConfigTemplate"
 	machineDeploymentKind      = "MachineDeployment"
 	infrastructureRefFieldPath = "spec.template.spec.infrastructureRef"
+	dockerClusterNamespace     = "docker-cluster"
 	cloudProviderArgName       = "cloud-provider"
 	externalCloudProvider      = "external"
 )
@@ -115,7 +115,7 @@ func NewKubeadmConfigTemplateRequest(
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
@@ -147,7 +147,7 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithFiles(
 func (b *KubeadmControlPlaneTemplateRequestItemBuilder) WithKubernetesVersion(
 	version string,
 ) *KubeadmControlPlaneTemplateRequestItemBuilder {
-	b.version = ptr.To(version)
+	b.version = new(version)
 	return b
 }
 
@@ -177,14 +177,14 @@ func (b *KubeadmControlPlaneTemplateRequestItemBuilder) NewRequest(
 						InitConfiguration: bootstrapv1.InitConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
 						JoinConfiguration: bootstrapv1.JoinConfiguration{
 							NodeRegistration: bootstrapv1.NodeRegistrationOptions{
 								KubeletExtraArgs: []bootstrapv1.Arg{
-									{Name: cloudProviderArgName, Value: ptr.To(externalCloudProvider)},
+									{Name: cloudProviderArgName, Value: new(externalCloudProvider)},
 								},
 							},
 						},
@@ -246,7 +246,7 @@ func NewCPDockerMachineTemplateRequestItem(
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "docker-machine-template",
-				Namespace: "docker-cluster",
+				Namespace: dockerClusterNamespace,
 			},
 		},
 		&runtimehooksv1.HolderReference{
@@ -269,9 +269,59 @@ func NewWorkerDockerMachineTemplateRequestItem(
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "docker-machine-template",
-				Namespace: "docker-cluster",
+				Namespace: dockerClusterNamespace,
 			},
 		},
+		&runtimehooksv1.HolderReference{
+			APIVersion: clusterv1.GroupVersion.String(),
+			Kind:       machineDeploymentKind,
+			FieldPath:  infrastructureRefFieldPath,
+		},
+		uid,
+	)
+}
+
+func newDevMachineTemplateWithDockerBackend() *capdv1beta2.DevMachineTemplate {
+	return &capdv1beta2.DevMachineTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: capdv1beta2.GroupVersion.String(),
+			Kind:       "DevMachineTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dev-machine-template",
+			Namespace: dockerClusterNamespace,
+		},
+		Spec: capdv1beta2.DevMachineTemplateSpec{
+			Template: capdv1beta2.DevMachineTemplateResource{
+				Spec: capdv1beta2.DevMachineSpec{
+					Backend: capdv1beta2.DevMachineBackendSpec{
+						Docker: &capdv1beta2.DockerMachineBackendSpec{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewCPDevMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		newDevMachineTemplateWithDockerBackend(),
+		&runtimehooksv1.HolderReference{
+			APIVersion: controlplanev1.GroupVersion.String(),
+			Kind:       "KubeadmControlPlane",
+			FieldPath:  "spec.machineTemplate.infrastructureRef",
+		},
+		uid,
+	)
+}
+
+func NewWorkerDevMachineTemplateRequestItem(
+	uid types.UID,
+) runtimehooksv1.GeneratePatchesRequestItem {
+	return NewRequestItem(
+		newDevMachineTemplateWithDockerBackend(),
 		&runtimehooksv1.HolderReference{
 			APIVersion: clusterv1.GroupVersion.String(),
 			Kind:       machineDeploymentKind,

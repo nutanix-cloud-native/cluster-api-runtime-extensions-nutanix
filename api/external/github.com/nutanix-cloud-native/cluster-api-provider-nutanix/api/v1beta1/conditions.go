@@ -92,7 +92,9 @@ const (
 )
 
 const (
-	// ClusterCategoryCreatedCondition indicates the status of the category linked to the NutanixCluster
+	// ClusterCategoryCreatedCondition indicates the status of the default CAPX
+	// categories: set True by the machine reconciler on first successful
+	// create/get, flipped False by the cluster reconciler on delete.
 	ClusterCategoryCreatedCondition capiv1beta1.ConditionType = "ClusterCategoryCreated"
 
 	ClusterCategoryCreationFailed = "ClusterCategoryCreationFailed"
@@ -166,4 +168,17 @@ const (
 	CredentialRefSecretOwnerSetFailed  = "CredentialRefSecretOwnerSetFailed"
 	TrustBundleSecretOwnerSetCondition = "TrustBundleSecretOwnerSet"
 	TrustBundleSecretOwnerSetFailed    = "TrustBundleSecretOwnerSetFailed"
+)
+
+// Conditions and Reasons related to Metro recovery placement on NutanixMachine.
+const (
+	// MetroRecoveryPlacementCondition indicates that the NutanixMachine VM has been placed
+	// on a paired/alternate site due to maintenance or disaster recovery activity on the
+	// native site. When this condition is True, the VM is running on a site different from
+	// its configured native failure domain.
+	MetroRecoveryPlacementCondition capiv1beta1.ConditionType = "MetroRecoveryPlacement"
+
+	// MetroRecoveryPlacementSiteMaintenanceReason indicates that the VM was placed on the
+	// paired site because the native site is under maintenance (recovery plan job active).
+	MetroRecoveryPlacementSiteMaintenanceReason = "SiteMaintenance"
 )
