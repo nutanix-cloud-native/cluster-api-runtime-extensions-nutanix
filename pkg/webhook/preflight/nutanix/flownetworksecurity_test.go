@@ -111,7 +111,7 @@ func TestGetCiliumLoadBalancerMode(t *testing.T) {
 	}
 }
 
-func TestGetKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t *testing.T) {
+func TestGetKeysOfServicesInFNSEntityGroups(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -125,72 +125,73 @@ func TestGetKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t *testing.T)
 			name: "no entity groups",
 		},
 		{
-			name: "entity group without status",
+			name: "entity group without spec",
 			objects: []ctrlclient.Object{
-				testEntityGroup("no-status", nil),
+				testEntityGroup("no-spec", nil),
 			},
 		},
 		{
-			name: "entity group with empty status",
+			name: "entity group with empty spec",
 			objects: []ctrlclient.Object{
-				testEntityGroup("empty-status", map[string]any{}),
+				testEntityGroup("empty-spec", map[string]any{}),
 			},
 		},
 		{
-			name: "status without service details",
+			name: "ignores entity groups whose resource type is not service_name",
 			objects: []ctrlclient.Object{
-				testEntityGroup("no-services", map[string]any{
-					"lastUpdatedTimestamp": int64(1),
+				testEntityGroup("pod-labels", map[string]any{
+					"resourceType":         "pod_label",
+					"resourceNames":        []any{"app=ingress"},
+					"entityGroupNamespace": "kube-system",
 				}),
 			},
 		},
 		{
-			name: "empty service details",
+			name: "skips entity groups missing service name or namespace",
 			objects: []ctrlclient.Object{
-				testEntityGroup("empty-services", map[string]any{
-					"serviceDetails": []any{},
+				testEntityGroup("no-names", map[string]any{
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"entityGroupNamespace": "default",
+				}),
+				testEntityGroup("empty-names", map[string]any{
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"resourceNames":        []any{},
+					"entityGroupNamespace": "default",
+				}),
+				testEntityGroup("empty-name", map[string]any{
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"resourceNames":        []any{""},
+					"entityGroupNamespace": "default",
+				}),
+				testEntityGroup("no-namespace", map[string]any{
+					"resourceType":  EntityGroupResourceTypeServiceName,
+					"resourceNames": []any{"missing-namespace"},
+				}),
+				testEntityGroup("no-resource-names-or-namespace", map[string]any{
+					"resourceType": EntityGroupResourceTypeServiceName,
 				}),
 			},
 		},
 		{
-			name: "ignores services that are not NodePort or LoadBalancer",
+			name: "uses only the first resource name",
 			objects: []ctrlclient.Object{
-				testEntityGroup("other-types", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("ClusterIP", "clusterip", "default"),
-						serviceDetail("ExternalName", "externalname", "default"),
-					},
+				testEntityGroup("many-names", map[string]any{
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"resourceNames":        []any{"ingress", "ignored"},
+					"entityGroupNamespace": "kube-system",
 				}),
+			},
+			want: []ctrlclient.ObjectKey{
+				{Namespace: "kube-system", Name: "ingress"},
 			},
 		},
 		{
-			name: "skips services missing name or namespace",
+			name: "returns services from every entity group, once each, sorted",
 			objects: []ctrlclient.Object{
-				testEntityGroup("incomplete", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "", "default"),
-						serviceDetail("LoadBalancer", "missing-namespace", ""),
-						serviceDetail("NodePort", "", "default"),
-						serviceDetail("NodePort", "missing-namespace", ""),
-					},
-				}),
-			},
-		},
-		{
-			name: "returns nodeport and loadbalancer services from every entity group",
-			objects: []ctrlclient.Object{
-				testEntityGroup("group-a", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("ClusterIP", "ignored", "default"),
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
-				testEntityGroup("group-b", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "gateway", "istio-system"),
-						serviceDetail("NodePort", "metrics", "monitoring"),
-					},
-				}),
+				testServiceEntityGroup("group-a", "kube-system", "ingress"),
+				testServiceEntityGroup("group-b", "istio-system", "gateway"),
+				testServiceEntityGroup("group-c", "monitoring", "metrics"),
+				testServiceEntityGroup("group-d", "kube-system", "ingress"),
 			},
 			want: []ctrlclient.ObjectKey{
 				{Namespace: "istio-system", Name: "gateway"},
@@ -226,74 +227,42 @@ func TestGetKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t *testing.T)
 			wantErr: "listing entity groups",
 		},
 		{
-			name: "status is not an object",
+			name: "spec is not an object",
 			objects: []ctrlclient.Object{
-				testEntityGroup("bad-status", "not-an-object"),
+				testEntityGroup("bad-spec", "not-an-object"),
 			},
-			wantErr: `getting status from entity group "bad-status"`,
+			wantErr: `reading field 'spec.resourceType' from entity group "bad-spec"`,
 		},
 		{
-			name: "service details is not a list",
-			objects: []ctrlclient.Object{
-				testEntityGroup("bad-services", map[string]any{
-					"serviceDetails": "not-a-list",
-				}),
-			},
-			wantErr: `getting serviceDetails from entity group "bad-services"`,
-		},
-		{
-			name: "service details entry is not an object",
-			objects: []ctrlclient.Object{
-				testEntityGroup("bad-entry", map[string]any{
-					"serviceDetails": []any{"not-an-object"},
-				}),
-			},
-			wantErr: `serviceDetails entry in entity group "bad-entry" is string, expected object`,
-		},
-		{
-			name: "service type is not a string",
+			name: "resource type is not a string",
 			objects: []ctrlclient.Object{
 				testEntityGroup("bad-type", map[string]any{
-					"serviceDetails": []any{
-						map[string]any{
-							"serviceType":      int64(1),
-							"serviceName":      "ingress",
-							"serviceNamespace": "kube-system",
-						},
-					},
+					"resourceType": int64(1),
 				}),
 			},
-			wantErr: `getting serviceType from entity group "bad-type"`,
+			wantErr: `reading field 'spec.resourceType' from entity group "bad-type"`,
 		},
 		{
-			name: "service name is not a string",
+			name: "resource names is not a list of strings",
 			objects: []ctrlclient.Object{
-				testEntityGroup("bad-name", map[string]any{
-					"serviceDetails": []any{
-						map[string]any{
-							"serviceType":      "LoadBalancer",
-							"serviceName":      int64(1),
-							"serviceNamespace": "kube-system",
-						},
-					},
+				testEntityGroup("bad-names", map[string]any{
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"resourceNames":        "ingress",
+					"entityGroupNamespace": "kube-system",
 				}),
 			},
-			wantErr: `getting serviceName from entity group "bad-name"`,
+			wantErr: `reading field 'spec.resourceNames' from entity group "bad-names"`,
 		},
 		{
-			name: "service namespace is not a string",
+			name: "entity group namespace is not a string",
 			objects: []ctrlclient.Object{
 				testEntityGroup("bad-namespace", map[string]any{
-					"serviceDetails": []any{
-						map[string]any{
-							"serviceType":      "LoadBalancer",
-							"serviceName":      "ingress",
-							"serviceNamespace": int64(1),
-						},
-					},
+					"resourceType":         EntityGroupResourceTypeServiceName,
+					"resourceNames":        []any{"ingress"},
+					"entityGroupNamespace": int64(1),
 				}),
 			},
-			wantErr: `getting serviceNamespace from entity group "bad-namespace"`,
+			wantErr: `reading field 'spec.entityGroupNamespace' from entity group "bad-namespace"`,
 		},
 	}
 
@@ -309,7 +278,7 @@ func TestGetKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t *testing.T)
 			}
 			remoteClient := builder.Build()
 
-			got, err := getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(t.Context(), remoteClient)
+			got, err := getKeysOfServicesInFNSEntityGroups(t.Context(), remoteClient)
 			if tt.wantErr != "" {
 				require.ErrorContains(t, err, tt.wantErr)
 				assert.Nil(t, got)
@@ -377,11 +346,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					},
 					Data: map[string]string{"some-other-key": "value"},
 				},
-				testEntityGroup("missing-annotations", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
+				testServiceEntityGroup("missing-annotations", "kube-system", "ingress"),
 				testService("kube-system", "ingress", nil),
 			},
 			want: preflight.CheckResult{Allowed: true},
@@ -404,23 +369,11 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "service referenced as LoadBalancer by entity group is now a ClusterIP",
+			name: "entity group references a ClusterIP service",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("stale-type", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ingress",
-						Namespace: "kube-system",
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeClusterIP,
-					},
-				},
+				testServiceEntityGroup("clusterip", "kube-system", "ingress"),
+				testServiceOfType(corev1.ServiceTypeClusterIP, "kube-system", "ingress", nil),
 			},
 			want: preflight.CheckResult{Allowed: true},
 		},
@@ -445,29 +398,25 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 					return fmt.Errorf("injected list failure")
 				},
 			},
-			internalErrorPrefix: "error getting NodePort and LoadBalancer Services in FNS entity groups: " +
+			internalErrorPrefix: "error getting Services in FNS entity groups: " +
 				"error listing entity groups: injected list failure",
 		},
 		{
 			name: "malformed entity group",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("bad-services", map[string]any{
-					"serviceDetails": "not-a-list",
+				testEntityGroup("bad-type", map[string]any{
+					"resourceType": int64(1),
 				}),
 			},
-			internalErrorPrefix: "error getting NodePort and LoadBalancer Services in FNS entity groups: " +
-				`getting serviceDetails from entity group "bad-services": `,
+			internalErrorPrefix: "error getting Services in FNS entity groups: " +
+				`reading field 'spec.resourceType' from entity group "bad-type": `,
 		},
 		{
 			name: "load balancer service referenced by entity group does not exist",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("missing-service", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
+				testServiceEntityGroup("missing-service", "kube-system", "ingress"),
 			},
 			want: preflight.CheckResult{Allowed: true},
 		},
@@ -475,11 +424,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			name: "error getting load balancer service",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("annotated", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
+				testServiceEntityGroup("annotated", "kube-system", "ingress"),
 				testService("kube-system", "ingress", dsrAnnotations),
 			},
 			interceptors: failGetWhen(isService),
@@ -510,11 +455,7 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			name: "cilium loadBalancer mode is already snat",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap("snat"),
-				testEntityGroup("missing-annotations", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
+				testServiceEntityGroup("missing-annotations", "kube-system", "ingress"),
 				testService("kube-system", "ingress", nil),
 			},
 			want: preflight.CheckResult{Allowed: true},
@@ -530,12 +471,16 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			name: "entity groups do not reference nodeport or load balancer services",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("other-types", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("ClusterIP", "clusterip", "default"),
-						serviceDetail("ExternalName", "externalname", "default"),
-					},
+				testServiceEntityGroup("clusterip", "default", "clusterip"),
+				testServiceEntityGroup("externalname", "default", "externalname"),
+				testEntityGroup("pod-labels", map[string]any{
+					"resourceType":         "pod_label",
+					"resourceNames":        []any{"ingress"},
+					"entityGroupNamespace": "kube-system",
 				}),
+				testServiceOfType(corev1.ServiceTypeClusterIP, "default", "clusterip", nil),
+				testServiceOfType(corev1.ServiceTypeExternalName, "default", "externalname", nil),
+				testService("kube-system", "ingress", nil),
 			},
 			want: preflight.CheckResult{Allowed: true},
 		},
@@ -543,13 +488,9 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			name: "entity groups reference nodeport and load balancer services with cilium dsr annotations",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("annotated", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-						serviceDetail("LoadBalancer", "gateway", "istio-system"),
-						serviceDetail("NodePort", "metrics", "monitoring"),
-					},
-				}),
+				testServiceEntityGroup("annotated-ingress", "kube-system", "ingress"),
+				testServiceEntityGroup("annotated-gateway", "istio-system", "gateway"),
+				testServiceEntityGroup("annotated-metrics", "monitoring", "metrics"),
 				testService("kube-system", "ingress", dsrAnnotations),
 				testService("istio-system", "gateway", dsrAnnotations),
 				testServiceOfType(corev1.ServiceTypeNodePort, "monitoring", "metrics", dsrAnnotations),
@@ -557,38 +498,17 @@ func TestFlowNetworkSecurityDSRToSNATCheckerRun(t *testing.T) {
 			want: preflight.CheckResult{Allowed: true},
 		},
 		{
-			name: "service referenced as NodePort by entity group is now a ClusterIP",
-			objects: []ctrlclient.Object{
-				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("stale-type", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("NodePort", "metrics", "monitoring"),
-					},
-				}),
-				testServiceOfType(corev1.ServiceTypeClusterIP, "monitoring", "metrics", nil),
-			},
-			want: preflight.CheckResult{Allowed: true},
-		},
-		{
 			name: "entity groups reference nodeport and load balancer services missing cilium dsr annotations",
 			objects: []ctrlclient.Object{
 				testCiliumConfigMap(CiliumLoadBalancerModeValueDSR),
-				testEntityGroup("missing-annotations", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("ClusterIP", "ignored", "default"),
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-						serviceDetail("LoadBalancer", "gateway", "istio-system"),
-						serviceDetail("NodePort", "metrics", "monitoring"),
-					},
-				}),
-				testEntityGroup("same-ingress", map[string]any{
-					"serviceDetails": []any{
-						serviceDetail("LoadBalancer", "ingress", "kube-system"),
-					},
-				}),
+				testServiceEntityGroup("ignored", "default", "ignored"),
+				testServiceEntityGroup("ingress", "kube-system", "ingress"),
+				testServiceEntityGroup("gateway", "istio-system", "gateway"),
+				testServiceEntityGroup("metrics", "monitoring", "metrics"),
+				testServiceEntityGroup("same-ingress", "kube-system", "ingress"),
 				testService("kube-system", "ingress", nil),
 				testService("istio-system", "gateway", nil),
-				testService("default", "ignored", nil),
+				testServiceOfType(corev1.ServiceTypeClusterIP, "default", "ignored", nil),
 				testServiceOfType(corev1.ServiceTypeNodePort, "monitoring", "metrics", nil),
 			},
 			messageContains: []string{
@@ -857,7 +777,7 @@ func testServiceOfType(
 	}
 }
 
-func testEntityGroup(name string, status any) *unstructured.Unstructured {
+func testEntityGroup(name string, spec any) *unstructured.Unstructured {
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   FlowNetworkSecurityGroupVersion.Group,
@@ -865,21 +785,16 @@ func testEntityGroup(name string, status any) *unstructured.Unstructured {
 		Kind:    "EntityGroup",
 	})
 	obj.SetName(name)
-	if status != nil {
-		obj.Object["status"] = status
+	if spec != nil {
+		obj.Object["spec"] = spec
 	}
 	return obj
 }
 
-func serviceDetail(serviceType, name, namespace string) map[string]any {
-	detail := map[string]any{
-		"serviceType": serviceType,
-	}
-	if name != "" {
-		detail["serviceName"] = name
-	}
-	if namespace != "" {
-		detail["serviceNamespace"] = namespace
-	}
-	return detail
+func testServiceEntityGroup(name, serviceNamespace, serviceName string) *unstructured.Unstructured {
+	return testEntityGroup(name, map[string]any{
+		"resourceType":         EntityGroupResourceTypeServiceName,
+		"resourceNames":        []any{serviceName},
+		"entityGroupNamespace": serviceNamespace,
+	})
 }

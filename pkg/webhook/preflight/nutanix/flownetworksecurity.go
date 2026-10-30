@@ -35,6 +35,8 @@ const (
 	CiliumForwardingModeAnnotationValueDSR = "dsr"
 )
 
+const EntityGroupResourceTypeServiceName = "service_name"
+
 var FlowNetworkSecurityGroupVersion = schema.GroupVersion{
 	Group:   "flow-container-security.nutanix.com",
 	Version: "v1",
@@ -94,7 +96,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 		}
 	}
 
-	allKeys, err := getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(ctx, remoteClient)
+	allKeys, err := getKeysOfServicesInFNSEntityGroups(ctx, remoteClient)
 	if err != nil {
 		return preflight.CheckResult{
 			Allowed:       false,
@@ -102,7 +104,7 @@ func (c *FlowNetworkSecurityDSRToSNATChecker) Run(ctx context.Context) preflight
 			Causes: []preflight.Cause{
 				{
 					Message: fmt.Sprintf(
-						"error getting NodePort and LoadBalancer Services in FNS entity groups: %s",
+						"error getting Services in FNS entity groups: %s",
 						err,
 					),
 				},
@@ -266,7 +268,9 @@ func getCiliumLoadBalancerMode(
 	return mode, nil
 }
 
-func getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(
+// getKeysOfServicesInFNSEntityGroups returns the ObjectKeys of the Services
+// referenced by the spec of all EntityGroups in the cluster.
+func getKeysOfServicesInFNSEntityGroups(
 	ctx context.Context,
 	remoteClient ctrlclient.Client,
 ) (
@@ -279,6 +283,7 @@ func getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(
 		Version: FlowNetworkSecurityGroupVersion.Version,
 		Kind:    "EntityGroup",
 	})
+	// EntityGroups are cluster-scoped resources.
 	err := remoteClient.List(ctx, entityGroups)
 	if err != nil {
 		if meta.IsNoMatchError(err) {
@@ -290,84 +295,67 @@ func getKeysOfNodePortAndLoadBalancerServicesInFNSEntityGroups(
 	// When multiple EntityGroups reference the same Service,
 	// we only need to check the annotations of the Service once.
 	// Therefore, we only record the ObjectKey of the Service once.
-	uniqueObjectKeys := map[string]ctrlclient.ObjectKey{}
+	uniqueServiceKeys := map[string]ctrlclient.ObjectKey{}
 	for i := range entityGroups.Items {
 		entityGroup := &entityGroups.Items[i]
 
-		status, found, err := unstructured.NestedMap(entityGroup.Object, "status")
+		resourceType, resourceTypeFound, err := unstructured.NestedString(entityGroup.Object, "spec", "resourceType")
 		if err != nil {
 			return nil, fmt.Errorf(
-				"getting status from entity group %q: %w",
+				"reading field 'spec.resourceType' from entity group %q: %w",
 				entityGroup.GetName(),
 				err,
 			)
 		}
-		if !found || len(status) == 0 {
+		if !resourceTypeFound || resourceType != EntityGroupResourceTypeServiceName {
 			continue
 		}
 
-		serviceDetails, found, err := unstructured.NestedSlice(entityGroup.Object, "status", "serviceDetails")
+		resourceNames, resourceNamesFound, err := unstructured.NestedStringSlice(
+			entityGroup.Object,
+			"spec",
+			"resourceNames",
+		)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"getting serviceDetails from entity group %q: %w",
+				"reading field 'spec.resourceNames' from entity group %q: %w",
 				entityGroup.GetName(),
 				err,
 			)
 		}
-		if !found || len(serviceDetails) == 0 {
+		if !resourceNamesFound || len(resourceNames) == 0 || resourceNames[0] == "" {
 			continue
 		}
 
-		for _, entry := range serviceDetails {
-			details, ok := entry.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf(
-					"serviceDetails entry in entity group %q is %T, expected object",
-					entityGroup.GetName(),
-					entry,
-				)
-			}
-
-			serviceType, _, err := unstructured.NestedString(details, "serviceType")
-			if err != nil {
-				return nil, fmt.Errorf(
-					"getting serviceType from entity group %q: %w",
-					entityGroup.GetName(),
-					err,
-				)
-			}
-			if !isServiceTypeAffectedByCiliumLoadBalancerMode(corev1.ServiceType(serviceType)) {
-				continue
-			}
-
-			serviceName, _, err := unstructured.NestedString(details, "serviceName")
-			if err != nil {
-				return nil, fmt.Errorf(
-					"getting serviceName from entity group %q: %w",
-					entityGroup.GetName(),
-					err,
-				)
-			}
-			serviceNamespace, _, err := unstructured.NestedString(details, "serviceNamespace")
-			if err != nil {
-				return nil, fmt.Errorf(
-					"getting serviceNamespace from entity group %q: %w",
-					entityGroup.GetName(),
-					err,
-				)
-			}
-			if serviceName == "" || serviceNamespace == "" {
-				continue
-			}
-
-			key := ctrlclient.ObjectKey{
-				Name:      serviceName,
-				Namespace: serviceNamespace,
-			}
-			uniqueObjectKeys[key.String()] = key
+		entityGroupNamespace, entityGroupNamespaceFound, err := unstructured.NestedString(
+			entityGroup.Object,
+			"spec",
+			"entityGroupNamespace",
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"reading field 'spec.entityGroupNamespace' from entity group %q: %w",
+				entityGroup.GetName(),
+				err,
+			)
 		}
+		if !entityGroupNamespaceFound || entityGroupNamespace == "" {
+			continue
+		}
+
+		// The EntityGroup references a Service by name and namespace, so we can record the Service key.
+		serviceKey := ctrlclient.ObjectKey{
+			// When the resource type is "service_name", the service name
+			// is assumed to be the first element; any other elements are
+			// ignored by the Flow Network Security controller.
+			Name: resourceNames[0],
+			// When the resource type is "service_name", the entity group namespace
+			// is assumed to be the namespace of the Service.
+			Namespace: entityGroupNamespace,
+		}
+		uniqueServiceKeys[serviceKey.String()] = serviceKey
 	}
-	return slices.SortedFunc(maps.Values(uniqueObjectKeys), func(a, b ctrlclient.ObjectKey) int {
+	return slices.SortedFunc(maps.Values(uniqueServiceKeys), func(a, b ctrlclient.ObjectKey) int {
 		return strings.Compare(a.String(), b.String())
 	}), nil
 }
