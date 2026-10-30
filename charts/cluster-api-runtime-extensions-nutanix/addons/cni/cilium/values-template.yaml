@@ -48,6 +48,8 @@ tunnelProtocol: geneve
 loadBalancer:
   mode: dsr
   dsrDispatch: geneve
+bpf:
+  masquerade: true
 {{- end }}
 {{- if eq .Provider "eks" }}
 enableIPv4Masquerade: false
