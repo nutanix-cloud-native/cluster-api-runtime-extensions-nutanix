@@ -1,0 +1,14 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# A cluster deployed into a Prism Central project provisions volumes from a storage container that
+# belongs to that project, not from the broad-scope container the other examples use.
+#
+# hypervisorAttached must be ENABLED: the Nutanix CSI driver defaults to iSCSI-attached volumes,
+# which are only supported in the Prism Central default project. CAREN's NutanixCSIProjectPolicy
+# and NutanixCSIProjectReference preflight checks reject a non-default project without it.
+- op: replace
+  path: "/spec/topology/variables/0/value/addons/csi/providers/nutanix/storageClassConfigs/volume/parameters"
+  value:
+    storageContainer: ${NUTANIX_PROJECT_STORAGE_CONTAINER_NAME}
+    hypervisorAttached: ENABLED

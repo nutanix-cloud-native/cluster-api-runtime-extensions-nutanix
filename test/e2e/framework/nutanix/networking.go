@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	networkingcommonapi "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/common/v1/config"
-	networkingapi "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
+	subnetModels "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/utils/ptr"
 
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
@@ -90,9 +90,9 @@ func ReserveIP(
 	taskRef, err := convergedClient.Subnets.ReserveIpsBySubnetId(
 		ctx,
 		subnetUUID.String(),
-		&networkingapi.IpReserveSpec{
+		&subnetModels.IpReserveSpec{
 			Count:       ptr.To[int64](1),
-			ReserveType: ptr.To(networkingapi.RESERVETYPE_IP_ADDRESS_COUNT),
+			ReserveType: ptr.To(subnetModels.RESERVETYPE_IP_ADDRESS_COUNT),
 		},
 	)
 	if err != nil {
@@ -176,8 +176,8 @@ func UnreserveIP(
 	taskRef, err := convergedClient.Subnets.UnreserveIpsBySubnetId(
 		ctx,
 		subnetUUID.String(),
-		&networkingapi.IpUnreserveSpec{
-			UnreserveType: ptr.To(networkingapi.UNRESERVETYPE_IP_ADDRESS_LIST),
+		&subnetModels.IpUnreserveSpec{
+			UnreserveType: ptr.To(subnetModels.UNRESERVETYPE_IP_ADDRESS_LIST),
 			IpAddresses:   []networkingcommonapi.IPAddress{*ipAddress},
 		},
 	)

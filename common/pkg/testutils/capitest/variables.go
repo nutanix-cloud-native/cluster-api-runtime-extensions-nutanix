@@ -35,7 +35,7 @@ func ValidateDiscoverVariables[V mutation.DiscoverVariables](
 ) {
 	t.Helper()
 
-	ValidateDiscoverVariablesAs[V, any](
+	ValidateDiscoverVariablesAs[V, map[string]any](
 		t,
 		variableName,
 		variableSchema,
@@ -91,7 +91,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 			case tt.OldVals != nil:
 				encodedOldVals, err := json.Marshal(tt.OldVals)
 				g.Expect(err).NotTo(gomega.HaveOccurred())
-				validateErr = openapi.ValidateClusterVariableUpdate[T](
+				validateErr = openapi.ValidateClusterVariableUpdate[map[string]any](
 					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},
@@ -104,7 +104,7 @@ func ValidateDiscoverVariablesAs[V mutation.DiscoverVariables, T any](
 					field.NewPath(variableName),
 				).ToAggregate()
 			default:
-				validateErr = openapi.ValidateClusterVariable[T](
+				validateErr = openapi.ValidateClusterVariable[map[string]any](
 					&clusterv1.ClusterVariable{
 						Name:  variableName,
 						Value: apiextensionsv1.JSON{Raw: encodedVals},

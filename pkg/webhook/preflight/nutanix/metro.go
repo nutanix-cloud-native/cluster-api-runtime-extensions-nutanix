@@ -18,6 +18,7 @@ import (
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/capx/nutanixprojectpolicy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -25,6 +26,15 @@ const (
 	metroPrismElementCount = 2
 	nutanixMetroName       = "NutanixMetro"
 	cpFailureDomainsField  = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.failureDomains" //nolint:lll // Message is long.
+
+	// nutanixMetroProjectPolicyName is the name of the check that ensures a metro
+	// Cluster's project policy is restricted to the default Prism Central project.
+	nutanixMetroProjectPolicyName = "NutanixMetroProjectPolicy"
+	// nutanixMetroProjectReferenceName is the name of the check that ensures a
+	// metro Cluster's machine details only reference the default Prism Central
+	// project.
+	nutanixMetroProjectReferenceName = "NutanixMetroProjectReference"
+
 	// metroMaxRTTMillis is the maximum network round-trip time, in
 	// milliseconds, supported between the two Prism Elements of a metro
 	// configuration for safe synchronous replication.
@@ -52,8 +62,6 @@ const (
 
 	// metroVMImageCheckName is the name of the metro unsupported-OS VM image preflight check.
 	metroVMImageCheckName = "NutanixMetroVMImage"
-
-	controlPlaneMachineDetailsField = "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails" //nolint:lll // Field is long.
 )
 
 // metroUnsupportedOSVersions are guest OS identifiers rejected for a stretched Kubernetes
@@ -93,6 +101,18 @@ func failCheck(result *preflight.CheckResult, field, message string) {
 func failCheckInternal(result *preflight.CheckResult, field, message string) {
 	result.InternalError = true
 	failCheck(result, field, message)
+}
+
+// failCheckClientNotInitialized records the standard cause for a check that cannot run because the
+// Nutanix Prism Central client was never initialized (typically because NutanixCredentials failed
+// earlier). action describes, in the imperative, what the check needed the client for, e.g. "validate
+// project consistency".
+func failCheckClientNotInitialized(result *preflight.CheckResult, field, action string) {
+	failCheckInternal(
+		result,
+		field,
+		fmt.Sprintf("Nutanix Prism Central client is not initialized; cannot %s.", action),
+	)
 }
 
 func (mc *metroCheck) Name() string {
@@ -147,14 +167,33 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 	// standalone failure domain whose Prism Element is a third PE.
 	if len(metroNames) > 0 {
 		fdNames, errMessage := clusterFailureDomainNames(cd)
+		checks = append(checks, &clusterPrismElementScaleCheck{
+			failureDomainNames: fdNames,
+			namespace:          cd.cluster.Namespace,
+			field:              firstField,
+			kclient:            cd.kclient,
+			nclient:            cd.nclient,
+			errMessage:         errMessage,
+		})
+
+		// Stretch clusters on AHV Metro are only supported in the default Prism
+		// Central project. These two guardrails enforce that:
+		//   1. the Cluster's project policy is restricted to default-only, and
+		//   2. no machine details reference a non-default project.
+		policy := ""
+		if cd.cluster != nil && cd.cluster.Annotations != nil {
+			policy = cd.cluster.Annotations[nutanixprojectpolicy.NutanixProjectPolicyAnnotationKey]
+		}
 		checks = append(checks,
-			&clusterPrismElementScaleCheck{
-				failureDomainNames: fdNames,
-				namespace:          cd.cluster.Namespace,
-				field:              firstField,
-				kclient:            cd.kclient,
-				nclient:            cd.nclient,
-				errMessage:         errMessage,
+			&metroProjectPolicyCheck{
+				policy: policy,
+				field:  clusterProjectPolicyField,
+			},
+			&metroProjectReferenceCheck{
+				refs:      collectNutanixProjectRefsWithFields(cd),
+				nclient:   cd.nclient,
+				pcVersion: cd.pcVersion,
+				field:     firstField,
 			},
 			// Prism Central must not reside on either of the metro's Prism
 			// Elements: otherwise a single Prism Element failure would take down
@@ -809,6 +848,80 @@ func (c *singleMetroCheck) Run(_ context.Context) preflight.CheckResult {
 	return result
 }
 
+// metroProjectPolicyCheck enforces that a metro Cluster's project policy is
+// restricted to the default Prism Central project. Stretch clusters on AHV Metro
+// are only supported in the default project, so the policy must be default-only.
+type metroProjectPolicyCheck struct {
+	policy string
+	field  string
+}
+
+func (c *metroProjectPolicyCheck) Name() string {
+	return nutanixMetroProjectPolicyName
+}
+
+func (c *metroProjectPolicyCheck) Run(_ context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if c.policy != nutanixprojectpolicy.PolicyDefaultOnly {
+		failCheck(
+			&result,
+			c.field,
+			"Project Policy Violation: A metro (stretched) cluster is only supported with the default Prism Central project.", //nolint:lll // Message is long.
+		)
+	}
+
+	return result
+}
+
+// metroProjectReferenceCheck enforces that a metro Cluster's machine details do
+// not reference a non-default Prism Central project. Stretch clusters on AHV
+// Metro are only supported in the default project.
+type metroProjectReferenceCheck struct {
+	refs      []projectRefWithField
+	nclient   client
+	pcVersion string
+	field     string
+}
+
+func (c *metroProjectReferenceCheck) Name() string {
+	return nutanixMetroProjectReferenceName
+}
+
+func (c *metroProjectReferenceCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if len(c.refs) == 0 {
+		return result
+	}
+
+	if c.nclient == nil {
+		failCheckClientNotInitialized(&result, c.field, "validate the default project for the metro Cluster")
+		return result
+	}
+
+	def, err := c.nclient.ResolvePCDefaultProject(ctx, c.pcVersion)
+	if err != nil {
+		// Fall back to the zero-UUID default project when the real default project cannot be
+		// resolved (e.g. a project-scoped user without permission to read it). It never matches a
+		// real project, so a non-default project reference is still reported.
+		def = &PCDefaultProject{UUID: zeroProjectUUID}
+	}
+
+	for _, ref := range c.refs {
+		if ProjectMatchesDefault(ref.id, def) {
+			continue
+		}
+		failCheck(
+			&result,
+			ref.field,
+			"Stretch clusters on AHV Metro are only supported in the default Prism Central project. A non-default project reference is set on the machine details.", //nolint:lll // Message is long.
+		)
+	}
+
+	return result
+}
+
 // metroReference identifies a NutanixMetro referenced by the Cluster and the
 // topology field that referenced it.
 type metroReference struct {
@@ -1388,19 +1501,4 @@ func newMetroVMImageChecks(cd *checkDependencies) []preflight.Check {
 	}
 
 	return checks
-}
-
-// clusterReferencesMetro reports whether any control plane or worker failure domain is a
-// NutanixMetro or NutanixMetroSite reference.
-func clusterReferencesMetro(cd *checkDependencies) bool {
-	if cd == nil {
-		return false
-	}
-	found := false
-	forEachClusterFailureDomain(cd, func(fd, _ string) {
-		if isNutanixMetroFailureDomain(fd) || isNutanixMetroSiteFailureDomain(fd) {
-			found = true
-		}
-	})
-	return found
 }

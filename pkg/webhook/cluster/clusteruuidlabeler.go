@@ -5,7 +5,7 @@ package cluster
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -17,6 +17,10 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
+
+// errSkipClusterMutation signals that the cluster mutator should admit the request without patches
+// (e.g. no topology).
+var errSkipClusterMutation = errors.New("skip cluster mutation")
 
 type clusterUUIDLabeler struct {
 	client  ctrlclient.Client
@@ -32,26 +36,15 @@ func NewClusterUUIDLabeler(
 	}
 }
 
-func (a *clusterUUIDLabeler) Defaulter() admission.HandlerFunc {
-	return a.defaulter
-}
-
 func (a *clusterUUIDLabeler) Validator() admission.HandlerFunc {
 	return a.validate
 }
 
-func (a *clusterUUIDLabeler) defaulter(
-	ctx context.Context,
-	req admission.Request,
-) admission.Response {
-	cluster := &clusterv1.Cluster{}
-	err := a.decoder.Decode(req, cluster)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-
+// mutateCluster applies the cluster UUID defaulting rules to cluster (in-memory).
+// It returns errSkipClusterMutation when the request should be admitted without patches.
+func (a *clusterUUIDLabeler) mutateCluster(req admission.Request, cluster *clusterv1.Cluster) error {
 	if !cluster.Spec.Topology.IsDefined() {
-		return admission.Allowed("")
+		return errSkipClusterMutation
 	}
 
 	if cluster.Annotations == nil {
@@ -72,10 +65,7 @@ func (a *clusterUUIDLabeler) defaulter(
 			oldCluster := &clusterv1.Cluster{}
 			err := a.decoder.DecodeRaw(req.OldObject, oldCluster)
 			if err != nil {
-				return admission.Errored(
-					http.StatusBadRequest,
-					fmt.Errorf("failed to decode old cluster: %w", err),
-				)
+				return fmt.Errorf("failed to decode old cluster: %w", err)
 			}
 
 			oldClusterUUID, ok := oldCluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
@@ -95,11 +85,7 @@ func (a *clusterUUIDLabeler) defaulter(
 		}
 	}
 
-	marshaledCluster, err := json.Marshal(cluster)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledCluster)
+	return nil
 }
 
 func (a *clusterUUIDLabeler) validate(

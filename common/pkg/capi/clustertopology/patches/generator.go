@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	jsonpatchapply "github.com/evanphx/json-patch/v5"
 	"github.com/go-logr/logr"
@@ -94,6 +96,18 @@ func MutateIfApplicable[T runtime.Object](
 		return fmt.Errorf("failed to create JSON patches for modified typed object: %w", err)
 	}
 
+	// jsonpatch.CreatePatch can emit "replace" operations for paths that don't exist in the (possibly minimal)
+	// input object. Applying such a patch to the minimal input fails with:
+	//   replace operation does not apply: doc is missing key: /some/path
+	//
+	// To preserve the "works with minimal templates" behavior, convert "replace" to "add" when the input
+	// object does not currently have the path.
+	for i := range jsonOps {
+		if strings.EqualFold(jsonOps[i].Operation, "replace") && !jsonPointerExists(obj.Object, jsonOps[i].Path) {
+			jsonOps[i].Operation = "add"
+		}
+	}
+
 	// Apply the patches to the original unstructured input.
 	jsonOpsBytes, err := json.Marshal(jsonOps)
 	if err != nil {
@@ -127,4 +141,39 @@ func MutateIfApplicable[T runtime.Object](
 	}
 
 	return nil
+}
+
+// jsonPointerExists returns true if the given RFC6901 JSON pointer exists in the document.
+// It supports map keys and array indices.
+func jsonPointerExists(doc any, pointer string) bool {
+	if pointer == "" || pointer == "/" {
+		return true
+	}
+	if !strings.HasPrefix(pointer, "/") {
+		return false
+	}
+
+	cur := doc
+	parts := strings.Split(pointer, "/")[1:]
+	for _, raw := range parts {
+		tok := strings.ReplaceAll(strings.ReplaceAll(raw, "~1", "/"), "~0", "~")
+
+		switch node := cur.(type) {
+		case map[string]any:
+			v, ok := node[tok]
+			if !ok {
+				return false
+			}
+			cur = v
+		case []any:
+			idx, err := strconv.Atoi(tok)
+			if err != nil || idx < 0 || idx >= len(node) {
+				return false
+			}
+			cur = node[idx]
+		default:
+			return false
+		}
+	}
+	return true
 }

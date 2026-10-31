@@ -21,6 +21,7 @@ require (
 	github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common v0.7.0
 	github.com/nutanix-cloud-native/prism-go-client v0.8.2
 	github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.3.1
+	github.com/nutanix/ntnx-api-golang-clients/multidomain-go-client/v4 v4.4.1-beta.1
 	github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.4.1
 	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.4.1
 	github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4 v4.3.1
@@ -145,7 +146,6 @@ require (
 	github.com/nutanix/ntnx-api-golang-clients/datapolicies-go-client/v4 v4.3.1 // indirect
 	github.com/nutanix/ntnx-api-golang-clients/iam-go-client/v4 v4.1.2-beta.3 // indirect
 	github.com/nutanix/ntnx-api-golang-clients/monitoring-go-client/v4 v4.3.1 // indirect
-	github.com/nutanix/ntnx-api-golang-clients/multidomain-go-client/v4 v4.4.1-beta.1 // indirect
 	github.com/nutanix/ntnx-api-golang-clients/volumes-go-client/v4 v4.3.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect

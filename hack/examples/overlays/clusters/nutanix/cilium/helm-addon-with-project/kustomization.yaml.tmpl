@@ -1,0 +1,16 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../helm-addon
+
+patches:
+  - target:
+      kind: Cluster
+    path: ../../../../../patches/nutanix/project.yaml
+  - target:
+      kind: Cluster
+    path: ../../../../../patches/nutanix/project-storage-container.yaml

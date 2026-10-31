@@ -14,6 +14,7 @@ import (
 	vmmv4error "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/error"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -513,6 +514,83 @@ func TestGetVMImages(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetVMImagesInProject_UsesProjectFilter(t *testing.T) {
+	t.Parallel()
+
+	id := &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: new("ubuntu-2404"),
+	}
+	callCount := 0
+	nclient := &clientWrapper{
+		ListImagesFunc: func(
+			ctx context.Context,
+			page_ *int,
+			limit_ *int,
+			filter_ *string,
+			orderby_ *string,
+			select_ *string,
+			args ...map[string]any,
+		) (*vmmv4.ListImagesApiResponse, error) {
+			require.NotNil(t, filter_)
+			callCount++
+			if callCount == 1 {
+				assert.Equal(t, "name eq 'ubuntu-2404' and projectExtId eq 'project-uuid-1'", *filter_)
+				resp := &vmmv4.ListImagesApiResponse{}
+				err := resp.SetData([]vmmv4.Image{})
+				require.NoError(t, err)
+				return resp, nil
+			}
+			assert.Equal(t, "name eq 'ubuntu-2404' and isSharedWithAllProjects eq true", *filter_)
+			resp := &vmmv4.ListImagesApiResponse{}
+			err := resp.SetData([]vmmv4.Image{{Name: new("ubuntu-2404")}})
+			require.NoError(t, err)
+			return resp, nil
+		},
+	}
+
+	images, err := getVMImagesInProject(context.Background(), nclient, id, "project-uuid-1")
+	require.NoError(t, err)
+	require.Len(t, images, 1)
+	assert.Equal(t, 2, callCount)
+}
+
+func TestGetVMImagesInProject_PrefersProjectOwnedByName(t *testing.T) {
+	t.Parallel()
+
+	id := &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: new("ubuntu-2404"),
+	}
+	callCount := 0
+	nclient := &clientWrapper{
+		ListImagesFunc: func(
+			ctx context.Context,
+			page_ *int,
+			limit_ *int,
+			filter_ *string,
+			orderby_ *string,
+			select_ *string,
+			args ...map[string]any,
+		) (*vmmv4.ListImagesApiResponse, error) {
+			require.NotNil(t, filter_)
+			callCount++
+			assert.Equal(t, 1, callCount)
+			assert.Equal(t, "name eq 'ubuntu-2404' and projectExtId eq 'project-uuid-1'", *filter_)
+			resp := &vmmv4.ListImagesApiResponse{}
+			err := resp.SetData([]vmmv4.Image{{Name: new("ubuntu-2404"), ExtId: new("owned-id")}})
+			require.NoError(t, err)
+			return resp, nil
+		},
+	}
+
+	images, err := getVMImagesInProject(context.Background(), nclient, id, "project-uuid-1")
+	require.NoError(t, err)
+	require.Len(t, images, 1)
+	assert.Equal(t, "owned-id", ptr.Deref(images[0].ExtId, ""))
+	assert.Equal(t, 1, callCount)
 }
 
 func TestNewVMImageChecks(t *testing.T) {

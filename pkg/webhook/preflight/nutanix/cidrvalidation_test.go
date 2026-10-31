@@ -9,11 +9,15 @@ import (
 	"net/netip"
 	"testing"
 
+	multidomainv4 "github.com/nutanix/ntnx-api-golang-clients/multidomain-go-client/v4/models/multidomain/v4/config"
 	networkingcommonapi "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/common/v1/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+
+	converged "github.com/nutanix-cloud-native/prism-go-client/converged"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -181,7 +185,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 				},
 				{
 					prefix: netip.MustParsePrefix("10.100.0.0/16"),
-					field:  "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]", //nolint:lll // Field path is long.
+					field:  "$.spec.topology.workers.machineDeployments[?@.name==\"md-0\"].variables[?@.name=='workerConfig'].value.nutanix.machineDetails.subnets[0]", //nolint:lll // Field path is long.
 					name:   "worker-subnet",
 				},
 			},
@@ -196,7 +200,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 				},
 				{
 					messagePart: `Service CIDR "10.96.0.0/12" overlaps with node subnet "worker-subnet"`,
-					field:       `$.spec.topology.workers.machineDeployments[?@.name=="md-0"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
+					field:       `$.spec.topology.workers.machineDeployments[?@.name=="md-0"].variables[?@.name=='workerConfig'].value.nutanix.machineDetails.subnets[0]`,
 				},
 			},
 		},
@@ -371,6 +375,7 @@ func TestCIDRValidationCheckRun(t *testing.T) {
 				cd: cd,
 				resolveNodeSubnetsFunc: func(
 					_ context.Context,
+					_ *checkDependencies,
 					_ client,
 					subnets []nutanixSubnet,
 				) ([]resolvedNodeSubnet, []string, error) {
@@ -469,10 +474,173 @@ func TestCollectNodeSubnetSources(t *testing.T) {
 
 	assert.Equal(
 		t,
-		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[0]`,
+		`$.spec.topology.workers.machineDeployments[?@.name=="md-1"].variables[?@.name=='workerConfig'].value.nutanix.machineDetails.subnets[0]`,
 		subnets[2].field,
 	)
 	assert.Equal(t, workerCluster, subnets[2].cluster)
+}
+
+func TestFilterSubnetsByPEClusterUsesClusterReferenceList(t *testing.T) {
+	t.Parallel()
+
+	subnets := []netv4.Subnet{
+		{
+			SubnetType:           ptr.To(netv4.SUBNETTYPE_VLAN),
+			ClusterReferenceList: []string{"pe-1"},
+		},
+		{
+			SubnetType:           ptr.To(netv4.SUBNETTYPE_VLAN),
+			ClusterReferenceList: []string{"pe-2"},
+		},
+	}
+
+	filtered, err := filterSubnetsByPECluster(
+		context.Background(),
+		nil,
+		&clientWrapper{},
+		subnets,
+		&capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierUUID, UUID: new("pe-1")},
+		nil,
+	)
+	require.NoError(t, err)
+	require.Len(t, filtered, 1)
+	assert.Equal(t, []string{"pe-1"}, filtered[0].ClusterReferenceList)
+}
+
+func TestResolveNodeSubnetsDoesNotConflateSameNameAcrossClusters(t *testing.T) {
+	t.Parallel()
+
+	// Two distinct subnets share the name "shared-name" but live on different PE clusters.
+	allSubnets := []netv4.Subnet{
+		{
+			Name:                 new("shared-name"),
+			SubnetType:           ptr.To(netv4.SUBNETTYPE_VLAN),
+			ClusterReferenceList: []string{"pe-1"},
+			IpConfig: []netv4.IPConfig{{
+				Ipv4: &netv4.IPv4Config{
+					IpSubnet: &netv4.IPv4Subnet{
+						Ip:           &networkingcommonapi.IPv4Address{Value: new("10.1.0.0")},
+						PrefixLength: new(24),
+					},
+				},
+			}},
+		},
+		{
+			Name:                 new("shared-name"),
+			SubnetType:           ptr.To(netv4.SUBNETTYPE_VLAN),
+			ClusterReferenceList: []string{"pe-2"},
+			IpConfig: []netv4.IPConfig{{
+				Ipv4: &netv4.IPv4Config{
+					IpSubnet: &netv4.IPv4Subnet{
+						Ip:           &networkingcommonapi.IPv4Address{Value: new("10.2.0.0")},
+						PrefixLength: new(24),
+					},
+				},
+			}},
+		},
+	}
+
+	nclient := &clientWrapper{
+		ListSubnetsByFilterFunc: func(context.Context, string) ([]netv4.Subnet, error) {
+			return allSubnets, nil
+		},
+	}
+
+	subnets := []nutanixSubnet{
+		{
+			id:      capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierName, Name: new("shared-name")},
+			field:   "controlPlane",
+			cluster: &capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierUUID, UUID: new("pe-1")},
+		},
+		{
+			id:      capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierName, Name: new("shared-name")},
+			field:   "worker",
+			cluster: &capxv1.NutanixResourceIdentifier{Type: capxv1.NutanixIdentifierUUID, UUID: new("pe-2")},
+		},
+	}
+
+	resolved, warnings, err := resolveNodeSubnets(context.Background(), nil, nclient, subnets)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	require.Len(t, resolved, 2)
+
+	byField := map[string]netip.Prefix{}
+	for _, r := range resolved {
+		byField[r.field] = r.prefix
+	}
+	assert.Equal(t, netip.MustParsePrefix("10.1.0.0/24"), byField["controlPlane"])
+	assert.Equal(t, netip.MustParsePrefix("10.2.0.0/24"), byField["worker"])
+}
+
+func TestResolvePEClusterUUIDProjectScoped(t *testing.T) {
+	t.Parallel()
+
+	cd := &checkDependencies{pcVersion: "7.6"}
+	projectRef := new(capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierUUID,
+		UUID: new(subnetTestProjectUUID),
+	})
+	clusterRef := capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: new("pe-project-scoped"),
+	}
+
+	t.Run("resolved via project resource groups, never calls getClusters", func(t *testing.T) {
+		t.Parallel()
+
+		nclient := &clientWrapper{
+			ResolvePCDefaultProjectFunc: func(context.Context, string) (*PCDefaultProject, error) {
+				return nil, projectScopedDefaultProjectErr()
+			},
+			ResolveProjectFunc: func(context.Context, *capxv1.NutanixResourceIdentifier, string) (*resolvedProject, error) {
+				return &resolvedProject{UUID: subnetTestProjectUUID}, nil
+			},
+			ListResourceGroupsFunc: func(
+				context.Context, ...converged.ODataOption,
+			) ([]multidomainv4.ResourceGroup, error) {
+				return []multidomainv4.ResourceGroup{{ExtId: new("rg-1"), Name: new("rg-1")}}, nil
+			},
+			ListPrismElementsByResourceGroupFunc: func(
+				_ context.Context, _ string,
+			) ([]converged.PrismElementInfo, error) {
+				return []converged.PrismElementInfo{{ExtId: "pe-uuid-from-project", Name: "pe-project-scoped"}}, nil
+			},
+			// No ListClustersFunc/GetClusterByIdFunc set: a call to the global cluster-management
+			// API would fail with "Func is not set", so success here proves the project-scoped
+			// path was taken instead.
+		}
+
+		peUUID, err := resolvePEClusterUUID(context.Background(), cd, nclient, &clusterRef, projectRef)
+		require.NoError(t, err)
+		assert.Equal(t, "pe-uuid-from-project", peUUID)
+	})
+
+	t.Run("PE not available in project scope - error", func(t *testing.T) {
+		t.Parallel()
+
+		nclient := &clientWrapper{
+			ResolvePCDefaultProjectFunc: func(context.Context, string) (*PCDefaultProject, error) {
+				return nil, projectScopedDefaultProjectErr()
+			},
+			ResolveProjectFunc: func(context.Context, *capxv1.NutanixResourceIdentifier, string) (*resolvedProject, error) {
+				return &resolvedProject{UUID: subnetTestProjectUUID}, nil
+			},
+			ListResourceGroupsFunc: func(
+				context.Context, ...converged.ODataOption,
+			) ([]multidomainv4.ResourceGroup, error) {
+				return []multidomainv4.ResourceGroup{{ExtId: new("rg-1"), Name: new("rg-1")}}, nil
+			},
+			ListPrismElementsByResourceGroupFunc: func(
+				_ context.Context, _ string,
+			) ([]converged.PrismElementInfo, error) {
+				return []converged.PrismElementInfo{{ExtId: "some-other-pe-uuid", Name: "some-other-pe"}}, nil
+			},
+		}
+
+		_, err := resolvePEClusterUUID(context.Background(), cd, nclient, &clusterRef, projectRef)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not available in the selected project scope")
+	})
 }
 
 func TestExtractIPv4PrefixesFromSubnet(t *testing.T) {

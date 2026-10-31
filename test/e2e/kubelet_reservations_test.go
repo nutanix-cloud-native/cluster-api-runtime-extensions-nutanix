@@ -55,7 +55,7 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 
 				applyProviderKubernetesVersionOverride(testE2EConfig, lowercaseProvider)
 
-				if provider == "Nutanix" {
+				if provider == nutanixProvider {
 					reserveNutanixIPsForCluster(testE2EConfig)
 				}
 

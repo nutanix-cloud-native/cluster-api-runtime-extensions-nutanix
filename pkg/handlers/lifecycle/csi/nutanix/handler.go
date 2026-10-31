@@ -101,7 +101,7 @@ func (n *NutanixCSI) Apply(
 			n.config.helmAddonConfig,
 			n.client,
 			helmChart,
-		)
+		).WithValueTemplater(templateValues)
 	case "":
 		return fmt.Errorf("strategy not provided for Nutanix CSI driver")
 	default:
