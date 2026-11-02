@@ -36,6 +36,14 @@ The discovery files differ only in serialization. CAPI v1.13 changed the `Discov
 on both sides, all 9 files are identical. CAPI stores and compares the schema semantically, so this difference does
 not change Cluster variables or roll Machines.
 
+## After rebasing onto `257745de`
+
+`main` moved to CAPI v1.14.3 (#1729). All `v6` and `v7` patch golden files are unchanged. The same PR re-synced the
+CAPX API, which adds an optional GPU `profile` field (and a `profile` value for `type`) to the unversioned
+`NutanixClusterConfigVars` and `NutanixWorkerConfigVars` schemas. The change is additive and has no defaults, so
+existing Cluster variables stay valid and unchanged and nothing rolls. It is still a change to a released schema: PR 5
+pins `v6` discovery to the `v0.50.0` schema, without this field.
+
 ## Consequences for the plan
 
 - PR 6 (align `v6` with `v0.50.0`) is not needed; drop layer `NCN-107121-05-align-v6`.

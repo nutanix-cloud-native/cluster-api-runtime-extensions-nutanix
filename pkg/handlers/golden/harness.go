@@ -31,7 +31,7 @@ import (
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
-	"sigs.k8s.io/cluster-api/webhooks"
+	"sigs.k8s.io/cluster-api/core/webhooks/admission"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -132,7 +132,7 @@ func DefaultVariables(
 		}
 	}
 
-	return (&webhooks.Cluster{}).DefaultAndValidateVariables(ctx, in.Cluster, nil, in.ClusterClass), nil
+	return (&admission.Cluster{}).DefaultAndValidateVariables(ctx, in.Cluster, nil, in.ClusterClass), nil
 }
 
 // BuildRequest builds the GeneratePatchesRequest CAPI sends to the external patch named patch in the ClusterClass,
