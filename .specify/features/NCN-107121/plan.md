@@ -366,10 +366,10 @@ Every task ends with: build, `make test.root GOTEST_RUN=TestGolden`, and `git st
 
 #### T4.3 — Full `v6` copy
 
-- [ ] Save `pkg/handlers/v6/generic/mutation/generic/imageregistries/credentials` aside; delete `pkg/handlers/v6`.
-- [ ] `cp -R pkg/handlers/v7 pkg/handlers/v6`; rewrite imports `/v7/` to `/v6/` and names `v7configpatch` to `v6configpatch` inside `v6`.
-- [ ] Restore the saved `credentials` package over the copy.
-- [ ] Verify golden files unchanged for both versions. This proves the copy reproduces `main`'s `v6` output exactly.
+- [x] Remove `pkg/handlers/v6` (`git rm`), keeping its `handlers.go` and `generic/mutation/generic/imageregistries/credentials` in `HEAD`.
+- [x] `cp -R pkg/handlers/v7 pkg/handlers/v6`; rewrite imports `/v7/` to `/v6/` and names `v7configpatch` to `v6configpatch` inside `v6`.
+- [x] Restore `handlers.go` and the `credentials` package from `HEAD` with `git checkout HEAD --`.
+- [x] Verify golden files unchanged for both versions. This proves the copy reproduces `main`'s `v6` output exactly.
 
 #### T4.4 — Expose mutator lists and the coverage test (FR-004)
 
