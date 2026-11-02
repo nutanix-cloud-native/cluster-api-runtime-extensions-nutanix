@@ -314,31 +314,31 @@ Title: `ci: [NCN-107121] Reject changes to released handler output`
 
 **Files:** Create `pkg/handlers/removed-handlers.txt`.
 
-- [ ] List the ten `v5` names (`{aws,docker,eks,generic,nutanix}{Cluster,Worker}v5configpatch`) with `v0.50.0`, verified with `git grep -ohE '"[A-Za-z]+v5configpatch"' v0.50.0 -- pkg/handlers | sort -u`.
+- [x] List the ten `v5` names (`{aws,docker,eks,generic,nutanix}{Cluster,Worker}v5configpatch`) with `v0.50.0`, verified with `git grep -ohE '"[A-Za-z]+v5configpatch"' v0.50.0 -- pkg/handlers | sort -u`.
 
 #### T3.2 — Self-test for the freeze check (write first)
 
 **Files:** Create `hack/handlers/check-frozen-selftest.sh`.
 
-- [ ] Script builds a throwaway repo in `mktemp -d` with a `v1.0.0` tag containing a golden file, a corpus file, a `pkg/handlers/v1/` file, and a registered name; then asserts the exit status of `check-frozen.sh` for: no change (0), modified golden (1), deleted corpus file (1), modified `v1/` file (1), modified `v1/` file with `FROZEN_HANDLER_OVERRIDE=true` (0), modified golden with override (1), removed name (1), removed name listed in the record with its directories deleted (0), added golden file (0).
-- [ ] Run it; expect failure because `check-frozen.sh` does not exist.
+- [x] Script builds a throwaway repo in `mktemp -d` with a `v1.0.0` tag containing a golden file, a corpus file, a `pkg/handlers/v1/` file, and a registered name; then asserts the exit status of `check-frozen.sh` for: no change (0), modified golden (1), deleted corpus file (1), modified `v1/` file (1), modified `v1/` file with `FROZEN_HANDLER_OVERRIDE=true` (0), modified golden with override (1), removed name (1), removed name listed in the record with its directories deleted (0), added golden file (0), renamed golden file (1), renamed `v1/` file (1).
+- [x] Run it; expect failure because `check-frozen.sh` does not exist.
 
 #### T3.3 — `check-frozen.sh`
 
 **Files:** Create `hack/handlers/check-frozen.sh`; add `handlers.check-frozen` to `make/handlers.mk`.
 
-- [ ] Golden and corpus files: `git diff --name-only --diff-filter=MD <tag> -- pkg/handlers/golden/testdata` excluding directories of names in the record; any output fails. Override does not apply.
-- [ ] Version directories: for each `pkg/handlers/vN/` whose names exist at the tag and are not all in the record, `git diff --name-only --diff-filter=MD <tag> -- pkg/handlers/vN`; fail unless `FROZEN_HANDLER_OVERRIDE=true`.
-- [ ] Registered names: names at the tag minus the record must be a subset of names at `HEAD`. Extract with `git grep -ohE '"[A-Za-z]+(v[0-9]+configpatch|ConfigVars(v[0-9]+)?)"'`. Mark with a `ponytail:` comment: regex extraction; upgrade path is a generated registered-names file.
-- [ ] Run the self-test; expect PASS. Run `make handlers.check-frozen` on the branch; expect PASS.
+- [x] Golden and corpus files: `git diff --name-only --no-renames --diff-filter=MDT <tag> -- pkg/handlers/golden/testdata` (without `--no-renames`, a rename shows as `R` and escapes the filter) excluding directories of names in the record; any output fails. Override does not apply.
+- [x] Version directories: for each `pkg/handlers/vN/` whose names exist at the tag and are not all in the record, `git diff --name-only --no-renames --diff-filter=MDT <tag> -- pkg/handlers/vN`; fail unless `FROZEN_HANDLER_OVERRIDE=true`.
+- [x] Registered names: names at the tag minus the record must be a subset of names at `HEAD`. Extract with `git grep -ohE '"[A-Za-z]+(v[0-9]+configpatch|ConfigVars(v[0-9]+)?)"'`. Mark with a `ponytail:` comment: regex extraction; upgrade path is a generated registered-names file.
+- [x] Run the self-test; expect PASS. Run `make handlers.check-frozen` on the branch; expect PASS.
 
 #### T3.4 — Workflow
 
 **Files:** Create `.github/workflows/handler-freeze.yml`.
 
-- [ ] Trigger on `pull_request` types `[opened, synchronize, reopened, labeled, unlabeled]`, `merge_group`, and `push` to `main`. Separate workflow so label changes do not re-run all of `checks.yml`.
-- [ ] `actions/checkout` with `fetch-depth: 0`; run self-test and `devbox run -- make handlers.check-frozen` with `FROZEN_HANDLER_OVERRIDE: ${{ contains(github.event.pull_request.labels.*.name, 'frozen-handler-override') }}`.
-- [ ] Verify with `actionlint` (pre-commit).
+- [x] Trigger on `pull_request` types `[opened, synchronize, reopened, labeled, unlabeled]`, `merge_group`, and `push` to `main`. Separate workflow so label changes do not re-run all of `checks.yml`.
+- [x] `actions/checkout` with `fetch-depth: 0`; run `check-frozen-selftest.sh` and `check-frozen.sh` directly (bash and git only, so no devbox install) with `FROZEN_HANDLER_OVERRIDE` true when the PR has the `frozen-handler-override` label, and on `push` and `merge_group` events, which carry no labels and were already gated by the PR run.
+- [x] Verify with `actionlint` (pre-commit).
 - [ ] Manual, by a maintainer: create the `frozen-handler-override` label and make the workflow a required check.
 
 ---
