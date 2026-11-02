@@ -373,17 +373,16 @@ Every task ends with: build, `make test.root GOTEST_RUN=TestGolden`, and `git st
 
 #### T4.4 — Expose mutator lists and the coverage test (FR-004)
 
-**Files:** Modify `pkg/handlers/v{6,7}/<p>/mutation/metapatch_handler.go`; create `pkg/handlers/golden/coverage_test.go`; add corpus inputs.
+Done in PR 1 (T1.7): the meta handler exposes `Mutators()`, so no per-provider accessors are needed, and `TestGoldenMutatorCoverage` lives in `golden_test.go`.
 
-- [ ] Each provider exposes `ClusterMutators(mgr)` and `WorkerMutators(mgr)`; `MetaPatchHandler` and `MetaWorkerPatchHandler` use them. Verify golden files unchanged.
-- [ ] Write the coverage test: for each version, provider, and mutator, wrap the mutator alone in `NewMetaGeneratePatchesHandler` and assert non-empty patches for at least one corpus input; name failures by `%T`.
-- [ ] Add corpus inputs (new files, new golden files) until it passes.
-- [ ] Verify: deleting the NTP input makes the coverage test fail.
+- [x] Write the coverage test: for each version, provider, and mutator, wrap the mutator alone in `NewMetaGeneratePatchesHandler` and assert non-empty patches for at least one corpus input; name failures by `%T`.
+- [x] Add corpus inputs (new files, new golden files) until it passes.
+- [x] Verify: removing every `ntp` block from the corpus makes the coverage test fail for `*ntp.ntpPatchHandler` in every `v6` and `v7` cluster handler.
 
 #### T4.5 — Remove the dead hardcoded version
 
-- [ ] In `hack/tools/clusterclass-v1beta2/main.go`, delete `deriveGeneratePatchesExtension` if no template under `hack/examples/overlays/clusterclasses/` lacks `generatePatchesExtension`; otherwise leave it for `new-version.sh`.
-- [ ] Verify `devbox run -- make examples.sync` produces no diff.
+- [x] In `hack/tools/clusterclass-v1beta2/main.go`, delete `deriveGeneratePatchesExtension`. It was not dead: the AWS, EKS, and Nutanix bases are `v1beta1` ClusterClasses, whose field is `generateExtension`, so the overlays' `generatePatchesExtension` was dropped on conversion and re-derived with a hardcoded `v7`. Those three overlays now use `generateExtension`, which CAPI conversion maps to `generatePatchesExtension`.
+- [x] Verify `devbox run -- make examples.sync` produces no diff.
 
 ---
 

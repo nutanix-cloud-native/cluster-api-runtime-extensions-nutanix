@@ -6,6 +6,7 @@ package coredns
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -122,7 +123,7 @@ func (h *coreDNSPatchHandler) Mutate(
 					cluster.Spec.Topology.Version,
 				)
 				if !found {
-					return ErrDefaultCoreDNSVersionNotFound
+					return fmt.Errorf("%w: %q", ErrDefaultCoreDNSVersionNotFound, cluster.Spec.Topology.Version)
 				}
 
 				dns.ImageTag = defaultCoreDNSVersion
