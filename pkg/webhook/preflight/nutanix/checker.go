@@ -95,8 +95,10 @@ type checkDependencies struct {
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName map[string]*carenv1.NutanixWorkerNodeConfigSpec
 	failureDomainByMachineDeploymentName               map[string]string
 
-	nclient       client
-	pcVersion     string
+	nclient   client
+	pcVersion string
+	// TODO: Remove pcCredentials once prism-go-client's converged client supports the Files API;
+	// the PC fallback path in the Files NFSv4 check should then use nclient directly.
 	pcCredentials *prismgoclient.Credentials
 	log           logr.Logger
 }

@@ -235,7 +235,7 @@ func TestFilesNFSv4Check_Run(t *testing.T) {
 		},
 		{
 			// An unknown/redacted/missing version is not a confirmed NFSv3-only server, so it must
-			// never block the upgrade.
+			// never block the update.
 			name:       "file server with unknown NFS version warns and allows",
 			newVersion: "v1.30.0",
 			oldVersion: "v1.29.5",

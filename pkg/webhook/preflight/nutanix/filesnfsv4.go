@@ -29,11 +29,11 @@ SC Evaluation:
   - StorageClass evaluation continues independently after one warning.
 
 Validation, Errors:
-- Fail-open cases produce warnings and leave upgrade allowed:
+- Fail-open cases produce warnings and leave the update allowed:
 	- Errors encountered while inspecting an individual Files StorageClass fail open for this check
-	- only confirmed NFSv3-only servers block the upgrade.
-- Confirmed NFSV4 or NFSV3V4 allows upgrade.
-- Only a confirmed NFSV3-only server without an explicit NFSv4 mount option blocks the upgrade
+	- only confirmed NFSv3-only servers block the update.
+- Confirmed NFSV4 or NFSV3V4 allows the update.
+- Only a confirmed NFSV3-only server without an explicit NFSv4 mount option blocks the update
   by adding a preflight cause for that StorageClass.
 */
 
@@ -106,8 +106,12 @@ const (
 	filesPCListPageSize = 100
 	filesPCListMaxPages = 100
 
-	// filesNFSv4SubCallTimeout bounds each external call (remote SC list, each Files lookup) so a
-	// single slow endpoint cannot consume the shared preflight check budget or hard-block the upgrade.
+	// filesNFSv4CheckTimeout bounds the entire NFS v4 preflight check so that the combined cost
+	// of all StorageClass evaluations cannot consume the shared preflight budget.
+	filesNFSv4CheckTimeout = 30 * time.Second
+
+	// filesNFSv4SubCallTimeout bounds each individual external call (remote SC list, each Files
+	// lookup) so a single slow endpoint cannot stall the whole check.
 	filesNFSv4SubCallTimeout = 5 * time.Second
 )
 
@@ -163,6 +167,9 @@ type filesNFSv4Check struct {
 
 	// pcCredentials are CAREN's validated Prism Central credentials, used as a fallback source of
 	// Nutanix Files credentials when a StorageClass does not carry files secret.
+	// TODO: Remove this field once prism-go-client's converged client supports the Files API.
+	// At that point the PC fallback path should go through cd.nclient instead of building its
+	// own client, and the raw credentials will no longer be needed.
 	pcCredentials *prismgoclient.Credentials
 
 	// clusterClientGetter builds a controller-runtime client for the workload cluster from its
@@ -179,6 +186,10 @@ func (c *filesNFSv4Check) Name() string {
 
 func (c *filesNFSv4Check) Run(ctx context.Context) preflight.CheckResult {
 	c.log.V(5).Info("Running Nutanix Files NFSv4 preflight check")
+
+	// Bound the entire check so the combined cost of all SC evaluations cannot exceed a fixed budget.
+	ctx, cancel := context.WithTimeout(ctx, filesNFSv4CheckTimeout)
+	defer cancel()
 
 	result := preflight.CheckResult{Allowed: true}
 
@@ -321,7 +332,7 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 	}
 
 	// An unknown version (empty or unparseable response, redacted value, missing field) is not a
-	// confirmed NFSv3-only server, so it must never block the upgrade: warn + allow.
+	// confirmed NFSv3-only server, so it must never block the update: warn + allow.
 	if version == nfsVersionUnknown {
 		result.Warnings = append(result.Warnings, fmt.Sprintf(
 			"The NFS version of Nutanix Files server %q for StorageClass %q could not be determined "+
@@ -344,16 +355,16 @@ func (c *filesNFSv4Check) evaluateStorageClass(
 		return
 	}
 
-	// Confirmed NFSv3-only file server with no NFSv4 mountOption: block the upgrade.
+	// Confirmed NFSv3-only file server with no NFSv4 mountOption: block the update.
 	c.log.V(5).Info(
-		"Nutanix Files server is NFSv3-only; blocking the upgrade",
+		"Nutanix Files server is NFSv3-only; blocking the cluster update",
 		"storageClass", sc.Name,
 		"fileServer", fileServer,
 	)
 	result.Allowed = false
 	result.Causes = append(result.Causes, preflight.Cause{
 		Message: fmt.Sprintf(
-			"StorageClass %q uses Nutanix Files server %q which is configured for NFSv3 only. NKP upgrade requires NFSv4: "+
+			"StorageClass %q uses Nutanix Files server %q which is configured for NFSv3 only. Cluster update requires NFSv4: "+
 				"either enable NFSv4 on the file server, or add `nfsvers=4.1` to the StorageClass `mountOptions`.",
 			sc.Name,
 			fileServer,

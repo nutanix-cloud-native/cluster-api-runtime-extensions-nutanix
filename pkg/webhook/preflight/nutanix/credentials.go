@@ -238,6 +238,8 @@ func newCredentialsCheck(
 		cd.nclient = nclient
 		// Retain the validated credentials so dependent checks (e.g. Nutanix Files NFSv4) can reuse
 		// them as a fallback when a StorageClass does not carry usable ones.
+		// TODO: Remove once prism-go-client's converged client supports the Files API and the
+		// PC fallback path uses cd.nclient instead of building its own client.
 		cd.pcCredentials = &credentials
 		return credentialsCheck
 	}
