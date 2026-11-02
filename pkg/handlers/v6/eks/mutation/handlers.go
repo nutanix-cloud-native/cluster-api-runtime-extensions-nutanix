@@ -1,14 +1,14 @@
-// Copyright 2026 Nutanix. All rights reserved.
+// Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package mutation
 
 import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v7/generic/mutation/generic/kubeproxymode"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v7/generic/mutation/generic/ntp"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v7/generic/mutation/generic/taints"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v7/generic/mutation/generic/users"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6/generic/mutation/generic/kubeproxymode"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6/generic/mutation/generic/ntp"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6/generic/mutation/generic/taints"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6/generic/mutation/generic/users"
 )
 
 // metaMutators returns all EKS applicable patch handlers.
