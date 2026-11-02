@@ -351,9 +351,9 @@ Every task ends with: build, `make test.root GOTEST_RUN=TestGolden`, and `git st
 
 #### T4.1 — Move live code to `v7`
 
-- [ ] `git mv pkg/handlers/<p>/mutation pkg/handlers/v7/<p>/mutation` for each provider.
-- [ ] Rewrite import paths (`rg -l` plus `sed` on `pkg/handlers/<p>/mutation` to `pkg/handlers/v7/<p>/mutation`), then `devbox run -- make fmt`.
-- [ ] Verify golden files unchanged.
+- [x] `git mv pkg/handlers/<p>/mutation pkg/handlers/v7/<p>/mutation` for each provider.
+- [x] Rewrite import paths (`rg -l` plus `sed` on `pkg/handlers/<p>/mutation` to `pkg/handlers/v7/<p>/mutation`), then `devbox run -- make fmt`.
+- [x] Verify golden files unchanged.
 
 #### T4.2 — Per-version registration
 
