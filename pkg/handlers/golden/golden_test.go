@@ -31,7 +31,10 @@ var updateGolden = flag.String("update-golden", "",
 
 var providers = []string{"aws", "docker", "eks", "nutanix", "generic"}
 
-var handlerVersion = regexp.MustCompile(`v([0-9]+)configpatch$`)
+var (
+	handlerVersion   = regexp.MustCompile(`v([0-9]+)(configpatch)?$`)
+	discoveryVersion = regexp.MustCompile(`v[0-9]+$`)
+)
 
 func registeredHandlers(t *testing.T) []handlers.Named {
 	t.Helper()
@@ -48,8 +51,12 @@ func providerOf(name string) string {
 	return ""
 }
 
-// discoveryFor returns the discovery handlers referenced by the ClusterClass in the input at path, keyed by patch name.
-func discoveryFor(t *testing.T, all []handlers.Named, path string) map[string]mutation.DiscoverVariables {
+// discoveryFor returns the discovery handlers for the ClusterClass patches in the input at path, keyed by patch name.
+// Whatever version the input's ClusterClass names, a patch handler of version vN pairs with the vN discovery handlers,
+// or with the unversioned ones if vN has none.
+func discoveryFor(
+	t *testing.T, all []handlers.Named, path, version string,
+) map[string]mutation.DiscoverVariables {
 	t.Helper()
 	in, err := LoadInput(path)
 	require.NoError(t, err)
@@ -59,9 +66,14 @@ func discoveryFor(t *testing.T, all []handlers.Named, path string) map[string]mu
 			continue
 		}
 		extension, _, _ := strings.Cut(p.External.DiscoverVariablesExtension, ".")
-		i := slices.IndexFunc(all, func(h handlers.Named) bool {
-			return strings.ToLower(h.Name())+"-dv" == extension
-		})
+		base := discoveryVersion.ReplaceAllString(strings.TrimSuffix(extension, "-dv"), "")
+		find := func(name string) int {
+			return slices.IndexFunc(all, func(h handlers.Named) bool { return strings.ToLower(h.Name()) == name })
+		}
+		i := find(base + version)
+		if i < 0 {
+			i = find(base)
+		}
 		require.GreaterOrEqual(t, i, 0, "%s: no registered handler for %s", path, extension)
 		discovery[p.Name] = all[i].(mutation.DiscoverVariables)
 	}
@@ -147,7 +159,7 @@ func TestGolden(t *testing.T) {
 			input := strings.TrimSuffix(filepath.Base(path), ".yaml")
 			t.Run(h.Name()+"/"+inputProvider+"/"+input, func(t *testing.T) {
 				t.Parallel()
-				discovery := discoveryFor(t, all, path)
+				discovery := discoveryFor(t, all, path, versionOf(h.Name()))
 				var outputs [][]byte
 				for range 2 {
 					in, err := LoadInput(path)
@@ -197,7 +209,7 @@ func TestGoldenMutatorCoverage(t *testing.T) {
 				only := mutation.NewMetaGeneratePatchesHandler(h.Name(), testEnv.Client, m).(mutation.GeneratePatches)
 				none := mutation.NewMetaGeneratePatchesHandler(h.Name(), testEnv.Client).(mutation.GeneratePatches)
 				for _, path := range inputs {
-					discovery := discoveryFor(t, all, path)
+					discovery := discoveryFor(t, all, path, versionOf(h.Name()))
 					run := func(g mutation.GeneratePatches) []byte {
 						in, err := LoadInput(path)
 						require.NoError(t, err)
@@ -241,5 +253,42 @@ func TestGoldenHandlersRegistered(t *testing.T) {
 	for _, d := range dirs {
 		assert.True(t, known[d.Name()],
 			"golden files exist for %s, which is neither registered nor listed in removed-handlers.txt", d.Name())
+	}
+}
+
+// TestGoldenLatestVersionServesAPI checks that the highest handler version serves the current API schema. Once that
+// version is released, an API change makes this fail until a new handler version is cut.
+func TestGoldenLatestVersionServesAPI(t *testing.T) {
+	t.Parallel()
+
+	dirs, err := filepath.Glob("../v[0-9]*")
+	require.NoError(t, err)
+	latest := slices.MaxFunc(dirs, func(a, b string) int {
+		var x, y int
+		_, _ = fmt.Sscanf(filepath.Base(a), "v%d", &x)
+		_, _ = fmt.Sscanf(filepath.Base(b), "v%d", &y)
+		return x - y
+	})
+
+	want, err := filepath.Glob("../../../api/v1alpha1/crds/*.yaml")
+	require.NoError(t, err)
+	require.NotEmpty(t, want)
+	got, err := filepath.Glob(filepath.Join(latest, "variables", "crds", "*.yaml"))
+	require.NoError(t, err)
+	base := func(paths []string) []string {
+		out := make([]string, 0, len(paths))
+		for _, p := range paths {
+			out = append(out, filepath.Base(p))
+		}
+		return out
+	}
+	require.Equal(t, base(want), base(got), "CRD snapshot of %s is out of date; run make go-generate", latest)
+	for _, w := range want {
+		wantBytes, err := os.ReadFile(w)
+		require.NoError(t, err)
+		gotBytes, err := os.ReadFile(filepath.Join(latest, "variables", "crds", filepath.Base(w)))
+		require.NoError(t, err)
+		assert.Equal(t, string(wantBytes), string(gotBytes),
+			"CRD snapshot %s of %s is out of date; run make go-generate", filepath.Base(w), latest)
 	}
 }

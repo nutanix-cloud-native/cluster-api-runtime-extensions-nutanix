@@ -273,6 +273,11 @@ go-generate: ; $(info $(M) running go generate)
 	yq --inplace \
 	'.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.kubeProxy.properties.mode |= (.description = "Mode specifies the mode for kube-proxy in EKS: - disabled means that kube-proxy is disabled (only supported mode for EKS)." | .enum = ["disabled"])' \
 	api/v1alpha1/crds/caren.nutanix.com_eksclusterconfigs.yaml
+	# The latest handler version serves the current API. Once it is released, the freeze check rejects this copy, so
+	# API changes need a new handler version.
+	latest="$$(ls -d pkg/handlers/v[0-9]* | sed 's#.*/v##' | sort -n | tail -1)" && \
+	  rm -f pkg/handlers/v$${latest}/variables/crds/*.yaml && \
+	  cp api/v1alpha1/crds/*.yaml pkg/handlers/v$${latest}/variables/crds/
 
 .PHONY: govulncheck
 govulncheck: ## Runs govulncheck for all modules in repository

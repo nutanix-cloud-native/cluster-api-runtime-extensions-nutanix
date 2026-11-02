@@ -1,0 +1,916 @@
+status: Success
+variables:
+- name: workerConfig
+  required: false
+  schema:
+    openAPIV3Schema:
+      description: NutanixWorkerNodeConfigSpec defines the desired state of NutanixWorkerNodeSpec.
+      exclusiveMaximum: false
+      exclusiveMinimum: false
+      properties:
+        kubeletConfiguration:
+          description: |-
+            KubeletConfiguration defines kubelet settings for this node group.
+            These values apply only to the nodes in this group.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            automaticReservations:
+              description: |-
+                AutomaticReservations, when set, makes each node compute its kubeReserved
+                resources and a hard eviction threshold at boot from its actual CPU and
+                memory capacity. Mutually exclusive with systemReserved, kubeReserved, and
+                evictionHard.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                profile:
+                  description: Profile selects the reservation strategy.
+                  enum:
+                  - CapacityTiered
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - profile
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            containerLogMaxFiles:
+              description: |-
+                ContainerLogMaxFiles specifies the maximum number of container log files
+                that can be present for a container.
+                Default kubelet value is 5.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int32
+              minimum: 2
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            containerLogMaxSize:
+              description: |-
+                ContainerLogMaxSize defines the maximum size of the container log file
+                before it is rotated. Value is a quantity (e.g. "10Mi", "256Ki").
+                Default kubelet value is "10Mi".
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            cpuManagerPolicy:
+              description: |-
+                CPUManagerPolicy controls how cpusets are assigned to containers.
+                "static" enables exclusive CPU pinning for Guaranteed QoS pods.
+                Default kubelet value is "none".
+              enum:
+              - none
+              - static
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            enforceNodeAllocatable:
+              description: |-
+                EnforceNodeAllocatable specifies which resource types are enforced via
+                cgroups. When "system-reserved" or "system-reserved-compressible" is
+                included, the kubelet enforces systemReserved limits using the well-known
+                systemd cgroup /system.slice. When "kube-reserved" or
+                "kube-reserved-compressible" is included, the kubelet enforces
+                kubeReserved limits using /system.slice/kubelet.service.
+                The "-compressible" variants enforce only compressible resources (CPU),
+                which is the recommended starting point. "system-reserved" and
+                "system-reserved-compressible" are mutually exclusive, as are
+                "kube-reserved" and "kube-reserved-compressible".
+                Default kubelet behaviour (when this field is not set) is to enforce
+                only pods.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                description: EnforceNodeAllocatableOption specifies a resource type
+                  for cgroup enforcement.
+                enum:
+                - pods
+                - system-reserved
+                - kube-reserved
+                - system-reserved-compressible
+                - kube-reserved-compressible
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 3
+              type: array
+              uniqueItems: true
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: system-reserved and system-reserved-compressible are mutually
+                  exclusive
+                rule: '!(''system-reserved'' in self && ''system-reserved-compressible''
+                  in self)'
+              - message: kube-reserved and kube-reserved-compressible are mutually
+                  exclusive
+                rule: '!(''kube-reserved'' in self && ''kube-reserved-compressible''
+                  in self)'
+            evictionHard:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                EvictionHard is a map of signal names to quantities that define hard eviction
+                thresholds. When the node reaches these thresholds, pods are evicted immediately
+                with no grace period. Values may be absolute quantities (e.g. "100Mi") or
+                percentages (e.g. "10%").
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxProperties: 6
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: only valid eviction signal names are allowed
+                rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree',
+                  'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+            evictionSoft:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                EvictionSoft is a map of signal names to quantities that define soft eviction
+                thresholds. Pods are evicted after the grace period specified in
+                evictionSoftGracePeriod has elapsed. Values may be absolute quantities or
+                percentages.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxProperties: 6
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: only valid eviction signal names are allowed
+                rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree',
+                  'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+            evictionSoftGracePeriod:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                EvictionSoftGracePeriod is a map of signal names to durations that define
+                grace periods for soft eviction signals. Each key must correspond to an entry
+                in evictionSoft.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxProperties: 6
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: only valid eviction signal names are allowed
+                rule: self.all(k, k in ['memory.available', 'nodefs.available', 'nodefs.inodesFree',
+                  'imagefs.available', 'imagefs.inodesFree', 'pid.available'])
+            imageGCHighThresholdPercent:
+              description: |-
+                ImageGCHighThresholdPercent is the percent of disk usage after which image
+                garbage collection is always run. Must be greater than
+                imageGCLowThresholdPercent when both are set.
+                Default kubelet value is 85.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int32
+              maximum: 100
+              minimum: 0
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            imageGCLowThresholdPercent:
+              description: |-
+                ImageGCLowThresholdPercent is the percent of disk usage before which image
+                garbage collection is never run. Must be less than
+                imageGCHighThresholdPercent when both are set.
+                Default kubelet value is 80.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int32
+              maximum: 100
+              minimum: 0
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            kubeReserved:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                KubeReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                resources reserved for Kubernetes system components (the kubelet, container
+                runtime, etc.).
+                Valid keys: cpu, memory, ephemeral-storage, pid.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxProperties: 4
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+            maxParallelImagePulls:
+              description: |-
+                MaxParallelImagePulls defines the maximum number of image pulls performed
+                in parallel by the kubelet. A value of zero means unlimited. When set to a
+                value > 0, serializeImagePulls is automatically set to false.
+                Default kubelet value is nil (serial pulls).
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int32
+              minimum: 0
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            maxPods:
+              description: |-
+                MaxPods defines the maximum number of pods that can run on a node.
+                Default kubelet value is 110.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int32
+              maximum: 256
+              minimum: 50
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            memoryManagerPolicy:
+              description: |-
+                MemoryManagerPolicy controls the memory management policy on the node.
+                "Static" enables NUMA-aware memory allocation for Guaranteed QoS pods.
+                Default kubelet value is "None".
+              enum:
+              - None
+              - Static
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            podPidsLimit:
+              description: |-
+                PodPidsLimit is the maximum number of PIDs in any pod.
+                Prevents fork bombs and enforces per-pod PID limits.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: int64
+              maximum: 16384
+              minimum: 1024
+              type: integer
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            protectKernelDefaults:
+              description: |-
+                ProtectKernelDefaults when enabled causes the kubelet to error if kernel flags
+                are not as it expects. Typically required by CIS benchmarks and DISA STIG.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: boolean
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            seccompDefault:
+              description: |-
+                SeccompDefault enables the kubelet to apply the runtime's default seccomp
+                profile (RuntimeDefault) to all pods that do not explicitly specify a
+                seccompProfile. Provides a baseline syscall filter for unhardened workloads;
+                pods that set seccompProfile.type: Unconfined opt out, and pods running with
+                privileged: true or CAP_SYS_ADMIN are not constrained.
+                Default kubelet value is false.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: boolean
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            shutdownGracePeriod:
+              description: |-
+                ShutdownGracePeriod specifies the total duration that the node should delay
+                the shutdown by for pod termination during a node shutdown.
+                Default kubelet value is "0s" (disabled).
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            shutdownGracePeriodCriticalPods:
+              description: |-
+                ShutdownGracePeriodCriticalPods specifies the duration used to terminate
+                critical pods during a node shutdown. This should be less than
+                shutdownGracePeriod.
+                Default kubelet value is "0s".
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            systemReserved:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                SystemReserved is a set of ResourceName=ResourceQuantity pairs that describe
+                resources reserved for OS system daemons. Kubernetes components such as the
+                kubelet are excluded from this reservation.
+                Valid keys: cpu, memory, ephemeral-storage, pid.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxProperties: 4
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: only cpu, memory, ephemeral-storage, and pid are valid keys
+                rule: self.all(k, k in ['cpu', 'memory', 'ephemeral-storage', 'pid'])
+            topologyManagerPolicy:
+              description: |-
+                TopologyManagerPolicy controls the NUMA-aware resource alignment policy.
+                Relevant for workloads sensitive to hardware topology (GPU, HPC, telco).
+                Default kubelet value is "none".
+              enum:
+              - none
+              - best-effort
+              - restricted
+              - single-numa-node
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+          x-kubernetes-validations:
+          - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+            rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent)
+              || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+          - message: evictionSoft must be set when evictionSoftGracePeriod is set
+            rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
+          - message: evictionSoftGracePeriod keys must match evictionSoft keys
+            rule: '!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) ||
+              self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)'
+          - message: automaticReservations cannot be combined with systemReserved,
+              kubeReserved, or evictionHard
+            rule: '!has(self.automaticReservations) || (!has(self.systemReserved)
+              && !has(self.kubeReserved) && !has(self.evictionHard))'
+        nodeRegistration:
+          default: {}
+          description: NodeRegistration holds fields that relate to registering the
+            new node to the cluster.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            ignorePreflightErrors:
+              default:
+              - SystemVerification
+              description: |-
+                IgnorePreflightErrors specifies a slice of pre-flight errors to be ignored by kubeadm
+                when the current node is registered.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 512
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 50
+              type: array
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        nutanix:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            machineDetails:
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                additionalCategories:
+                  description: |-
+                    List of categories that need to be added to the machines. Categories must already
+                    exist in Prism Central. One category key can have more than one value.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  items:
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      key:
+                        description: key is the Key of category in PC.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      value:
+                        description: value is the category value linked to the category
+                          key in PC
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                  maxItems: 32
+                  type: array
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                bootType:
+                  description: Defines the boot type of the virtual machine. Only
+                    supports UEFI and Legacy
+                  enum:
+                  - legacy
+                  - uefi
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                cluster:
+                  description: |-
+                    cluster identifies the Prism Element in which the machine will be created.
+                    The identifier (uuid or name) can be obtained from the console or API.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    name:
+                      description: name is the resource name in the PC
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    type:
+                      description: Type is the identifier type to use for this resource.
+                      enum:
+                      - uuid
+                      - name
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    uuid:
+                      description: uuid is the UUID of the resource in the PC.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      format: uuid
+                      maxLength: 36
+                      minLength: 36
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - type
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                  x-kubernetes-validations:
+                  - message: '''name'' must be set when type is ''name'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                  - message: '''uuid'' must be set when type is ''uuid'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'')
+                      : !has(self.uuid)'
+                gpus:
+                  description: List of GPU devices that need to be added to the machines.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  items:
+                    description: |-
+                      NutanixGPU identifies a GPU to attach to a VM, either by device (name/deviceID) or
+                      by an AHV GPU profile.
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      deviceID:
+                        description: deviceID is the id of the GPU entity.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        format: int64
+                        type: integer
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      name:
+                        description: name is the GPU name
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        minLength: 1
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      profile:
+                        description: |-
+                          profile identifies the AHV GPU profile to assign by name or UUID. Profile-based GPU
+                          assignment uses the named GPU profile APIs and is only supported on PC 7.6 or later.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        properties:
+                          name:
+                            description: name is the resource name in the PC
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            minLength: 1
+                            type: string
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                          type:
+                            description: Type is the identifier type to use for this
+                              resource.
+                            enum:
+                            - uuid
+                            - name
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            type: string
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                          uuid:
+                            description: uuid is the UUID of the resource in the PC.
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            format: uuid
+                            maxLength: 36
+                            minLength: 36
+                            type: string
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                        required:
+                        - type
+                        type: object
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                        x-kubernetes-validations:
+                        - message: '''name'' must be set when type is ''name'', and
+                            forbidden otherwise'
+                          rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                        - message: '''uuid'' must be set when type is ''uuid'', and
+                            forbidden otherwise'
+                          rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'')
+                            : !has(self.uuid)'
+                      type:
+                        description: Type is the identifier type to use for this resource.
+                        enum:
+                        - deviceID
+                        - name
+                        - profile
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    required:
+                    - type
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                    x-kubernetes-validations:
+                    - message: '''name'' must be set when type is ''name'', and forbidden
+                        otherwise'
+                      rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                    - message: '''deviceID'' must be set when type is ''deviceID'',
+                        and forbidden otherwise'
+                      rule: 'self.type == ''deviceID'' ? has(self.deviceID) : !has(self.deviceID)'
+                    - message: '''profile'' must be set when type is ''profile'',
+                        and forbidden otherwise'
+                      rule: 'self.type == ''profile'' ? has(self.profile) : !has(self.profile)'
+                  maxItems: 32
+                  type: array
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                image:
+                  description: |-
+                    image identifies the image uploaded to Prism Central (PC). The identifier
+                    (uuid or name) can be obtained from the console or API.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    name:
+                      description: name is the resource name in the PC
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    type:
+                      description: Type is the identifier type to use for this resource.
+                      enum:
+                      - uuid
+                      - name
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    uuid:
+                      description: uuid is the UUID of the resource in the PC.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      format: uuid
+                      maxLength: 36
+                      minLength: 36
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - type
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                  x-kubernetes-validations:
+                  - message: '''name'' must be set when type is ''name'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                  - message: '''uuid'' must be set when type is ''uuid'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'')
+                      : !has(self.uuid)'
+                imageLookup:
+                  description: imageLookup is a container that holds how to look up
+                    vm images for the cluster.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    baseOS:
+                      description: |-
+                        BaseOS is the name of the base operating system to use for
+                        image lookup.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    format:
+                      default: capx-{{.BaseOS}}-{{.K8sVersion}}-*
+                      description: |-
+                        Format is the naming format to look up the image for this
+                        machine It will be ignored if an explicit image is set. Supports
+                        substitutions for {{.BaseOS}} and {{.K8sVersion}} with the base OS and
+                        kubernetes version, respectively. The BaseOS will be the value in
+                        BaseOS and the K8sVersion is the value in the Machine .spec.version, with the v prefix removed.
+                        This is effectively the defined by the packages produced by kubernetes/release without v as a
+                        prefix: 1.13.0, 1.12.5-mybuild.1, or 1.17.3. For example, the default
+                        image format of {{.BaseOS}}-?{{.K8sVersion}}-* and BaseOS as "rhel-8.10" will end up
+                        searching for images that match the pattern rhel-8.10-1.30.5-* for a
+                        Machine that is targeting kubernetes v1.30.5. See
+                        also: https://golang.org/pkg/text/template/
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - baseOS
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                memorySize:
+                  description: memorySize is the memory size (in Quantity format)
+                    of the VM
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                project:
+                  description: |-
+                    add the virtual machines to the project defined in Prism Central.
+                    The project must already be present in the Prism Central.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    name:
+                      description: name is the resource name in the PC
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    type:
+                      description: Type is the identifier type to use for this resource.
+                      enum:
+                      - uuid
+                      - name
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    uuid:
+                      description: uuid is the UUID of the resource in the PC.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      format: uuid
+                      maxLength: 36
+                      minLength: 36
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - type
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                  x-kubernetes-validations:
+                  - message: '''name'' must be set when type is ''name'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                  - message: '''uuid'' must be set when type is ''uuid'', and forbidden
+                      otherwise'
+                    rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'')
+                      : !has(self.uuid)'
+                subnets:
+                  description: |-
+                    subnet identifies the network subnet to use for the machine.
+                    The identifier (uuid or name) can be obtained from the console or API.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  items:
+                    description: NutanixResourceIdentifier holds the identity of a
+                      Nutanix PC resource (cluster, image, subnet, etc.)
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      name:
+                        description: name is the resource name in the PC
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        minLength: 1
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      type:
+                        description: Type is the identifier type to use for this resource.
+                        enum:
+                        - uuid
+                        - name
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      uuid:
+                        description: uuid is the UUID of the resource in the PC.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        format: uuid
+                        maxLength: 36
+                        minLength: 36
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    required:
+                    - type
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                    x-kubernetes-validations:
+                    - message: '''name'' must be set when type is ''name'', and forbidden
+                        otherwise'
+                      rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                    - message: '''uuid'' must be set when type is ''uuid'', and forbidden
+                        otherwise'
+                      rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'')
+                        : !has(self.uuid)'
+                  maxItems: 16
+                  type: array
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                systemDiskSize:
+                  description: |-
+                    systemDiskSize is size (in Quantity format) of the system disk of the VM
+                    The minimum systemDiskSize is 20Gi bytes
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                vcpuSockets:
+                  description: vcpuSockets is the number of vCPU sockets of the VM
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  format: int32
+                  type: integer
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                vcpusPerSocket:
+                  description: vcpusPerSocket is the number of vCPUs per socket of
+                    the VM
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  format: int32
+                  type: integer
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - memorySize
+              - systemDiskSize
+              - vcpuSockets
+              - vcpusPerSocket
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: Either 'image' or 'imageLookup' must be set, but not both
+                rule: has(self.image) != has(self.imageLookup)
+          required:
+          - machineDetails
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        taints:
+          description: Taints specifies the taints the Node API object should be registered
+            with.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          items:
+            description: |-
+              The node this Taint is attached to has the "effect" on
+              any pod that does not tolerate the Taint.
+            exclusiveMaximum: false
+            exclusiveMinimum: false
+            properties:
+              effect:
+                default: NoSchedule
+                description: |-
+                  The effect of the taint on pods that do not tolerate the taint.
+                  Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                enum:
+                - NoSchedule
+                - PreferNoSchedule
+                - NoExecute
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              key:
+                description: The taint key to be applied to a node.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 253
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              value:
+                description: The taint value corresponding to the taint key.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 63
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+            required:
+            - effect
+            - key
+            type: object
+            uniqueItems: false
+            x-kubernetes-preserve-unknown-fields: false
+          maxItems: 32
+          type: array
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+      type: object
+      uniqueItems: false
+      x-kubernetes-preserve-unknown-fields: false

@@ -85,7 +85,8 @@ pkg/handlers/
 ├── v6/
 │   ├── handlers.go            # AllHandlers(mgr) for v6; registers the unversioned discovery names
 │   ├── variables/crds/*.yaml  # snapshot from v0.50.0 api/v1alpha1/crds
-│   ├── variables/*.go         # discovery handlers
+│   ├── variables/schemas.go   # schemas from the snapshot
+│   ├── {aws,docker,eks,generic,nutanix}/{clusterconfig,workerconfig}/   # discovery handlers
 │   └── {aws,docker,eks,generic,nutanix}/mutation/...   # full frozen copy
 └── v7/                        # same shape; open version; discovery names end in v7
 hack/handlers/
@@ -392,25 +393,25 @@ Title: `feat: [NCN-107121] Version variable discovery with handlers`
 
 #### T5.1 — `v7` discovery from a CRD snapshot
 
-**Files:** Create `pkg/handlers/v7/variables/crds/*.yaml`, `pkg/handlers/v7/variables/*.go`; move `pkg/handlers/<p>/{clusterconfig,workerconfig}` content into it; modify `make/go.mk` (`go-generate`).
+**Files:** Create `pkg/handlers/v7/variables/crds/*.yaml`, `pkg/handlers/v7/variables/schemas.go`; move `pkg/handlers/<p>/{clusterconfig,workerconfig}` to `pkg/handlers/v7/<p>/`; modify `make/go.mk` (`go-generate`).
 
-- [ ] Write a failing test: `v7` discovery for AWS cluster returns a schema equal to `v1alpha1.AWSClusterConfig{}.VariableSchema()` and the handler name is `AWSClusterConfigVarsv7`.
-- [ ] Copy `api/v1alpha1/crds/*.yaml`; `//go:embed` them; build schemas with `variables.MustSchemaFromCRDYAML`.
-- [ ] `go-generate` refreshes the open version's snapshot after `controller-gen` (uses `open-version.sh`), so the open version tracks `api/` until release.
-- [ ] Re-run; expect PASS. New discovery golden files appear for the `v7` names.
+- [x] Write a failing test, `TestGoldenLatestVersionServesAPI` in the golden package: the highest `vN` CRD snapshot equals `api/v1alpha1/crds`. It lives outside the frozen trees, so after a release it fails on API changes until a new version is cut.
+- [x] Copy `api/v1alpha1/crds/*.yaml`; `//go:embed` them; build schemas with `variables.MustSchemaFromCRDYAML`. The moved discovery packages keep their `NewVariable` constructors, serve those schemas, and their names end in `v7`.
+- [x] `go-generate` refreshes the highest version's snapshot after `controller-gen`. It does not use `open-version.sh` (no tag dependency): once that version is released, the freeze check rejects the copy.
+- [x] Re-run; expect PASS. New discovery golden files appear for the `v7` names.
 
 #### T5.2 — `v6` and the unversioned names from `v0.50.0`
 
-- [ ] `git show v0.50.0:api/v1alpha1/crds/<file>` into `pkg/handlers/v6/variables/crds/` for every CRD file.
-- [ ] `v6/variables` registers the existing unversioned names (`AWSClusterConfigVars`, and so on).
-- [ ] Verify the unversioned discovery golden files still match the PR 2 baseline after dropping `false` and `{}` values on both sides (the baseline was serialized with CAPI v1.12 types, so bytes differ; see `baseline-v0.50.0.md`).
-- [ ] Switch harness pairing: `vN` patch handlers use `vN` discovery, `v6` uses the unversioned names.
-- [ ] `v6` patch output can change here because its defaults now come from the `v0.50.0` schema. `v6` golden files are not yet released, so regenerate them with `-update-golden=v6` to keep `main` green, and list every changed file in the PR description. Compare them to the PR 2 baseline; remaining differences are the input to PR 6.
+- [x] `git show v0.50.0:api/v1alpha1/crds/<file>` into `pkg/handlers/v6/variables/crds/` for every CRD file. The only difference from `main` is the Nutanix GPU profile (#1729).
+- [x] `v6/<p>/{clusterconfig,workerconfig}` register the existing unversioned names (`AWSClusterConfigVars`, and so on); each `vN.AllHandlers` now returns its own discovery handlers.
+- [x] Verify the unversioned discovery golden files match the PR 2 baseline after dropping `false` and `{}` values on both sides: all nine identical. The two Nutanix files lose the GPU profile; unversioned discovery golden files cannot be overwritten by `-update-golden`, so they were deleted and rewritten.
+- [x] Switch harness pairing: `vN` patch handlers use `vN` discovery, or the unversioned names if `vN` has none, regardless of the names in the corpus ClusterClass (corpus files are frozen once released).
+- [x] `v6` patch output did not change; no `v6` golden file was regenerated.
 
 #### T5.3 — ClusterClass templates
 
-- [ ] In `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`, change `discoverVariablesExtension` to the `...configvarsv7-dv` names.
-- [ ] `devbox run -- make examples.sync`; verify every default ClusterClass pairs `v7` patch and `v7` discovery names (`rg` both names per file).
+- [x] In `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`, change `discoverVariablesExtension` to the `...configvarsv7-dv` names.
+- [x] `devbox run -- make examples.sync`; verify every default ClusterClass pairs `v7` patch and `v7` discovery names (`rg` both names per file).
 
 ---
 
@@ -490,7 +491,7 @@ Title: `test: [NCN-107121] Add CAREN upgrade e2e with no-rollout check`
 ### PR 10 — Docs, rules, constitution (FR-025, FR-026)
 
 - [ ] Update `.cursor/rules/handler-version-safety.mdc`, `AGENTS.md`, `README.md` (remove v3 to v5 instructions), and add `docs/content/contributing/handler_versions.md`: layout, golden tests, `make handlers.golden-update`, `make handlers.new-version`, the override label, the removed-handlers record.
-- [ ] Fix `docs/content/getting-started/integrating-with-your-clusterclass/_index.md` (wrong field name and missing `-gp`/`-dv` suffixes).
+- [ ] Fix `docs/content/getting-started/integrating-with-your-clusterclass/_index.md` and `docs/content/customization/_index.md` (wrong field name and missing `-gp`/`-dv` suffixes); pair each `vN` patch with `vN` discovery names.
 - [ ] Constitution principle VII amendment in its own PR. Ask the user before writing it.
 
 ## Spec Coverage

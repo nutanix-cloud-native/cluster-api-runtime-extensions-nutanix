@@ -1,0 +1,905 @@
+status: Success
+variables:
+- name: clusterConfig
+  required: true
+  schema:
+    openAPIV3Schema:
+      description: EKSClusterConfigSpec defines the desired state of ClusterConfig.
+      exclusiveMaximum: false
+      exclusiveMinimum: false
+      properties:
+        addons:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            ccm:
+              description: CCM tells us to enable or disable the cloud provider interface.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                credentials:
+                  description: A reference to the Secret for credential information
+                    for the target Prism Central instance
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    secretRef:
+                      description: A reference to the Secret containing the credentials
+                        used by the CCM provider.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          maxLength: 253
+                          minLength: 1
+                          type: string
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                      required:
+                      - name
+                      type: object
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - secretRef
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                strategy:
+                  default: HelmAddon
+                  description: Addon strategy used to deploy the CCM to the workload
+                    cluster.
+                  enum:
+                  - ClusterResourceSet
+                  - HelmAddon
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            clusterAutoscaler:
+              description: ClusterAutoscaler tells us to enable or disable the cluster-autoscaler
+                addon.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                strategy:
+                  default: HelmAddon
+                  description: |-
+                    Addon strategy used to deploy cluster-autoscaler to the management cluster
+                    targeting the workload cluster.
+                  enum:
+                  - ClusterResourceSet
+                  - HelmAddon
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            cni:
+              description: CNI defines CNI provider configuration.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                imagePullCredentials:
+                  description: |-
+                    ImagePullCredentials is a reference to a Secret with image pull credentials
+                    for the CNI provider images. The Secret will be copied to the workload cluster.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    secretRef:
+                      description: A reference to the Secret containing the image
+                        pull credentials.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          maxLength: 253
+                          minLength: 1
+                          type: string
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                      required:
+                      - name
+                      type: object
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - secretRef
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                provider:
+                  description: CNI provider to deploy.
+                  enum:
+                  - Calico
+                  - Cilium
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                strategy:
+                  default: HelmAddon
+                  description: Addon strategy used to deploy the CNI provider to the
+                    workload cluster.
+                  enum:
+                  - ClusterResourceSet
+                  - HelmAddon
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                values:
+                  description: Values contains the helm values for the CNI when HelmAddon
+                    is the strategy.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    sourceRef:
+                      description: |-
+                        SourceRef is an object reference to Configmap/Secret inside the same namespace
+                        which contains inline YAML representing the values for the Helm chart.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      properties:
+                        kind:
+                          description: Kind is the type of resource being referenced,
+                            valid values are ('ConfigMap').
+                          enum:
+                          - ConfigMap
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          type: string
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                        name:
+                          description: Name is the name of resource being referenced.
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          maxLength: 253
+                          minLength: 1
+                          type: string
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                      required:
+                      - kind
+                      - name
+                      type: object
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - provider
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            csi:
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                defaultStorage:
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    provider:
+                      description: Name of the CSI Provider for the default storage
+                        class.
+                      enum:
+                      - aws-ebs
+                      - nutanix
+                      - local-path
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                    storageClassConfig:
+                      description: Name of the default storage class config the specified
+                        default provider.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      maxLength: 242
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - provider
+                  - storageClassConfig
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                providers:
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    aws-ebs:
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      properties:
+                        credentials:
+                          description: The reference to any secret used by the CSI
+                            Provider.
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          properties:
+                            secretRef:
+                              description: A reference to the Secret containing the
+                                credentials used by the CSI provider.
+                              exclusiveMaximum: false
+                              exclusiveMinimum: false
+                              properties:
+                                name:
+                                  description: |-
+                                    Name of the referent.
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  exclusiveMaximum: false
+                                  exclusiveMinimum: false
+                                  maxLength: 253
+                                  minLength: 1
+                                  type: string
+                                  uniqueItems: false
+                                  x-kubernetes-preserve-unknown-fields: false
+                              required:
+                              - name
+                              type: object
+                              uniqueItems: false
+                              x-kubernetes-preserve-unknown-fields: false
+                          required:
+                          - secretRef
+                          type: object
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                        storageClassConfigs:
+                          additionalProperties:
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            properties:
+                              allowExpansion:
+                                description: If the storage class should allow volume
+                                  expanding
+                                exclusiveMaximum: false
+                                exclusiveMinimum: false
+                                type: boolean
+                                uniqueItems: false
+                                x-kubernetes-preserve-unknown-fields: false
+                              parameters:
+                                additionalProperties:
+                                  exclusiveMaximum: false
+                                  exclusiveMinimum: false
+                                  type: string
+                                  uniqueItems: false
+                                  x-kubernetes-preserve-unknown-fields: false
+                                description: Parameters passed into the storage class
+                                  object.
+                                exclusiveMaximum: false
+                                exclusiveMinimum: false
+                                type: object
+                                uniqueItems: false
+                                x-kubernetes-preserve-unknown-fields: false
+                              reclaimPolicy:
+                                default: Delete
+                                description: PersistentVolumeReclaimPolicy describes
+                                  a policy for end-of-life maintenance of persistent
+                                  volumes.
+                                enum:
+                                - Delete
+                                - Retain
+                                - Recycle
+                                exclusiveMaximum: false
+                                exclusiveMinimum: false
+                                type: string
+                                uniqueItems: false
+                                x-kubernetes-preserve-unknown-fields: false
+                              volumeBindingMode:
+                                default: WaitForFirstConsumer
+                                description: VolumeBindingMode indicates how PersistentVolumeClaims
+                                  should be bound.
+                                enum:
+                                - Immediate
+                                - WaitForFirstConsumer
+                                exclusiveMaximum: false
+                                exclusiveMinimum: false
+                                type: string
+                                uniqueItems: false
+                                x-kubernetes-preserve-unknown-fields: false
+                            type: object
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                          description: StorageClassConfigs is a map of storage class
+                            configurations for this CSI provider.
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          type: object
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                        strategy:
+                          default: HelmAddon
+                          description: Addon strategy used to deploy the CSI provider
+                            to the workload cluster.
+                          enum:
+                          - ClusterResourceSet
+                          - HelmAddon
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          type: string
+                          uniqueItems: false
+                          x-kubernetes-preserve-unknown-fields: false
+                      required:
+                      - storageClassConfigs
+                      type: object
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - aws-ebs
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                snapshotController:
+                  description: Deploy the CSI snapshot controller and associated CRDs.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    strategy:
+                      default: HelmAddon
+                      description: Addon strategy used to deploy the snapshot controller
+                        to the workload cluster.
+                      enum:
+                      - ClusterResourceSet
+                      - HelmAddon
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - defaultStorage
+              - providers
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            ingress:
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                provider:
+                  description: The Ingress provider to deploy.
+                  enum:
+                  - aws-lb-controller
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - provider
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            nfd:
+              description: NFD tells us to enable or disable the node feature discovery
+                addon.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                strategy:
+                  default: HelmAddon
+                  description: Addon strategy used to deploy Node Feature Discovery
+                    (NFD) to the workload cluster.
+                  enum:
+                  - ClusterResourceSet
+                  - HelmAddon
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            registry:
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                provider:
+                  default: CNCF Distribution
+                  description: The OCI registry provider to deploy.
+                  enum:
+                  - CNCF Distribution
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - provider
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            serviceLoadBalancer:
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                configuration:
+                  description: Configuration for the chosen ServiceLoadBalancer provider.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    addressRanges:
+                      description: |-
+                        AddressRanges is a list of IPv4 address ranges the
+                        provider uses to choose an address for a load balancer.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      items:
+                        description: AddressRange defines an IPv4 range.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        properties:
+                          end:
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            format: ipv4
+                            type: string
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                          start:
+                            exclusiveMaximum: false
+                            exclusiveMinimum: false
+                            format: ipv4
+                            type: string
+                            uniqueItems: false
+                            x-kubernetes-preserve-unknown-fields: false
+                        required:
+                        - end
+                        - start
+                        type: object
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                      maxItems: 10
+                      minItems: 1
+                      type: array
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - addressRanges
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                provider:
+                  description: |-
+                    The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
+                    the CCM acts as the provider.
+                  enum:
+                  - MetalLB
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - provider
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        eks:
+          description: EKS cluster configuration.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            additionalTags:
+              additionalProperties:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              description: |-
+                AdditionalTags is an optional set of tags to add to an instance,
+                in addition to the ones added by default by the AWS provider.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            identityRef:
+              description: |-
+                IdentityRef is a reference to an identity to be used when reconciling the managed control plane.
+                If no identity is specified, the default identity for this controller will be used.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                kind:
+                  description: Kind of the identity.
+                  enum:
+                  - AWSClusterControllerIdentity
+                  - AWSClusterRoleIdentity
+                  - AWSClusterStaticIdentity
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                name:
+                  description: Name of the identity.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  minLength: 1
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              required:
+              - kind
+              - name
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            network:
+              description: AWS network configuration.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                subnets:
+                  description: AWS Subnet configuration.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  items:
+                    description: SubnetSpec configures an AWS Subnet.
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      id:
+                        description: Existing Subnet ID to use for the cluster.
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        format: ^subnet-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    required:
+                    - id
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                  maxItems: 10
+                  type: array
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                vpc:
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    id:
+                      description: Existing VPC ID to use for the cluster.
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      format: ^vpc-[0-9a-f]{8}(?:[0-9a-f]{9})?$
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - id
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            region:
+              description: AWS region to create cluster in.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxLength: 16
+              minLength: 4
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        globalImageRegistryMirror:
+          description: GlobalImageRegistryMirror sets default mirror configuration
+            for all the image registries.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            credentials:
+              description: Credentials and CA certificate for the image registry mirror
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                secretRef:
+                  description: |-
+                    A reference to the Secret containing the registry credentials and optional CA certificate
+                    using the keys `username`, `password` and `ca.crt`.
+                    This credentials Secret is not required for some registries, e.g. ECR.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    name:
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      maxLength: 253
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - name
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            url:
+              description: Registry mirror URL.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: uri
+              pattern: ^https?://
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          required:
+          - url
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        imageRegistries:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          items:
+            exclusiveMaximum: false
+            exclusiveMinimum: false
+            properties:
+              credentials:
+                description: Credentials and CA certificate for the image registry
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                properties:
+                  secretRef:
+                    description: |-
+                      A reference to the Secret containing the registry credentials and optional CA certificate
+                      using the keys `username`, `password` and `ca.crt`.
+                      This credentials Secret is not required for some registries, e.g. ECR.
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      name:
+                        description: |-
+                          Name of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    required:
+                    - name
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                type: object
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              url:
+                description: Registry URL.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                format: uri
+                pattern: ^https?://
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+            required:
+            - url
+            type: object
+            uniqueItems: false
+            x-kubernetes-preserve-unknown-fields: false
+          maxItems: 32
+          type: array
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        kubeProxy:
+          description: KubeProxy defines the configuration for kube-proxy.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            mode:
+              description: 'Mode specifies the mode for kube-proxy in EKS: - disabled
+                means that kube-proxy is disabled (only supported mode for EKS).'
+              enum:
+              - disabled
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: Value cannot be changed after cluster creation
+                rule: self == oldSelf
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        ntp:
+          description: NTP defines the NTP configuration for the cluster.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            servers:
+              description: Servers is a list of NTP servers to use for time synchronization.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 253
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 16
+              minItems: 1
+              type: array
+              uniqueItems: true
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: Each server must be a valid IP address, hostname, or domain
+                  name
+                rule: self.all(server, isIP(server) || server.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\\.?$'))
+          required:
+          - servers
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        proxy:
+          description: HTTPProxy required for providing proxy configuration.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            additionalNo:
+              description: |-
+                AdditionalNo Proxy list that will be added to the automatically calculated
+                values that will apply no_proxy configuration for cluster internal network.
+                Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                  ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 253
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 128
+              type: array
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            http:
+              description: HTTP proxy value.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxLength: 2048
+              minLength: 1
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            https:
+              description: HTTPS proxy value.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxLength: 2048
+              minLength: 1
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        users:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          items:
+            description: User defines the input for a generated user in cloud-init.
+            exclusiveMaximum: false
+            exclusiveMinimum: false
+            properties:
+              hashedPassword:
+                description: |-
+                  HashedPassword is a hashed password for the user, formatted as described
+                  by the crypt(5) man page. See your distribution's documentation for
+                  instructions to create a hashed password.
+                  An empty string is not marshalled, because it is not a valid value.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              name:
+                description: Name specifies the user name.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              sshAuthorizedKeys:
+                description: |-
+                  SSHAuthorizedKeys is a list of public SSH keys to write to the
+                  machine. Use the corresponding private SSH keys to authenticate. See SSH
+                  documentation for instructions to create a key pair.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                items:
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  maxLength: 2048
+                  minLength: 1
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                maxItems: 100
+                type: array
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              sudo:
+                description: |-
+                  Sudo is a sudo user specification, formatted as described in the sudo
+                  documentation.
+                  An empty string is not marshalled, because it is not a valid value.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+            required:
+            - name
+            type: object
+            uniqueItems: false
+            x-kubernetes-preserve-unknown-fields: false
+          maxItems: 32
+          type: array
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+      type: object
+      uniqueItems: false
+      x-kubernetes-preserve-unknown-fields: false
