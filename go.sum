@@ -285,6 +285,8 @@ github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.3.1 h1:ls
 github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4 v4.3.1/go.mod h1:0YgJ2R23u7mU9TtVpMZEPKZSFDHXvLRk7W2qMuCwweI=
 github.com/nutanix/ntnx-api-golang-clients/datapolicies-go-client/v4 v4.3.1 h1:Fp6TvDcpTlrzWCSkiW41qKZG4T2e83tlF7+xj3oQ0aw=
 github.com/nutanix/ntnx-api-golang-clients/datapolicies-go-client/v4 v4.3.1/go.mod h1:i3izKMeXOPm6HWJ7+0N2sBAEOEzRaVHY538dBjF3pVU=
+github.com/nutanix/ntnx-api-golang-clients/files-go-client/v4 v4.0.1-alpha.2 h1:XvWbw+57X5YM7/6MCJmgk34udiII0OGsH9K8zqti/NE=
+github.com/nutanix/ntnx-api-golang-clients/files-go-client/v4 v4.0.1-alpha.2/go.mod h1:d23LUrnD0BoFwng9Gb9/fqqLgjWW+FsFDyG8p9Q56BA=
 github.com/nutanix/ntnx-api-golang-clients/iam-go-client/v4 v4.1.2-beta.3 h1:6BnxocO1FBsPIio3IsPOK8HU/WnCSNTTnVxR2y6DEA8=
 github.com/nutanix/ntnx-api-golang-clients/iam-go-client/v4 v4.1.2-beta.3/go.mod h1:gF7zQKbtt3n3/mzFhAPzupXi++VEjGr27zpOnYwNUJI=
 github.com/nutanix/ntnx-api-golang-clients/monitoring-go-client/v4 v4.3.1 h1:NJNuKXXPkvgUbkTgLtJYA9zS8EkqeCsw/HRdDR025zk=

@@ -30,6 +30,7 @@ var Checker = &nutanixChecker{
 	storageContainerChecksFactory:         newStorageContainerChecks,
 	controlPlaneEndpointChecksFactory:     newControlPlaneEndpointChecks,
 	metroChecksFactory:                    newMetroChecks,
+	filesNFSv4ChecksFactory:               newFilesNFSv4Checks,
 }
 
 type nutanixChecker struct {
@@ -79,6 +80,10 @@ type nutanixChecker struct {
 	metroChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
+
+	filesNFSv4ChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
 }
 
 type checkDependencies struct {
@@ -92,7 +97,10 @@ type checkDependencies struct {
 
 	nclient   client
 	pcVersion string
-	log       logr.Logger
+	// TODO: Remove pcCredentials once prism-go-client's converged client supports the Files API;
+	// the PC fallback path in the Files NFSv4 check should then use nclient directly.
+	pcCredentials *prismgoclient.Credentials
+	log           logr.Logger
 }
 
 func (n *nutanixChecker) Init(
@@ -130,6 +138,7 @@ func (n *nutanixChecker) Init(
 		n.storageContainerChecksFactory(cd),
 		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
+		n.filesNFSv4ChecksFactory(cd),
 	)
 
 	return checks
