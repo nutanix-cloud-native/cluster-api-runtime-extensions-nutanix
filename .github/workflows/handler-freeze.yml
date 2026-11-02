@@ -1,0 +1,48 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: handler-freeze
+
+# Separate from checks.yml so that adding or removing the override label does not re-run every check.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+  merge_group:
+    types:
+      - checks_requested
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-frozen:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Self-test the freeze check
+        run: hack/handlers/check-frozen-selftest.sh
+
+      - name: Check released handlers are unchanged
+        env:
+          # Labels are only visible on pull_request events. Merge queue and main runs have already passed the
+          # pull_request check, and the override never applies to golden files, corpus inputs or handler names.
+          FROZEN_HANDLER_OVERRIDE: >-
+            ${{ github.event_name != 'pull_request' ||
+            contains(github.event.pull_request.labels.*.name, 'frozen-handler-override') }}
+        run: hack/handlers/check-frozen.sh
