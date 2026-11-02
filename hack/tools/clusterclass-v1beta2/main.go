@@ -16,7 +16,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -166,8 +165,7 @@ func ensureOutputMeta(obj map[string]interface{}, kind, apiVersion string) {
 }
 
 // ensureClusterClassDesiredState ensures ClusterClass output has v1beta2 apiVersion/kind,
-// templateRefs for control plane and bootstrap point to v1beta2 (so they match the converted templates),
-// and every patch with discoverVariablesExtension also has generatePatchesExtension (required by v1beta2 validation).
+// and templateRefs for control plane and bootstrap point to v1beta2 (so they match the converted templates).
 func ensureClusterClassDesiredState(obj map[string]interface{}) {
 	if obj == nil {
 		return
@@ -200,51 +198,6 @@ func ensureClusterClassDesiredState(obj map[string]interface{}) {
 				}
 			}
 		}
-	}
-	patches, _ := spec["patches"].([]interface{})
-	if len(patches) == 0 {
-		return
-	}
-	for _, p := range patches {
-		pm, _ := p.(map[string]interface{})
-		if pm == nil {
-			continue
-		}
-		ext, _ := pm["external"].(map[string]interface{})
-		if ext == nil {
-			continue
-		}
-		dv, _ := ext["discoverVariablesExtension"].(string)
-		if dv == "" {
-			continue
-		}
-		if _, has := ext["generatePatchesExtension"]; has {
-			continue
-		}
-		// Derive generatePatchesExtension from discoverVariablesExtension name.
-		// e.g. awsclusterconfigvars-dv... -> awsclusterv7configpatch-gp...
-		//      awsworkerconfigvars-dv... -> awsworkerv7configpatch-gp...
-		gp := deriveGeneratePatchesExtension(dv)
-		if gp != "" {
-			ext["generatePatchesExtension"] = gp
-		}
-	}
-}
-
-// deriveGeneratePatchesExtension returns the generatePatchesExtension name from a discoverVariablesExtension name.
-func deriveGeneratePatchesExtension(discoverVariablesExtension string) string {
-	const suffix = ".cluster-api-runtime-extensions-nutanix"
-	if !strings.HasSuffix(discoverVariablesExtension, suffix) {
-		return ""
-	}
-	base := discoverVariablesExtension[:len(discoverVariablesExtension)-len(suffix)]
-	switch {
-	case strings.HasSuffix(base, "clusterconfigvars-dv"):
-		return strings.TrimSuffix(base, "clusterconfigvars-dv") + "clusterv7configpatch-gp" + suffix
-	case strings.HasSuffix(base, "workerconfigvars-dv"):
-		return strings.TrimSuffix(base, "workerconfigvars-dv") + "workerv7configpatch-gp" + suffix
-	default:
-		return ""
 	}
 }
 
