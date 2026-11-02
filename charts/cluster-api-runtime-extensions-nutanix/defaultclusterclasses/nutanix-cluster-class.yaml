@@ -101,11 +101,11 @@ spec:
       name: nutanix-quick-start-nct
   patches:
     - external:
-        discoverVariablesExtension: nutanixclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: nutanixclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: nutanixclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: cluster-config
     - external:
-        discoverVariablesExtension: nutanixworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: nutanixworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: nutanixworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: worker-config
   workers:
