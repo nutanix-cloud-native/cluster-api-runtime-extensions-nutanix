@@ -359,10 +359,10 @@ Every task ends with: build, `make test.root GOTEST_RUN=TestGolden`, and `git st
 
 **Files:** Create `pkg/handlers/v7/handlers.go`, `pkg/handlers/v6/handlers.go`, `pkg/handlers/versions.go`; modify `cmd/main.go`; delete `pkg/handlers/<p>/handlers.go`.
 
-- [ ] `vN.AllHandlers(mgr)` returns that version's patch handlers and, for now, the unversioned discovery handlers are registered once from `versions.go`.
-- [ ] `versions.go` contains a `// new-version:imports` and `// new-version:entries` marker for the script.
-- [ ] Switch the golden matrix to `handlers.AllHandlers(mgr)`.
-- [ ] Verify golden files unchanged and the set of registered names is identical (golden directory test).
+- [x] `vN.AllHandlers(mgr)` returns that version's patch handlers and, for now, the unversioned discovery handlers are registered once from `versions.go`.
+- [x] `versions.go` contains a `// new-version:entries` marker for the script. An import-block marker does not survive `gci`, so the script adds the import after the existing `pkg/handlers/vN"` line.
+- [x] Switch the golden matrix to `handlers.AllHandlers(mgr)`.
+- [x] Verify golden files unchanged and the set of registered names is identical (golden directory test).
 
 #### T4.3 — Full `v6` copy
 
@@ -445,7 +445,7 @@ Title: `build: [NCN-107121] Add make target to cut a handler version`
 **Files:** Create `hack/handlers/new-version.sh`; add `handlers.new-version` to `make/handlers.mk`.
 
 - [ ] Refuse when `open-version.sh` prints a version: exit 1 naming it. Verify on this branch (`v7` is open).
-- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import and entry at the `versions.go` markers; add a depguard rule; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
+- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
 - [ ] Verify the success path in a scratch clone: `git clone --local . /tmp/caren-newversion`, tag `HEAD` there as a fake release, run the target, then `make test` and `make lint` pass with no hand edits and `git status` shows only `pkg/handlers/v8/`, registration, lint config, templates, examples, and new golden files.
 
 ---
