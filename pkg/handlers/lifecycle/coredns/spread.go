@@ -136,7 +136,11 @@ func affinityNeedsUpdate(current *corev1.Affinity, desired *corev1.PodAntiAffini
 	cur := current.PodAntiAffinity
 	want := desired
 
-	if len(cur.RequiredDuringSchedulingIgnoredDuringExecution) != len(want.RequiredDuringSchedulingIgnoredDuringExecution) {
+	if len(
+		cur.RequiredDuringSchedulingIgnoredDuringExecution,
+	) != len(
+		want.RequiredDuringSchedulingIgnoredDuringExecution,
+	) {
 		return true
 	}
 	for i := range want.RequiredDuringSchedulingIgnoredDuringExecution {
@@ -146,7 +150,11 @@ func affinityNeedsUpdate(current *corev1.Affinity, desired *corev1.PodAntiAffini
 		}
 	}
 
-	if len(cur.PreferredDuringSchedulingIgnoredDuringExecution) != len(want.PreferredDuringSchedulingIgnoredDuringExecution) {
+	if len(
+		cur.PreferredDuringSchedulingIgnoredDuringExecution,
+	) != len(
+		want.PreferredDuringSchedulingIgnoredDuringExecution,
+	) {
 		return true
 	}
 	for i := range want.PreferredDuringSchedulingIgnoredDuringExecution {

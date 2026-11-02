@@ -14,8 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +85,11 @@ func TestEnsureCoreDNSFaultDomainSpread_patchesMultiZoneRequired(t *testing.T) {
 	require.Len(t, paa.RequiredDuringSchedulingIgnoredDuringExecution, 1)
 	assert.Equal(t, topologyKeyZone, paa.RequiredDuringSchedulingIgnoredDuringExecution[0].TopologyKey)
 	require.Len(t, paa.PreferredDuringSchedulingIgnoredDuringExecution, 1)
-	assert.Equal(t, topologyKeyHostname, paa.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.TopologyKey)
+	assert.Equal(
+		t,
+		topologyKeyHostname,
+		paa.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.TopologyKey,
+	)
 	assert.Equal(t, spreadRolloutAnnotationValue, updated.Spec.Template.Annotations[spreadRolloutAnnotation])
 }
 

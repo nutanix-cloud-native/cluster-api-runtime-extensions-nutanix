@@ -55,10 +55,18 @@ func TestBuildMultiZonePodAntiAffinity_requiredZoneWhenMultiZone(t *testing.T) {
 	require.NotNil(t, anti)
 	require.Len(t, anti.RequiredDuringSchedulingIgnoredDuringExecution, 1)
 	assert.Equal(t, topologyKeyZone, anti.RequiredDuringSchedulingIgnoredDuringExecution[0].TopologyKey)
-	assert.Equal(t, AppLabelKey, anti.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchExpressions[0].Key)
+	assert.Equal(
+		t,
+		AppLabelKey,
+		anti.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchExpressions[0].Key,
+	)
 
 	require.Len(t, anti.PreferredDuringSchedulingIgnoredDuringExecution, 1)
-	assert.Equal(t, topologyKeyHostname, anti.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.TopologyKey)
+	assert.Equal(
+		t,
+		topologyKeyHostname,
+		anti.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.TopologyKey,
+	)
 	assert.Equal(t, int32(1), anti.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight)
 }
 
