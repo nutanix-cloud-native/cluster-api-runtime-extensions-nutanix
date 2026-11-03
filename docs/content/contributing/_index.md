@@ -14,5 +14,6 @@ The pages in this section cover day-to-day development:
 
 - [Linting]({{< ref "linting" >}})
 - [API conventions]({{< ref "api_conventions" >}})
+- [Handler versions]({{< ref "handler_versions" >}})
 - [End-to-end tests]({{< ref "e2e_tests" >}})
 - [Releasing]({{< ref "releasing" >}})

@@ -492,8 +492,8 @@ Title: `test: [NCN-107121] Add CAREN upgrade e2e with no-rollout check`
 
 ### PR 10 — Docs, rules, constitution (FR-025, FR-026)
 
-- [ ] Update `.cursor/rules/handler-version-safety.mdc`, `AGENTS.md`, `README.md` (remove v3 to v5 instructions), and add `docs/content/contributing/handler_versions.md`: layout, golden tests, `make handlers.golden-update`, `make handlers.new-version`, the override label, the removed-handlers record.
-- [ ] Fix `docs/content/getting-started/integrating-with-your-clusterclass/_index.md` and `docs/content/customization/_index.md` (wrong field name and missing `-gp`/`-dv` suffixes); pair each `vN` patch with `vN` discovery names.
+- [x] Update `.cursor/rules/handler-version-safety.mdc`, `AGENTS.md`, `README.md` (remove v3 to v5 instructions), and add `docs/content/contributing/handler_versions.md`: layout, golden tests, `make handlers.golden-update`, `make handlers.new-version`, the override label, the removed-handlers record.
+- [x] Fix `docs/content/getting-started/integrating-with-your-clusterclass/_index.md` and `docs/content/customization/_index.md` (wrong field name and missing `-gp`/`-dv` suffixes); pair each `vN` patch with `vN` discovery names.
 - [ ] Constitution principle VII amendment in its own PR. Ask the user before writing it.
 
 ## Spec Coverage

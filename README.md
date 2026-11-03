@@ -40,27 +40,13 @@ or [Helm](https://nutanix-cloud-native.github.io/cluster-api-runtime-extensions-
 
 ### Implementing Topology Mutation Handler
 
-See examples of existing [topology mutation handlers] in the `pkg/handlers/../mutation/` directory.
-When adding a new handler, or modifying an existing one, pay close attention to what happens to existing clusters
-when a new version of this extension is deployed in the management cluster,
-and avoid rollouts of Machines in those existing clusters.
+See examples of existing [topology mutation handlers] in the `pkg/handlers/vN/{provider}/mutation/` directories.
 
-If a change to a handler is unavoidable, you must:
-
-1. Update the version of the handlers, e.g. from `v4` to `v5`.
-   This is done by updating the `..ClusterV4ConfigPatch` in the handler files in `pkg/handlers/../mutation/`.
-   And `..clusterv4configpatch` in `hack/examples/overlays/clusterclasses/../kustomization.yaml.tmpl`
-2. Update the version of the handler in the `pkg/handlers/v3` package, e.g. from `v3` to `v4`.
-3. Copy the existing implementation of the handler to `pkg/handlers/../v4/`.
-
-During CAPI provider upgrades, and periodically, all managed clusters are reconciled and mutation handler patches
-are applied.
-Any new handlers that return a new set of patches, or updated handlers that return a different set of patches,
-will be applied causing a rollout of Machines in all managed clusters.
-
-For example, when adding a new handler, a handler that is enabled by default and returns CAPI resources patches,
-will cause a rollout of Machines.
-Similarly, if a handler is modified to return a different set of patches, it will also cause a rollout of Machines.
+Upgrading CAREN must not change existing clusters. During upgrades, and periodically, all managed clusters are
+reconciled and the patches of the handlers their ClusterClass names are applied, so any change to what a released
+handler returns rolls out Machines in every cluster using it. Changes to handler output go into the open, unreleased
+handler version only; golden tests, a freeze check in CI and an upgrade e2e test enforce this. See
+[Handler versions](docs/content/contributing/handler_versions.md).
 
 ### Run Locally
 

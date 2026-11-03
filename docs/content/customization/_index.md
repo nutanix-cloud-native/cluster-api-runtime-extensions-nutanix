@@ -9,8 +9,8 @@ The cluster configuration handlers wrap all the other mutation handlers in a con
 your ClusterClasses, allowing for a single configuration variable with nested values. This provides the most flexibility
 with the least configuration.
 
-To enable the handler, add the provider-specific `clusterconfigvars` and `clusterconfigpatch` external patches on
-`ClusterClass`. This will enable all of the [generic cluster customizations]({{< ref "generic" >}}), along with the
+To enable the handler, add the provider-specific `clusterconfigvarsvN` and `clustervNconfigpatch` external patches of
+the same handler version on `ClusterClass`. This will enable all of the [generic cluster customizations]({{< ref "generic" >}}), along with the
 relevant provider-specific variables.
 
 Regardless of provider, a single variable called `clusterConfig` will be available for use on the `ClusterClass`. The
@@ -55,7 +55,7 @@ spec:
 See [AWS customizations]({{< ref "aws" >}}) for the AWS specific customizations.
 
 ```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta2
 kind: ClusterClass
 metadata:
   name: <NAME>
@@ -63,8 +63,8 @@ spec:
   patches:
     - name: cluster-config
       external:
-        generateExtension: "awsclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
-        discoverVariablesExtension: "awsclusterconfigvars.cluster-api-runtime-extensions-nutanix"
+        generatePatchesExtension: "awsclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix"
+        discoverVariablesExtension: "awsclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix"
 ```
 
 ## Docker
@@ -72,7 +72,7 @@ spec:
 See [generic customizations]({{< ref "generic" >}}) for the Docker specific customizations.
 
 ```yaml
-apiVersion: cluster.x-k8s.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta2
 kind: ClusterClass
 metadata:
   name: <NAME>
@@ -80,6 +80,6 @@ spec:
   patches:
     - name: cluster-config
       external:
-        generateExtension: "dockerclusterconfigpatch.cluster-api-runtime-extensions-nutanix"
-        discoverVariablesExtension: "dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix"
+        generatePatchesExtension: "dockerclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix"
+        discoverVariablesExtension: "dockerclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix"
 ```
