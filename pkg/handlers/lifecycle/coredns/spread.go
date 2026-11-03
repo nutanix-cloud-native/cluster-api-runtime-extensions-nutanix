@@ -18,20 +18,18 @@ const (
 	AppLabelValue = "kube-dns"
 
 	topologyKeyHostname = "kubernetes.io/hostname"
-	// topologyKeyZone is the fault domain for both non-metro and metro clusters.
-	// Non-metro nodes are labeled with the Prism Element or category zone.
-	// Metro control-plane nodes use a NutanixMetroSite failure domain, and the
-	// cloud provider copies that failure-domain name into this label, so two
-	// sites become two zones. A NutanixMetro failure domain is one zone shared
-	// by both sites and does not split pods.
+	// topologyKeyZone carries the CAPI failure domain onto the Node. Providers
+	// copy Machine.Status.FailureDomain (or equivalent) into this label. Two
+	// distinct values mean two failure domains; one shared value means a single
+	// failure domain and the handler is a no-op.
 	topologyKeyZone = "topology.kubernetes.io/zone"
 
 	// spreadRolloutAnnotation bumps the pod template to trigger a Deployment
-	// rollout after required zone anti-affinity is applied. Pods are never deleted
-	// directly by the handler.
+	// rollout after required failure-domain anti-affinity is applied. Pods are
+	// never deleted directly by the handler.
 	spreadRolloutAnnotation = "coredns.caren.nutanix.com/fault-domain-spread"
 	// spreadRolloutAnnotationValue is set when a rollout is requested for the
-	// required zone anti-affinity policy.
+	// required failure-domain anti-affinity policy.
 	spreadRolloutAnnotationValue = "zone-required"
 )
 
@@ -52,13 +50,15 @@ func coreDNSPodAffinityTerm() corev1.PodAffinityTerm {
 	}
 }
 
-// isMultiZoneCluster reports whether Ready nodes expose at least two distinct zone values.
+// isMultiZoneCluster reports whether Ready nodes expose at least two distinct
+// topology.kubernetes.io/zone values (two CAPI failure domains).
 func isMultiZoneCluster(nodes []corev1.Node) bool {
 	return hasMultipleDistinctValues(nodes, topologyKeyZone)
 }
 
-// buildMultiZonePodAntiAffinity returns required zone + preferred hostname anti-affinity.
-// Call only for multi-zone clusters. Returns nil for single-zone (caller should no-op).
+// buildMultiZonePodAntiAffinity returns required failure-domain (zone) anti-affinity
+// plus preferred hostname anti-affinity. Call only when the cluster has multiple
+// failure domains. Returns nil for a single failure domain (caller should no-op).
 func buildMultiZonePodAntiAffinity(nodes []corev1.Node) *corev1.PodAntiAffinity {
 	if !isMultiZoneCluster(nodes) {
 		return nil
@@ -125,7 +125,7 @@ func countReadyControlPlaneNodes(nodes []corev1.Node) int32 {
 }
 
 // affinityNeedsUpdate reports whether the Deployment affinity should be patched
-// to match the desired multi-zone anti-affinity.
+// to match the desired multi-failure-domain anti-affinity.
 func affinityNeedsUpdate(current *corev1.Affinity, desired *corev1.PodAntiAffinity) bool {
 	if desired == nil {
 		return false
@@ -170,8 +170,9 @@ func affinityNeedsUpdate(current *corev1.Affinity, desired *corev1.PodAntiAffini
 	return false
 }
 
-// podsSpreadAcrossZones reports whether running CoreDNS pods use at least two distinct zones.
-// Pods without a nodeName or whose node has no zone label are ignored for the count.
+// podsSpreadAcrossZones reports whether running CoreDNS pods already use at least
+// two distinct failure domains (topology.kubernetes.io/zone). Pods without a
+// nodeName or whose node has no zone label are ignored for the count.
 func podsSpreadAcrossZones(pods []corev1.Pod, nodes []corev1.Node) bool {
 	nodeZone := map[string]string{}
 	for i := range nodes {

@@ -26,13 +26,13 @@ const handlerName = "CoreDNSFaultDomainSpread"
 
 // errControlPlaneNodesPending is returned when not every expected control-plane
 // node is Ready yet. AfterControlPlaneInitialized returns Failure so CAPI keeps
-// the hook pending and retries after CP2/CP3 join; that is when metro clusters
-// expose both NutanixMetroSite_* zones.
+// the hook pending and retries after CP2/CP3 join; that is when clusters with
+// multiple failure domains expose distinct topology.kubernetes.io/zone values.
 var errControlPlaneNodesPending = errors.New("waiting for remaining control-plane nodes")
 
 // Handler patches the kubeadm-managed CoreDNS Deployment so replicas are required
-// to land in different zones on multi-zone / metro clusters. Single-zone clusters
-// are left unchanged.
+// to land in different failure domains (via topology.kubernetes.io/zone) when the
+// cluster has more than one. Single-failure-domain clusters are left unchanged.
 type Handler struct {
 	client              ctrlclient.Client
 	clusterClientGetter remote.ClusterClientGetter
@@ -61,9 +61,9 @@ func (h *Handler) AfterControlPlaneInitialized(
 	req *runtimehooksv1.AfterControlPlaneInitializedRequest,
 	resp *runtimehooksv1.AfterControlPlaneInitializedResponse,
 ) {
-	// NKP marks the control plane initialized after CP1 is Ready, then joins
-	// CP2/CP3. Returning Failure keeps this hook pending so we re-evaluate once
-	// later control-plane nodes (and their zones) exist.
+	// ControlPlaneInitialized can fire after CP1 is Ready, before CP2/CP3 join.
+	// Returning Failure keeps this hook pending so we re-evaluate once later
+	// control-plane nodes (and their failure-domain zone labels) exist.
 	h.apply(ctx, &req.Cluster, resp, true /* waitForControlPlane */)
 }
 
@@ -152,9 +152,9 @@ func ensureCoreDNSFaultDomainSpread(
 		}
 	}
 
-	// Single-zone (or no zone labels): leave kubeadm CoreDNS defaults alone.
+	// Single failure domain (or no zone labels): leave kubeadm CoreDNS defaults alone.
 	if !isMultiZoneCluster(nodeList.Items) {
-		log.V(4).Info("single-zone cluster; skipping CoreDNS fault-domain spread")
+		log.V(4).Info("single failure domain; skipping CoreDNS fault-domain spread")
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func ensureCoreDNSFaultDomainSpread(
 	forceRollout := needsAffinity || needsSpreadRollout(deploy.Spec.Template.Annotations, podList.Items, nodeList.Items)
 
 	if !needsAffinity && !forceRollout {
-		log.V(4).Info("CoreDNS affinity and spread already satisfy multi-zone policy")
+		log.V(4).Info("CoreDNS affinity and spread already satisfy multi-failure-domain policy")
 		return nil
 	}
 
@@ -204,7 +204,7 @@ func ensureCoreDNSFaultDomainSpread(
 	}
 
 	if needsAffinity {
-		log.Info("patched CoreDNS Deployment with required zone pod anti-affinity")
+		log.Info("patched CoreDNS Deployment with required failure-domain zone pod anti-affinity")
 	}
 	if forceRollout {
 		log.Info("triggered CoreDNS Deployment annotation rollout for fault-domain spread")

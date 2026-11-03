@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestEnsureCoreDNSFaultDomainSpread_patchesMultiZoneRequired(t *testing.T) {
+func TestEnsureCoreDNSFaultDomainSpread_patchesMultipleFailureDomainsRequired(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
@@ -54,8 +54,8 @@ func TestEnsureCoreDNSFaultDomainSpread_patchesMultiZoneRequired(t *testing.T) {
 
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 		deploy,
-		readyNode("n1", map[string]string{topologyKeyZone: "site-a"}),
-		readyNode("n2", map[string]string{topologyKeyZone: "site-b"}),
+		readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "coredns-1",
@@ -93,7 +93,7 @@ func TestEnsureCoreDNSFaultDomainSpread_patchesMultiZoneRequired(t *testing.T) {
 	assert.Equal(t, spreadRolloutAnnotationValue, updated.Spec.Template.Annotations[spreadRolloutAnnotation])
 }
 
-func TestEnsureCoreDNSFaultDomainSpread_singleZoneNoop(t *testing.T) {
+func TestEnsureCoreDNSFaultDomainSpread_singleFailureDomainNoop(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
@@ -128,8 +128,8 @@ func TestEnsureCoreDNSFaultDomainSpread_singleZoneNoop(t *testing.T) {
 
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 		deploy,
-		readyNode("n1", map[string]string{topologyKeyZone: "pe-a"}),
-		readyNode("n2", map[string]string{topologyKeyZone: "pe-a"}),
+		readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		readyNode("n2", map[string]string{topologyKeyZone: "fd-a"}),
 	).Build()
 
 	require.NoError(t, ensureCoreDNSFaultDomainSpread(context.Background(), c, 1, false))
@@ -168,7 +168,8 @@ func TestEnsureCoreDNSFaultDomainSpread_waitsForControlPlane(t *testing.T) {
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{Name: DeploymentName, Namespace: DeploymentNamespace},
 		},
-		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s0"}),
+		// Only one control-plane Ready; wait until expected replicas expose all failure domains.
+		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "fd-east"}),
 	).Build()
 
 	err := ensureCoreDNSFaultDomainSpread(context.Background(), c, 3, true)
@@ -184,10 +185,11 @@ func TestEnsureCoreDNSFaultDomainSpread_succeedsWhenAllControlPlanesReady(t *tes
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{Name: DeploymentName, Namespace: DeploymentNamespace},
 		},
-		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s0"}),
-		readyControlPlaneNode("cp2", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s0"}),
-		readyControlPlaneNode("cp3", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s1"}),
-		readyNode("w1", map[string]string{topologyKeyZone: "NutanixMetro_metro0"}),
+		// Zone labels are CAPI failure-domain names on the Node.
+		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "fd-east"}),
+		readyControlPlaneNode("cp2", map[string]string{topologyKeyZone: "fd-east"}),
+		readyControlPlaneNode("cp3", map[string]string{topologyKeyZone: "fd-west"}),
+		readyNode("w1", map[string]string{topologyKeyZone: "fd-shared"}),
 	).Build()
 
 	require.NoError(t, ensureCoreDNSFaultDomainSpread(context.Background(), c, 3, true))
@@ -207,8 +209,8 @@ func TestEnsureCoreDNSFaultDomainSpread_skipsRolloutWhenAlreadySpread(t *testing
 	require.NoError(t, appsv1.AddToScheme(scheme))
 
 	desired := buildMultiZonePodAntiAffinity([]corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "b"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 	})
 
 	deploy := &appsv1.Deployment{
@@ -224,8 +226,8 @@ func TestEnsureCoreDNSFaultDomainSpread_skipsRolloutWhenAlreadySpread(t *testing
 
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 		deploy,
-		readyNode("n1", map[string]string{topologyKeyZone: "a"}),
-		readyNode("n2", map[string]string{topologyKeyZone: "b"}),
+		readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "coredns-1", Namespace: DeploymentNamespace,
@@ -261,7 +263,7 @@ func TestHandlerAfterControlPlaneInitialized_retriesUntilControlPlanesReady(t *t
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{Name: DeploymentName, Namespace: DeploymentNamespace},
 		},
-		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s0"}),
+		readyControlPlaneNode("cp1", map[string]string{topologyKeyZone: "fd-east"}),
 	).Build()
 
 	mgmt := fake.NewClientBuilder().WithScheme(scheme).Build()

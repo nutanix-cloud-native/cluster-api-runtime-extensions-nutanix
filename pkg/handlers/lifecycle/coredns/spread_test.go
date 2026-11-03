@@ -26,29 +26,29 @@ func readyNode(name string, labels map[string]string) *corev1.Node {
 	}
 }
 
-func TestIsMultiZoneCluster(t *testing.T) {
+func TestIsMultiZoneCluster_detectsMultipleFailureDomains(t *testing.T) {
 	assert.False(t, isMultiZoneCluster([]corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "pe-a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "pe-a"}),
-	}))
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-a"}),
+	}), "one shared failure domain must be treated as single-domain")
 	assert.True(t, isMultiZoneCluster([]corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "site-a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "site-b"}),
-	}))
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
+	}), "distinct topology.kubernetes.io/zone values are distinct failure domains")
 }
 
-func TestBuildMultiZonePodAntiAffinity_nilWhenSingleZone(t *testing.T) {
+func TestBuildMultiZonePodAntiAffinity_nilWhenSingleFailureDomain(t *testing.T) {
 	nodes := []corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "pe-a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "pe-a"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-a"}),
 	}
 	assert.Nil(t, buildMultiZonePodAntiAffinity(nodes))
 }
 
-func TestBuildMultiZonePodAntiAffinity_requiredZoneWhenMultiZone(t *testing.T) {
+func TestBuildMultiZonePodAntiAffinity_requiredZoneWhenMultipleFailureDomains(t *testing.T) {
 	nodes := []corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "site-a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "site-b"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 	}
 
 	anti := buildMultiZonePodAntiAffinity(nodes)
@@ -70,11 +70,12 @@ func TestBuildMultiZonePodAntiAffinity_requiredZoneWhenMultiZone(t *testing.T) {
 	assert.Equal(t, int32(1), anti.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight)
 }
 
-func TestBuildMultiZonePodAntiAffinity_includesMetroSiteZones(t *testing.T) {
+func TestBuildMultiZonePodAntiAffinity_usesFailureDomainZoneLabels(t *testing.T) {
+	// Zone label values are the CAPI failure-domain names providers copy onto Nodes.
 	nodes := []corev1.Node{
-		*readyNode("cp-1", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s0"}),
-		*readyNode("cp-2", map[string]string{topologyKeyZone: "NutanixMetroSite_metro0-s1"}),
-		*readyNode("w-1", map[string]string{topologyKeyZone: "NutanixMetro_metro0"}),
+		*readyNode("cp-1", map[string]string{topologyKeyZone: "fd-east"}),
+		*readyNode("cp-2", map[string]string{topologyKeyZone: "fd-west"}),
+		*readyNode("w-1", map[string]string{topologyKeyZone: "fd-shared"}),
 	}
 
 	anti := buildMultiZonePodAntiAffinity(nodes)
@@ -83,20 +84,21 @@ func TestBuildMultiZonePodAntiAffinity_includesMetroSiteZones(t *testing.T) {
 	assert.Equal(t, topologyKeyZone, anti.RequiredDuringSchedulingIgnoredDuringExecution[0].TopologyKey)
 }
 
-func TestBuildMultiZonePodAntiAffinity_singleMetroFailureDomainIsNil(t *testing.T) {
+func TestBuildMultiZonePodAntiAffinity_sharedFailureDomainIsNil(t *testing.T) {
+	// All Ready nodes share one failure-domain zone label -> no required anti-affinity.
 	nodes := []corev1.Node{
-		*readyNode("w-1", map[string]string{topologyKeyZone: "NutanixMetro_metro0"}),
-		*readyNode("w-2", map[string]string{topologyKeyZone: "NutanixMetro_metro0"}),
+		*readyNode("w-1", map[string]string{topologyKeyZone: "fd-shared"}),
+		*readyNode("w-2", map[string]string{topologyKeyZone: "fd-shared"}),
 	}
 	assert.Nil(t, buildMultiZonePodAntiAffinity(nodes))
 }
 
 func TestBuildMultiZonePodAntiAffinity_ignoresNotReadyNodes(t *testing.T) {
-	notReady := readyNode("n2", map[string]string{topologyKeyZone: "site-b"})
+	notReady := readyNode("n2", map[string]string{topologyKeyZone: "fd-b"})
 	notReady.Status.Conditions[0].Status = corev1.ConditionFalse
 
 	nodes := []corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "site-a"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
 		*notReady,
 	}
 	assert.Nil(t, buildMultiZonePodAntiAffinity(nodes))
@@ -104,8 +106,8 @@ func TestBuildMultiZonePodAntiAffinity_ignoresNotReadyNodes(t *testing.T) {
 
 func TestAffinityNeedsUpdate(t *testing.T) {
 	desired := buildMultiZonePodAntiAffinity([]corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "b"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 	})
 
 	assert.True(t, affinityNeedsUpdate(nil, desired))
@@ -129,26 +131,26 @@ func TestAffinityNeedsUpdate(t *testing.T) {
 
 func TestPodsSpreadAcrossZones(t *testing.T) {
 	nodes := []corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "b"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 	}
-	sameZone := []corev1.Pod{
+	sameFailureDomain := []corev1.Pod{
 		{Spec: corev1.PodSpec{NodeName: "n1"}},
 		{Spec: corev1.PodSpec{NodeName: "n1"}},
 	}
-	assert.False(t, podsSpreadAcrossZones(sameZone, nodes))
+	assert.False(t, podsSpreadAcrossZones(sameFailureDomain, nodes))
 
-	spread := []corev1.Pod{
+	spreadAcrossFailureDomains := []corev1.Pod{
 		{Spec: corev1.PodSpec{NodeName: "n1"}},
 		{Spec: corev1.PodSpec{NodeName: "n2"}},
 	}
-	assert.True(t, podsSpreadAcrossZones(spread, nodes))
+	assert.True(t, podsSpreadAcrossZones(spreadAcrossFailureDomains, nodes))
 }
 
 func TestNeedsSpreadRollout(t *testing.T) {
 	nodes := []corev1.Node{
-		*readyNode("n1", map[string]string{topologyKeyZone: "a"}),
-		*readyNode("n2", map[string]string{topologyKeyZone: "b"}),
+		*readyNode("n1", map[string]string{topologyKeyZone: "fd-a"}),
+		*readyNode("n2", map[string]string{topologyKeyZone: "fd-b"}),
 	}
 	unspread := []corev1.Pod{
 		{Spec: corev1.PodSpec{NodeName: "n1"}},
