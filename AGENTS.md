@@ -35,8 +35,8 @@ the `make` targets below fan out to every module.
 | Concern | Path |
 | --- | --- |
 | API types and variables | `api/v1alpha1/` |
-| Active mutation handlers | `pkg/handlers/vN/{aws,nutanix,docker,eks,generic}/mutation/` |
-| Previous handler versions | `pkg/handlers/vN/` |
+| Mutation and discovery handlers, per version | `pkg/handlers/vN/` |
+| Handler golden tests | `pkg/handlers/golden/` |
 | Lifecycle addon hooks | `pkg/handlers/lifecycle/` |
 | Webhooks | `pkg/webhook/` |
 | Helm chart and default ClusterClasses | `charts/cluster-api-runtime-extensions-nutanix/` |
@@ -53,6 +53,8 @@ regenerated output together with your change.
 | Generated | Source | Target |
 | --- | --- | --- |
 | Deepcopy, CRDs, chart RBAC templates | `api/`, kubebuilder markers | `make go-generate` |
+| CRD snapshot of the latest handler version | `api/v1alpha1/crds/` | `make go-generate` |
+| Golden files of the open handler version | its handlers, `pkg/handlers/golden/testdata/corpus/` | `make handlers.golden-update` |
 | `examples/` | `hack/examples/` | `make examples.sync` |
 | Default ClusterClasses in the chart | `hack/examples/overlays/clusterclasses/` | `make examples.sync` |
 | Addon manifests and Helm repository config | `make/addons.mk` versions | `make addons.sync` |
@@ -131,12 +133,13 @@ Deploy a local build on Kind with `make dev.run-on-kind`.
 
 - Add or update unit tests next to the code you change. Unit tests use
   `testify`; integration and e2e tests use Ginkgo and Gomega.
-- A handler change that alters `GeneratePatches` output for an existing input
-  needs a new handler version. Follow the steps in the constitution: copy the
-  current implementation under `pkg/handlers/vN/`, bump the version in the
-  handler name, register both versions, update the ClusterClass templates under
-  `hack/examples/overlays/clusterclasses/`, and run `make examples.sync`.
-  Upgrading CAREN must not roll Machines on existing clusters.
+- Upgrading CAREN must not roll Machines on existing clusters. Change handler
+  output (patches, variable schemas or defaults) only in the open, unreleased
+  version under `pkg/handlers/vN/`, then run `make handlers.golden-update` and
+  review the golden diff. If every version is released, run
+  `make handlers.new-version` first. Released versions, their golden files and
+  their handler names are frozen; `make handlers.check-frozen` enforces it. See
+  `docs/content/contributing/handler_versions.md`.
 - Every new or changed handler needs user-facing docs under `docs/content/` in
   the same PR. Preview with `make preview-docs`.
 - Do not run the full e2e suite unless the change needs it.
