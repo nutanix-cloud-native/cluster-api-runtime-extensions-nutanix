@@ -432,9 +432,9 @@ Title: `ci: [NCN-107121] Forbid cross-version handler imports`
 
 **Files:** Modify `.golangci.yml`.
 
-- [ ] Add a depguard rule per version with `files: ["**/pkg/handlers/vN/**"]`, denying `.../pkg/handlers` and allowing `.../pkg/handlers/vN`, `.../pkg/handlers/utils`, `.../pkg/handlers/options`, `.../pkg/handlers/lifecycle/registry/utils`.
-- [ ] Verify the rule fires: temporarily import a `v6` package from `v7`; `devbox run -- make lint` fails. Revert; lint passes.
-- [ ] If depguard does not let a more specific allow override the deny, replace the rule with `pkg/handlers/imports_test.go` using `go list -deps -json` and record why in the PR.
+- [x] Add a depguard rule per version with `files: ["**/pkg/handlers/vN/**"]`, denying `.../pkg/handlers` and allowing `.../pkg/handlers/vN`, `.../pkg/handlers/utils`, `.../pkg/handlers/options`, `.../pkg/handlers/lifecycle/registry/utils` (the only `pkg/handlers` packages outside their own tree that `v6` and `v7` import, per `go list`). A `# new-version:depguard` marker follows the last rule.
+- [x] Verify the rule fires: temporary files importing `v6` and `lifecycle/addons` from `v7`, and `v7` from `v6`, each give a `depguard` error naming the rule. Removed; lint passes.
+- [x] Not needed: depguard lets the longer allow pattern override the deny.
 
 ---
 
@@ -445,7 +445,7 @@ Title: `build: [NCN-107121] Add make target to cut a handler version`
 **Files:** Create `hack/handlers/new-version.sh`; add `handlers.new-version` to `make/handlers.mk`.
 
 - [ ] Refuse when `open-version.sh` prints a version: exit 1 naming it. Verify on this branch (`v7` is open).
-- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
+- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule at the `.golangci.yml` marker; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
 - [ ] Verify the success path in a scratch clone: `git clone --local . /tmp/caren-newversion`, tag `HEAD` there as a fake release, run the target, then `make test` and `make lint` pass with no hand edits and `git status` shows only `pkg/handlers/v8/`, registration, lint config, templates, examples, and new golden files.
 
 ---
