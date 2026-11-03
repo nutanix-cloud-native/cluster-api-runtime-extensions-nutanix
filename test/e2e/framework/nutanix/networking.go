@@ -21,6 +21,11 @@ import (
 	v4Converged "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 )
 
+// IPReservationTaskCompletionTimeout is the timeout for waiting for a Nutanix IP reservation task to complete.
+// The duration is chosen based on the average time we observe for the task to complete in the CI Prism Central (25s),
+// plus a small buffer.
+const IPReservationTaskCompletionTimeout = 35 * time.Second
+
 func GetSubnetUUIDFromNameAndCluster(
 	ctx context.Context,
 	subnet, cluster string,
@@ -105,7 +110,7 @@ func ReserveIP(
 	}
 	taskRefData := taskRef
 
-	taskCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	taskCtx, cancel := context.WithTimeout(ctx, IPReservationTaskCompletionTimeout)
 	defer cancel()
 
 	result, err := WaitForTaskCompletion(taskCtx, *taskRefData.ExtId, convergedClient)
@@ -191,7 +196,7 @@ func UnreserveIP(
 	}
 	taskRefData := taskRef
 
-	taskCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	taskCtx, cancel := context.WithTimeout(ctx, IPReservationTaskCompletionTimeout)
 	defer cancel()
 
 	_, err = WaitForTaskCompletion(taskCtx, *taskRefData.ExtId, convergedClient)
