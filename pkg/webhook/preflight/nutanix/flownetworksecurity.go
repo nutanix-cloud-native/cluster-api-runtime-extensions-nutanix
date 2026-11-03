@@ -230,7 +230,9 @@ func getCNIProvider(cluster *clusterv1.Cluster) (string, error) {
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
-			return "", nil // The CNI provider is not specified, so we assume it is not Cilium.
+			// The CNI variable has no default, and CAREN does not deploy a CNI when it is unset
+			// (see the Cilium lifecycle handler). A unit test will fail if the default is introduced.
+			return "", nil
 		}
 		return "", fmt.Errorf("error getting CNI provider from Cluster Addons configuration: %w", err)
 	}

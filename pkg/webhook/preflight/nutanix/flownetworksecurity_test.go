@@ -805,6 +805,22 @@ func TestNewFlowNetworkSecurityDSRToSNATChecker(t *testing.T) {
 	}
 }
 
+// getCNIProvider treats a missing CNI variable as "not Cilium". That is only correct while no part of the
+// variable path to the CNI provider has a default; otherwise, a missing variable could be defaulted to Cilium.
+func TestNutanixCNIProviderVariableHasNoDefault(t *testing.T) {
+	path := []string{carenv1.ClusterConfigVariableName, "addons", carenv1.CNIVariableName, "provider"}
+
+	props := carenv1.NutanixClusterConfig{}.VariableSchema().OpenAPIV3Schema
+	assert.Nil(t, props.Default, "%s must not have a default", path[0])
+
+	for i := 1; i < len(path); i++ {
+		next, ok := props.Properties[path[i]]
+		require.True(t, ok, "%s is missing from the variable schema", strings.Join(path[:i+1], "."))
+		assert.Nil(t, next.Default, "%s must not have a default", strings.Join(path[:i+1], "."))
+		props = next
+	}
+}
+
 func entityGroupNoKindMatchError() error {
 	return &meta.NoKindMatchError{
 		GroupKind: schema.GroupKind{
