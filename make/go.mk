@@ -82,11 +82,28 @@ E2E_CONF_FILE ?= $(REPO_ROOT)/test/e2e/config/caren.yaml
 E2E_CONF_FILE_ENVSUBST ?= $(basename $(E2E_CONF_FILE))-envsubst.yaml
 export E2E_KUBERNETES_VERSION ?= $(KINDEST_IMAGE_TAG)
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
+export CAREN_UPGRADE_FROM_VERSION ?= $(GIT_TAG)
+E2E_UPGRADE_FROM_DIR := $(REPO_ROOT)/test/e2e/data/upgrade-from-release
+
+.PHONY: e2e-upgrade-from-release
+e2e-upgrade-from-release: ## Writes the last release's Docker ClusterClass and Cluster for the upgrade e2e test
+e2e-upgrade-from-release: ; $(info $(M) writing $(CAREN_UPGRADE_FROM_VERSION) Docker templates for the upgrade e2e test)
+	mkdir -p $(E2E_UPGRADE_FROM_DIR)
+	git show $(CAREN_UPGRADE_FROM_VERSION):charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/docker-cluster-class.yaml | \
+	  sed 's/docker-quick-start/docker-quick-start-upgrade-from/g' \
+	  >$(E2E_UPGRADE_FROM_DIR)/clusterclass-docker-quick-start-upgrade-from.yaml
+	# The spec scales md-0 through the topology, which CAPI rejects while the autoscaler annotations in its
+	# metadata are set.
+	git show $(CAREN_UPGRADE_FROM_VERSION):examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml | \
+	  sed 's/docker-quick-start/docker-quick-start-upgrade-from/g' | \
+	  gojq --yaml-input --yaml-output \
+	    '.spec.topology.workers.machineDeployments[] |= (del(.metadata) | .replicas = "$${WORKER_MACHINE_COUNT}")' \
+	  >$(E2E_UPGRADE_FROM_DIR)/cluster-template-upgrade-from-release.yaml
 
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
 ifneq ($(wildcard test/e2e/*),)
-e2e-test: examples.sync
+e2e-test: examples.sync e2e-upgrade-from-release
 ifneq ($(SKIP_BUILD),true)
 	$(MAKE) GORELEASER_FLAGS=$$'--config=<(env GOOS=$(shell go env GOOS) GOARCH=$(shell go env GOARCH) gojq --yaml-input --yaml-output \'del(.builds[0].goarch) | del(.builds[0].goos) | .builds[0].targets|=(["linux_amd64","linux_arm64",env.GOOS+"_"+env.GOARCH] | unique | map(. | sub("_amd64";"_amd64_v1")))\' .goreleaser.yml)' release-snapshot
 endif
