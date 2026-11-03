@@ -7,6 +7,12 @@ handlers.check-frozen: ; $(info $(M) checking released handlers are unchanged)
 	hack/handlers/check-frozen-selftest.sh
 	hack/handlers/check-frozen.sh
 
+.PHONY: handlers.new-version
+handlers.new-version: ## Cuts a new handler version from the latest one once that is released
+handlers.new-version: ; $(info $(M) cutting a new handler version)
+	hack/handlers/new-version.sh
+	$(MAKE) examples.sync handlers.golden-update
+
 .PHONY: handlers.golden-update
 handlers.golden-update: ## Regenerates golden output of the open, unreleased handler version
 # TODO: Remove once https://github.com/golang/go/issues/75031 is fixed.
