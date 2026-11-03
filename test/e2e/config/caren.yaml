@@ -91,6 +91,8 @@ providers:
       targetName: cluster-template-topology-calico-helm-addon.yaml
     - sourcePath: "../../../examples/capi-quick-start/docker-cluster-calico-crs.yaml"
       targetName: cluster-template-topology-calico-crs.yaml
+    - sourcePath: "../data/upgrade-from-release/clusterclass-docker-quick-start-upgrade-from.yaml"
+    - sourcePath: "../data/upgrade-from-release/cluster-template-upgrade-from-release.yaml"
     replacements:
     - old: --metrics-addr=127.0.0.1:8080
       new: --metrics-addr=:8080
@@ -140,10 +142,9 @@ providers:
 - name: caren
   type: RuntimeExtensionProvider
   versions:
-  # Upgrade e2e tests will use this as the "upgrade from" version.
-  # This should reference the most recent successful release.
-  - name: "{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.49}"
-    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/{go://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix@v0.49}/runtime-extensions-components.yaml"
+  # The upgrade e2e test installs this version first. `make e2e-test` sets it to the last release tag.
+  - name: "${CAREN_UPGRADE_FROM_VERSION}"
+    value: "https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/releases/download/${CAREN_UPGRADE_FROM_VERSION}/runtime-extensions-components.yaml"
     type: "url"
     contract: v1beta2
     files:
@@ -189,6 +190,8 @@ variables:
   EXP_MACHINE_SET_PREFLIGHT_CHECKS: "true"
   CAPI_DIAGNOSTICS_ADDRESS: ":8080"
   CAPI_INSECURE_DIAGNOSTICS: "true"
+  # Required by the kind management cluster of the upgrade e2e test.
+  IP_FAMILY: "IPv4"
   AMI_LOOKUP_FORMAT: "konvoy-ami-{{.BaseOS}}-release-?{{.K8sVersion}}-*"
   AMI_LOOKUP_BASEOS: "rocky-9.1"
   AMI_LOOKUP_ORG: "999867407951"
@@ -232,3 +235,5 @@ intervals:
   default/wait-clusterresourceset: [ "5m", "10s" ]
   default/wait-helmrelease: [ "5m", "10s" ]
   default/wait-resource: [ "5m", "10s" ]
+  default/wait-resource-versions-become-stable: ["2m", "15s"]
+  default/wait-resource-versions-remain-stable: ["2m", "5s"]

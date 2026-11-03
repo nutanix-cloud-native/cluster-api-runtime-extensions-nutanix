@@ -175,7 +175,7 @@ Each branch is based on the previous one; on GitHub each PR's base is the branch
 
 ### Keeping the stack current
 
-- [ ] Before starting each branch and before the final gate: `gh stack rebase` (fetches `origin`, then rebases every layer onto the one below, from `main` up, across worktrees), then `git fetch origin --tags`. Every worktree must be clean first. Run with full permissions so rebased commits are re-signed.
+- [ ] Before starting each branch and before the final gate: `gh stack rebase` (fetches `origin`, then rebases every layer onto the one below, from `main` up, across worktrees), then `git fetch origin --tags`. Every worktree must be clean first. Run with full permissions so rebased commits are re-signed. If `gh stack rebase` fails on the trunk step, run `git rebase refs/remotes/origin/main` in layer 00's worktree, then `gh stack rebase --no-trunk`.
 - [ ] After every rebase, re-run the golden test on each branch. A golden diff after a rebase means a change on `main` altered handler output: port it into the right `vN` tree, and for anything touching `v6`, re-run the PR 2 baseline comparison.
 - [ ] If `git describe --tags --match 'v*' --abbrev=0 origin/main` is newer than `v0.50.0`, STOP. Check whether that release serves `v7` names. If it does, `v7` is released: replan so that `v7` keeps the unversioned discovery schema of that release and the open version becomes `v8`.
 
@@ -458,33 +458,35 @@ Title: `test: [NCN-107121] Add CAREN upgrade e2e with no-rollout check`
 
 **Files:** Modify `make/go.mk` (`e2e-test` prerequisites); add `test/e2e/data/upgrade-from-release/` to `.gitignore`.
 
-- [ ] Target generates `cluster-template-upgrade-from-release.yaml` from `git show <last release>:charts/.../defaultclusterclasses/docker-cluster-class.yaml` (ClusterClass and templates renamed with an `-upgrade-from` suffix) and `git show <last release>:examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml` pointed at the renamed class.
-- [ ] Verify the file references the last release's handler names (`v6configpatch` today).
+- [x] `make e2e-upgrade-from-release` (an `e2e-test` prerequisite) writes `clusterclass-docker-quick-start-upgrade-from.yaml` from `git show <last release>:charts/.../defaultclusterclasses/docker-cluster-class.yaml` and `cluster-template-upgrade-from-release.yaml` from `git show <last release>:examples/capi-quick-start/docker-cluster-cilium-helm-addon.yaml`, renaming `docker-quick-start` to `docker-quick-start-upgrade-from` in both. clusterctl adds a missing ClusterClass from `clusterclass-<name>.yaml` in the provider repository, and `clusterclass-docker-quick-start.yaml` there is the current class, hence the rename. The release's `runtime-extensions-components.yaml` does not contain ClusterClasses (`helm template` has no CAPI API capabilities), so the upgrade does not replace the class either.
+- [x] In the Cluster template, drop `md-0`'s `metadata` and set `replicas: ${WORKER_MACHINE_COUNT}`. The spec scales `md-0` through the topology, which CAPI rejects while the example's autoscaler annotations are set, and an empty `metadata` fails CRD validation.
+- [x] Verify the files reference the last release's handler names (`dockerclusterv6configpatch-gp` and unversioned discovery today) and that an unknown tag fails the target.
 
 #### T9.2 — e2e config
 
 **Files:** Modify `test/e2e/config/caren.yaml`.
 
-- [ ] Replace the unused `v0.49` entry with `${CAREN_UPGRADE_FROM_VERSION}` (exported by `make e2e-test` from `git describe`).
-- [ ] Add the flavor file to the Docker provider `files:`.
+- [x] Replace the unused `v0.49` entry with `${CAREN_UPGRADE_FROM_VERSION}` (exported by `make e2e-test`, defaulting to `GIT_TAG`, the last release tag reachable from `HEAD`).
+- [x] Add both files to the Docker provider `files:`.
+- [x] Add `IP_FAMILY` (the spec's kind management cluster requires it) and `wait-resource-versions-*` intervals (the spec's final stability check).
 
 #### T9.3 — Spec
 
 **Files:** Create `test/e2e/upgrade_test.go`.
 
-- [ ] `Describe("Upgrade", Label("provider:Docker"))` running `capie2e.ClusterctlUpgradeSpec` with `InitWithRuntimeExtensionProviders: caren:<last release>`, `Upgrades: [{RuntimeExtensionProviders: caren:v0.51.99}]`, `WorkloadFlavor: upgrade-from-release`, and current CAPI and CAPD versions for init and upgrade.
-- [ ] `PreUpgrade`: record KubeadmControlPlane `spec`, MachineDeployment `spec`, and Cluster `spec.topology.variables`.
-- [ ] `PostUpgrade`: set an annotation on the Cluster to trigger reconcile, wait for `TopologyReconciled=True` with `lastTransitionTime` after the annotation, then assert all three are deep-equal to the recorded values. The built-in `validateMachineRollout` covers Machines.
-- [ ] Verify locally: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Upgrade'` passes.
-- [ ] Verify the backstop once: change a `v6` mutator's output locally, rebuild, re-run; the spec fails. Revert.
+- [x] `Describe("Upgrade", Label("provider:Docker"), Serial)` running `capie2e.ClusterctlUpgradeSpec` with a kind management cluster (node version from CAPI's pinned `DefaultNodeImageVersion`), clusterctl and providers at the current CAPI version, CAPD only, `InitWithRuntimeExtensionProviders: caren:<last release>`, `Upgrades: [{RuntimeExtensionProviders: <latest caren in config>}]`, and `WorkloadFlavor: upgrade-from-release`.
+- [x] `PreUpgrade`: record KubeadmControlPlane `spec`, MachineDeployment `spec`, and Cluster `spec.topology.variables`.
+- [x] `PostUpgrade` (runs before the spec's 3-minute wait and Machine comparison): set `spec.paused` to `true`, then `false`, each time waiting until the `TopologyReconciled` condition's `observedGeneration` equals the new generation. This proves a topology reconcile with the new CAREN; an annotation alone gives no completion signal, and `lastTransitionTime` does not move while the condition stays `True`. Assert the recorded state is deep-equal, then wait for the condition to be `True` and assert again. The first comparison comes before requiring success because a changed desired state is applied before lifecycle hooks run, and the rollout it starts can make those hooks time out (seen in the gate's negative run: MetalLB configuration in `AfterControlPlaneInitialized`); the second catches a reconcile that failed before applying anything.
+- [x] Verify locally: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Upgrade'` passes. CAPD needs rootful Docker, and three kind clusters need inotify limits above the default 128 instances.
+- [x] Verify the backstop once: change a `v6` mutator's output locally, rebuild, re-run; the spec fails. Revert. Changing `v6` `audit-log-maxage` from 30 to 31 fails `PostUpgrade` with a `cmp.Diff` naming that argument; Gomega's `Equal` truncates the objects before the difference.
 
 #### T9.4 — Workflows
 
 **Files:** Modify `.github/workflows/checks.yml`; create `.github/workflows/nightly-e2e.yml`.
 
-- [ ] `checks.yml`: add `e2e-upgrade` calling `e2e.yml` with `provider: Docker`, `focus: Upgrade`, newest supported Kubernetes version. Confirm `focus: Quick start` and `focus: Self-hosted` do not match it.
-- [ ] `nightly-e2e.yml`: `schedule` cron and `workflow_dispatch`, same job against `main`.
-- [ ] Verify with `actionlint`.
+- [x] `checks.yml`: add `e2e-upgrade` calling `e2e.yml` with `provider: Docker`, `focus: Upgrade`, Kubernetes `v1.37.0`. A Ginkgo dry run confirms `focus: Quick start` and `focus: Self-hosted` do not select it.
+- [x] `nightly-e2e.yml`: `schedule` cron and `workflow_dispatch`, same job; scheduled runs use the default branch.
+- [x] Verify with `actionlint`.
 
 ---
 

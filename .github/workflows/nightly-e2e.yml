@@ -1,0 +1,26 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: nightly-e2e
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-upgrade:
+    name: e2e-upgrade (Docker provider, Kubernetes v1.37)
+    uses: ./.github/workflows/e2e.yml
+    with:
+      focus: Upgrade
+      provider: Docker
+      kubernetes-version: v1.37.0
+      runs-on: ubuntu-24.04
+    secrets: inherit
+    permissions:
+      contents: read
+      checks: write

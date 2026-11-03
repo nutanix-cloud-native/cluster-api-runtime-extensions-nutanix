@@ -120,6 +120,25 @@ jobs:
       contents: read
       checks: write
 
+  e2e-upgrade:
+    needs:
+      - "lint-gha"
+      - "lint-go"
+      - "lint-test-helm"
+      - "pre-commit"
+      - "unit-test"
+    name: e2e-upgrade (Docker provider, Kubernetes v1.37)
+    uses: ./.github/workflows/e2e.yml
+    with:
+      focus: Upgrade
+      provider: Docker
+      kubernetes-version: v1.37.0
+      runs-on: ubuntu-24.04
+    secrets: inherit
+    permissions:
+      contents: read
+      checks: write
+
   lint-go:
     runs-on: ubuntu-24.04
     strategy:
