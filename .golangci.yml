@@ -49,6 +49,33 @@ linters:
               desc: do not use CAPI providers directly, instead vendor necessary APIs
             - pkg: sigs.k8s.io/cluster-api-addon-provider-
               desc: do not use CAPI providers directly, instead vendor necessary APIs
+        # Each handler version is frozen once released, so it must not share code with other versions or with
+        # unversioned handler packages, which can change. One rule per served version.
+        handlers-v6:
+          list-mode: lax
+          files:
+            - "**/pkg/handlers/v6/**"
+          allow:
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v6
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/utils
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils
+          deny:
+            - pkg: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers
+              desc: handler versions must not import other handler versions or unversioned handler packages
+        handlers-v7:
+          list-mode: lax
+          files:
+            - "**/pkg/handlers/v7/**"
+          allow:
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/v7
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry/utils
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options
+            - github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils
+          deny:
+            - pkg: github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers
+              desc: handler versions must not import other handler versions or unversioned handler packages
+        # new-version:depguard
     errcheck:
       exclude-functions:
         - encoding/json.Marshal
