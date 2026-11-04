@@ -44,6 +44,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle"
+	lifecycleconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/addons"
@@ -169,6 +170,17 @@ func main() {
 		setupLog.Error(err, "failed to create a new controller manager")
 		os.Exit(1)
 	}
+
+	// Wire the Helm chart ConfigMap reader used by the Nutanix project policy defaulter and preflight
+	// checks. Without this, GetHelmChartGetter() returns nil at runtime and the project policy
+	// silently defaults to "unrestricted" while the preflight check is skipped.
+	preflightnutanix.InitHelmChartGetter(
+		lifecycleconfig.NewHelmChartGetterFromConfigMap(
+			globalOptions.HelmAddonsConfigMapName(),
+			globalOptions.DefaultsNamespace(),
+			mgr.GetClient(),
+		),
+	)
 
 	allHandlers := slices.Concat(
 		lifecycleHandlers.AllHandlers(mgr),

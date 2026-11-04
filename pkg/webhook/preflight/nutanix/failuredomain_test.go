@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
+	networkingcommonapi "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/common/v1/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -299,8 +301,9 @@ func TestFailureDomainCheck(t *testing.T) {
 					}
 					err := resp.SetData([]netv4.Subnet{
 						{
-							Name:  new(subnetName),
-							ExtId: new(subnetUUID),
+							Name:             new(subnetName),
+							ExtId:            new(subnetUUID),
+							ClusterReference: new(peClusterUUID),
 						},
 					})
 					require.NoError(t, err)
@@ -344,6 +347,70 @@ func TestFailureDomainCheck(t *testing.T) {
 	}
 }
 
+func TestFailureDomainCheckRejectsOverlappingPodCIDR(t *testing.T) {
+	t.Parallel()
+
+	check := failureDomainCheck{
+		failureDomainName: failureDomainName,
+		namespace:         namespace,
+		field:             field,
+		kclient:           getK8sClient(),
+		podCIDRs:          []string{"10.22.0.0/16"},
+		nclient: &clientWrapper{
+			ListClustersFunc: func(
+				context.Context,
+				*int,
+				*int,
+				*string,
+				*string,
+				*string,
+				*string,
+				...map[string]any,
+			) (*clustermgmtv4.ListClustersApiResponse, error) {
+				resp := &clustermgmtv4.ListClustersApiResponse{}
+				err := resp.SetData([]clustermgmtv4.Cluster{{
+					Name:  new(peClusterName),
+					ExtId: new(peClusterUUID),
+				}})
+				require.NoError(t, err)
+				return resp, nil
+			},
+			ListSubnetsFunc: func(
+				context.Context,
+				*int,
+				*int,
+				*string,
+				*string,
+				*string,
+				*string,
+				...map[string]any,
+			) (*netv4.ListSubnetsApiResponse, error) {
+				resp := &netv4.ListSubnetsApiResponse{}
+				err := resp.SetData([]netv4.Subnet{{
+					Name:             new(subnetName),
+					ClusterReference: new(peClusterUUID),
+					IpConfig: []netv4.IPConfig{{
+						Ipv4: &netv4.IPv4Config{
+							IpSubnet: &netv4.IPv4Subnet{
+								Ip:           &networkingcommonapi.IPv4Address{Value: new("10.22.1.1")},
+								PrefixLength: new(24),
+							},
+						},
+					}},
+				}})
+				require.NoError(t, err)
+				return resp, nil
+			},
+		},
+	}
+
+	result := check.Run(context.Background())
+	require.False(t, result.Allowed)
+	require.Len(t, result.Causes, 1)
+	assert.Contains(t, result.Causes[0].Message, `Pod CIDR "10.22.0.0/16" overlaps with node subnet`)
+	assert.Equal(t, field, result.Causes[0].Field)
+}
+
 func getK8sClient() ctrlclient.Client {
 	fdObj := &capxv1.NutanixFailureDomain{
 		ObjectMeta: metav1.ObjectMeta{
@@ -365,4 +432,90 @@ func getK8sClient() ctrlclient.Client {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(capxv1.AddToScheme(scheme))
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(fdObj).Build()
+}
+
+func TestGetSubnetsInProject_UsesProjectFilter(t *testing.T) {
+	t.Parallel()
+
+	id := &capxv1.NutanixResourceIdentifier{
+		Type: capxv1.NutanixIdentifierName,
+		Name: new("subnet-a"),
+	}
+	nclient := &clientWrapper{
+		ListSubnetsFunc: func(
+			ctx context.Context,
+			page_ *int,
+			limit_ *int,
+			filter_ *string,
+			orderby_ *string,
+			expand_ *string,
+			select_ *string,
+			args ...map[string]any,
+		) (*netv4.ListSubnetsApiResponse, error) {
+			require.NotNil(t, filter_)
+			assert.Equal(
+				t,
+				"name eq 'subnet-a' and (projectExtId eq 'project-uuid-1' or sharedWithProjects/any(a:a eq 'project-uuid-1'))",
+				*filter_,
+			)
+			resp := &netv4.ListSubnetsApiResponse{}
+			err := resp.SetData([]netv4.Subnet{{Name: new("subnet-a")}})
+			require.NoError(t, err)
+			return resp, nil
+		},
+	}
+
+	subnets, err := getSubnetsInProject(context.Background(), nclient, id, "project-uuid-1")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+}
+
+func TestSubnetFromGetSubnetData(t *testing.T) {
+	t.Parallel()
+
+	valueSubnet := netv4.Subnet{
+		ExtId: new("subnet-uuid"),
+		Name:  new("subnet-name"),
+	}
+
+	tests := []struct {
+		name        string
+		data        any
+		expectError bool
+	}{
+		{
+			name:        "accepts value subnet",
+			data:        valueSubnet,
+			expectError: false,
+		},
+		{
+			name:        "accepts pointer subnet",
+			data:        &valueSubnet,
+			expectError: false,
+		},
+		{
+			name:        "rejects nil pointer subnet",
+			data:        (*netv4.Subnet)(nil),
+			expectError: true,
+		},
+		{
+			name:        "rejects unexpected type",
+			data:        "not-a-subnet",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			subnet, err := subnetFromGetSubnetData(tt.data)
+			if tt.expectError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, ptr.Deref(valueSubnet.ExtId, ""), ptr.Deref(subnet.ExtId, ""))
+			assert.Equal(t, ptr.Deref(valueSubnet.Name, ""), ptr.Deref(subnet.Name, ""))
+		})
+	}
 }
