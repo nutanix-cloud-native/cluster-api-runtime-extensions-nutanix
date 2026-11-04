@@ -13,8 +13,8 @@ require (
 	github.com/google/go-github/v72 v72.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.35.9
-	k8s.io/apimachinery v0.35.9
+	k8s.io/api v0.35.10
+	k8s.io/apimachinery v0.35.10
 	sigs.k8s.io/cluster-api v1.13.6
 	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/yaml v1.6.0
@@ -174,12 +174,12 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	helm.sh/helm/v3 v3.17.4 // indirect
-	k8s.io/apiextensions-apiserver v0.35.9 // indirect
-	k8s.io/apiserver v0.35.9 // indirect
+	k8s.io/apiextensions-apiserver v0.35.10 // indirect
+	k8s.io/apiserver v0.35.10 // indirect
 	k8s.io/cli-runtime v0.32.2 // indirect
-	k8s.io/client-go v0.35.9 // indirect
+	k8s.io/client-go v0.35.10 // indirect
 	k8s.io/cluster-bootstrap v0.35.4 // indirect
-	k8s.io/component-base v0.35.9 // indirect
+	k8s.io/component-base v0.35.10 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/kubectl v0.32.2 // indirect
