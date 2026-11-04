@@ -46,7 +46,7 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 kubeProxyReplacement: true
 tunnelProtocol: geneve
 loadBalancer:
-  mode: dsr
+  mode: snat
   dsrDispatch: geneve
 bpf:
   masquerade: true
@@ -60,3 +60,5 @@ routingMode: native
 endpointRoutes:
   enabled: true
 {{- end }}
+bpf:
+  lbModeAnnotation: true
