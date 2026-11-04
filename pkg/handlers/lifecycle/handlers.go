@@ -20,6 +20,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/multus"
 	nutanixflow "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cni/nutanixflow"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/coredns"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/cosi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/awsebs"
@@ -144,6 +145,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		konnectoragent.New(mgr.GetClient(), h.konnectorAgentConfig, helmChartInfoGetter),
 		awsloadbalancercontroller.New(mgr.GetClient(), h.awsLoadBalancerControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
+		coredns.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
 		// The order of the handlers in the list is important and are called consecutively.
 		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
