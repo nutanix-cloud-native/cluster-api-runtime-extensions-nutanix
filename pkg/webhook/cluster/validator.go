@@ -12,6 +12,7 @@ func NewValidator(client ctrlclient.Client, decoder admission.Decoder) admission
 	return admission.MultiValidatingHandler(
 		NewClusterUUIDLabeler(client, decoder).Validator(),
 		NewNutanixValidator(client, decoder).Validator(),
+		NewStorageNodePoolValidator(client, decoder).Validator(),
 		NewAdvancedCiliumConfigurationValidator(client, decoder).Validator(),
 		NewKubeletConfigurationValidator(client, decoder).Validator(),
 	)

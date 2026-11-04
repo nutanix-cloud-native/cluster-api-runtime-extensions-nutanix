@@ -48,14 +48,32 @@ func WaitForKonnectorAgentToBeReadyInWorkloadCluster(
 		ctx, input.WorkloadCluster.Namespace, input.WorkloadCluster.Name,
 	).GetClient()
 
+	konnectorAgentDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "konnector-agent",
+			Namespace: "ntnx-system",
+		},
+	}
+
 	// Wait for konnector-agent deployment to be available
 	WaitForDeploymentsAvailable(ctx, framework.WaitForDeploymentsAvailableInput{
-		Getter: workloadClusterClient,
-		Deployment: &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "konnector-agent",
-				Namespace: ntnxSystemNamespace,
-			},
-		},
+		Getter:     workloadClusterClient,
+		Deployment: konnectorAgentDeployment,
 	}, input.DeploymentIntervals...)
+
+	if len(konnectorAgentDeployment.Spec.Template.Spec.Containers) == 0 {
+		Log("konnector-agent deployment has no containers to report image from")
+		return
+	}
+
+	for i := range konnectorAgentDeployment.Spec.Template.Spec.Containers {
+		container := &konnectorAgentDeployment.Spec.Template.Spec.Containers[i]
+		Logf(
+			"konnector-agent container image: deployment=%s/%s container=%s image=%s",
+			konnectorAgentDeployment.Namespace,
+			konnectorAgentDeployment.Name,
+			container.Name,
+			container.Image,
+		)
+	}
 }

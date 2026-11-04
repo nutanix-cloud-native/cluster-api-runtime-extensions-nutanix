@@ -9,16 +9,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/netip"
+	"strings"
 
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/capx/nutanixprojectpolicy"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
 )
 
@@ -62,6 +65,46 @@ func (a *nutanixValidator) validate(
 		return admission.Allowed("")
 	}
 
+	// The Nutanix project policy (and, for single-project, the pinned project UUID) may only be
+	// narrowed, never widened, once set. A cluster's project is an irreversible tenant boundary, so
+	// leaving default-only or single-project, or swapping the project UUID, would let new machines
+	// land outside that boundary.
+	if req.Operation == v1.Update {
+		oldCluster := &clusterv1.Cluster{}
+		if err := a.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		if projectPolicyAnnotationWidened(oldCluster, cluster) {
+			key := nutanixprojectpolicy.NutanixProjectPolicyAnnotationKey
+			return admission.Denied(fmt.Sprintf(
+				"the %q annotation cannot be changed from %q to %q: the Nutanix project policy may only be "+
+					"narrowed (a cluster's project is an irreversible tenant boundary), not widened",
+				key,
+				oldCluster.Annotations[key],
+				annotationValueForMessage(cluster.Annotations[key]),
+			))
+		}
+		if projectUUIDAnnotationChanged(oldCluster, cluster) {
+			key := nutanixprojectpolicy.NutanixProjectUUIDAnnotationKey
+			return admission.Denied(fmt.Sprintf(
+				"project UUID is immutable and cannot be changed for clusters obeying single-project policy "+
+					"(from %q to %q)",
+				oldCluster.Annotations[key],
+				annotationValueForMessage(cluster.Annotations[key]),
+			))
+		}
+		if storageProjectPolicyWidened(oldCluster, cluster) {
+			key := nutanixprojectpolicy.CSIStorageProjectPolicyAnnotationKey
+			return admission.Denied(fmt.Sprintf(
+				"the %q annotation cannot be changed from %q to %q: CSI storage project policy may only be "+
+					"narrowed (from default to project-policy), not widened",
+				key,
+				oldCluster.Annotations[key],
+				annotationValueForMessage(cluster.Annotations[key]),
+			))
+		}
+	}
+
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return admission.Denied(
@@ -69,6 +112,10 @@ func (a *nutanixValidator) validate(
 				v1alpha1.ClusterConfigVariableName,
 				err).Error(),
 		)
+	}
+	// A Cluster without the clusterConfig variable has nothing for this validator to check.
+	if clusterConfig == nil {
+		return admission.Allowed("")
 	}
 
 	if clusterConfig.Nutanix != nil {
@@ -350,4 +397,71 @@ func validatePrismCentralIPDoesNotEqualControlPlaneIP(
 	}
 
 	return nil
+}
+
+// projectPolicyAnnotationWidened reports whether the project policy annotation is being loosened.
+// default-only and single-project are committed tenant boundaries, so any transition away from them
+// (to unrestricted, the other frozen policy, absent, or unknown) is a widening.
+func projectPolicyAnnotationWidened(oldCluster, newCluster *clusterv1.Cluster) bool {
+	key := nutanixprojectpolicy.NutanixProjectPolicyAnnotationKey
+
+	// clusterctl move stamps the delete-for-move annotation on each source object (right before deleting
+	// it) via a JSON Patch that replaces the entire /metadata/annotations map, which necessarily drops the
+	// project-policy annotation. That paused, about-to-be-deleted source object is not a genuine widening,
+	// so blocking the transition only breaks the pivot (NCN-115866). Let it through.
+	if _, moving := newCluster.Annotations[clusterctlv1.DeleteForMoveAnnotation]; moving {
+		return false
+	}
+
+	oldPolicy := oldCluster.Annotations[key]
+	newPolicy := newCluster.Annotations[key]
+	if oldPolicy == newPolicy {
+		return false
+	}
+
+	return oldPolicy == nutanixprojectpolicy.PolicyDefaultOnly ||
+		oldPolicy == nutanixprojectpolicy.PolicySingleProject
+}
+
+// projectUUIDAnnotationChanged reports whether a committed single-project UUID is being changed.
+// Once a cluster is pinned to a project UUID, swapping or removing that UUID would let new machines
+// land in a different tenant. Stamping a UUID onto a single-project cluster that did not yet have
+// one is allowed (it only narrows).
+func projectUUIDAnnotationChanged(oldCluster, newCluster *clusterv1.Cluster) bool {
+	if _, moving := newCluster.Annotations[clusterctlv1.DeleteForMoveAnnotation]; moving {
+		return false
+	}
+
+	if oldCluster.Annotations[nutanixprojectpolicy.NutanixProjectPolicyAnnotationKey] !=
+		nutanixprojectpolicy.PolicySingleProject {
+		return false
+	}
+
+	oldUUID := strings.TrimSpace(oldCluster.Annotations[nutanixprojectpolicy.NutanixProjectUUIDAnnotationKey])
+	if oldUUID == "" {
+		return false
+	}
+
+	newUUID := strings.TrimSpace(newCluster.Annotations[nutanixprojectpolicy.NutanixProjectUUIDAnnotationKey])
+	return !strings.EqualFold(oldUUID, newUUID)
+}
+
+// storageProjectPolicyWidened reports whether csi.nutanix.com/storage-project-policy is being loosened
+// away from project-policy (to default, unset, or any other value). default → project-policy is a
+// narrowing and is allowed.
+func storageProjectPolicyWidened(oldCluster, newCluster *clusterv1.Cluster) bool {
+	if _, moving := newCluster.Annotations[clusterctlv1.DeleteForMoveAnnotation]; moving {
+		return false
+	}
+	if !nutanixprojectpolicy.StorageProjectPolicyIsProjectPolicy(oldCluster.Annotations) {
+		return false
+	}
+	return !nutanixprojectpolicy.StorageProjectPolicyIsProjectPolicy(newCluster.Annotations)
+}
+
+func annotationValueForMessage(value string) string {
+	if value == "" {
+		return "<unset>"
+	}
+	return value
 }

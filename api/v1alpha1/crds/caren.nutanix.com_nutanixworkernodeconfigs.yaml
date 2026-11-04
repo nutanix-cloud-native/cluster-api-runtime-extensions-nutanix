@@ -359,7 +359,9 @@ spec:
                             - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
                               rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                         gpus:
-                          description: List of GPU devices that need to be added to the machines.
+                          description: |-
+                            List of GPU devices that need to be added to the machines.
+                            Mutually exclusive with VMProfile. When VMProfile is set, GPUs must not be set.
                           items:
                             description: |-
                               NutanixGPU identifies a GPU to attach to a VM, either by device (name/deviceID) or
@@ -554,20 +556,55 @@ spec:
                         vcpuSockets:
                           description: vcpuSockets is the number of vCPU sockets of the VM
                           format: int32
+                          minimum: 1
                           type: integer
                         vcpusPerSocket:
                           description: vcpusPerSocket is the number of vCPUs per socket of the VM
                           format: int32
+                          minimum: 1
                           type: integer
+                        vmProfile:
+                          description: |-
+                            VMProfile is to identify the VM profile in Prism Central (PC)
+                            The VM profile identifier (uuid or name) can be obtained from the Prism Central console
+                            or using the prism_central API.
+                            When VMProfile is set, it provides CPU, memory, and bootType configuration,
+                            making vcpusPerSocket, vcpuSockets, memorySize, bootType, and GPUs mutually exclusive.
+                          properties:
+                            name:
+                              description: name is the resource name in the PC
+                              minLength: 1
+                              type: string
+                            type:
+                              description: Type is the identifier type to use for this resource.
+                              enum:
+                                - uuid
+                                - name
+                              type: string
+                            uuid:
+                              description: uuid is the UUID of the resource in the PC.
+                              format: uuid
+                              maxLength: 36
+                              minLength: 36
+                              type: string
+                          required:
+                            - type
+                          type: object
+                          x-kubernetes-validations:
+                            - message: '''name'' must be set when type is ''name'', and forbidden otherwise'
+                              rule: 'self.type == ''name'' ? has(self.name) : !has(self.name)'
+                            - message: '''uuid'' must be set when type is ''uuid'', and forbidden otherwise'
+                              rule: 'self.type == ''uuid'' ? has(self.uuid) && self.uuid.contains(''-'') : !has(self.uuid)'
                       required:
-                        - memorySize
                         - systemDiskSize
-                        - vcpuSockets
-                        - vcpusPerSocket
                       type: object
                       x-kubernetes-validations:
                         - message: Either 'image' or 'imageLookup' must be set, but not both
                           rule: has(self.image) != has(self.imageLookup)
+                        - message: When 'vmProfile' is set, 'vcpuSockets', 'vcpusPerSocket', 'memorySize', 'bootType', and 'gpus' must not be set
+                          rule: '!has(self.vmProfile) || (!has(self.vcpuSockets) && !has(self.vcpusPerSocket) && !has(self.memorySize) && !has(self.bootType) && (!has(self.gpus) || size(self.gpus) == 0))'
+                        - message: When 'vmProfile' is not set, 'vcpuSockets', 'vcpusPerSocket', 'memorySize', and 'bootType' must be set
+                          rule: has(self.vmProfile) || (has(self.vcpuSockets) && has(self.vcpusPerSocket) && has(self.memorySize) && has(self.bootType))
                   required:
                     - machineDetails
                   type: object

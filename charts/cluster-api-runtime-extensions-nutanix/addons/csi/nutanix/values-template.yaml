@@ -5,6 +5,12 @@ createSecret: false
 createPESecrets: false
 pcSecretName: nutanix-csi-credentials
 
+pulse:
+  enabled: true
+
+ntnxInitConfigMap:
+  isNKP: true
+
 tolerations:
   - key: CriticalAddonsOnly
     operator: Exists
@@ -13,3 +19,7 @@ tolerations:
     tolerationSeconds: 300
   - effect: NoSchedule
     operator: Exists
+
+{{- if .BareMetalMode }}
+kubernetesClusterDeploymentType: bare-metal
+{{- end }}

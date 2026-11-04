@@ -1,0 +1,25 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Same cluster as helm-addon-with-project, but every Prism Central credential the
+# cluster consumes - CAPX/CCM, CSI and the konnector agent - belongs to a user
+# scoped to NUTANIX_PROJECT_NAME rather than a broad-scope Prism Central user.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../helm-addon-with-project
+
+patches:
+- target:
+    kind: Secret
+    name: '\$\{CLUSTER_NAME\}-pc-creds'
+  path: ../../../../../patches/nutanix/project-scoped-user/pc-credentials-secret.yaml
+- target:
+    kind: Secret
+    name: '\$\{CLUSTER_NAME\}-pc-creds-for-csi'
+  path: ../../../../../patches/nutanix/project-scoped-user/pc-credentials-for-csi-secret.yaml
+- target:
+    kind: Secret
+    name: '\$\{CLUSTER_NAME\}-pc-creds-for-konnector-agent'
+  path: ../../../../../patches/nutanix/project-scoped-user/pc-credentials-for-konnector-agent-secret.yaml

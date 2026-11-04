@@ -50,6 +50,41 @@ func TestDefaultingRegistryAddon(t *testing.T) {
 	g.Expect(clusterConfig.Addons.Registry.Provider).To(Equal(carenv1.RegistryProviderCNCFDistribution))
 }
 
+func TestDefaultingRegistryAddonForNutanixCluster(t *testing.T) {
+	g := NewWithT(t)
+
+	_ = createTestManagementCluster(
+		t,
+		&carenv1.DockerClusterConfigSpec{
+			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.CNI{},
+				GenericAddons: carenv1.GenericAddons{
+					Registry: &carenv1.RegistryAddon{
+						Provider: carenv1.RegistryProviderCNCFDistribution,
+					},
+				},
+			},
+		},
+	)
+	workloadCluster := createTestClusterWithLabels(
+		t,
+		nil,
+		map[string]string{
+			clusterv1beta2.ProviderNameLabel: "nutanix",
+		},
+		&carenv1.DockerClusterConfigSpec{
+			Addons: &carenv1.DockerAddons{
+				CNI: &carenv1.CNI{},
+			},
+		},
+	)
+
+	clusterConfig, err := variables.UnmarshalClusterConfigVariable(workloadCluster.Spec.Topology.Variables)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(clusterConfig.Addons.Registry).ToNot(BeNil())
+	g.Expect(clusterConfig.Addons.Registry.Provider).To(Equal(carenv1.RegistryProviderCNCFDistribution))
+}
+
 func TestDefaultingShouldBeSkippedWithAnnotation(t *testing.T) {
 	g := NewWithT(t)
 
@@ -336,6 +371,16 @@ func createTestCluster(
 	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
 ) *clusterv1beta2.Cluster {
 	t.Helper()
+	return createTestClusterWithLabels(t, annotations, nil, clusterConfigSpec)
+}
+
+func createTestClusterWithLabels(
+	t *testing.T,
+	annotations map[string]string,
+	labels map[string]string,
+	clusterConfigSpec *carenv1.DockerClusterConfigSpec,
+) *clusterv1beta2.Cluster {
+	t.Helper()
 	g := NewWithT(t)
 
 	variable, err := variables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfigSpec)
@@ -344,6 +389,7 @@ func createTestCluster(
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-cluster-",
 			Annotations:  annotations,
+			Labels:       labels,
 			Namespace:    metav1.NamespaceDefault,
 		},
 		Spec: clusterv1beta2.ClusterSpec{

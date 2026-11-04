@@ -10,8 +10,9 @@ import (
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
+	"github.com/nutanix-cloud-native/prism-go-client/versionutils"
+
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
-	nutanixutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/nutanix/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight/skip"
 )
 
@@ -76,7 +77,8 @@ func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) pre
 		return check
 	}
 
-	cleanVersion := nutanixutils.CleanPCVersion(lowerVersion)
+	parsedVersion := versionutils.Parse(lowerVersion)
+	cleanVersion := parsedVersion.String()
 	if cleanVersion == "" {
 		check.result.Allowed = false
 		check.result.InternalError = false
@@ -92,7 +94,7 @@ func newPrismCentralVersionCheck(ctx context.Context, cd *checkDependencies) pre
 		return check
 	}
 
-	if nutanixutils.ComparePCVersions(cleanVersion, minSupportedPrismCentralVersion) == -1 {
+	if !parsedVersion.AtLeast(versionutils.Parse(minSupportedPrismCentralVersion)) {
 		check.result.Allowed = false
 		check.result.Causes = append(check.result.Causes, preflight.Cause{
 			Message: fmt.Sprintf(
