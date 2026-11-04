@@ -92,6 +92,13 @@ jobs:
           NUTANIX_ENDPOINT: ${{ secrets.NUTANIX_ENDPOINT }}
           NUTANIX_USER: ${{ secrets.NUTANIX_USER }}
           NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
+          NUTANIX_API_KEY: ${{ secrets.NUTANIX_API_KEY }}
+          # Prism Central user scoped to NUTANIX_PROJECT_NAME, used by the project-scope e2e tests.
+          NUTANIX_PROJECT_SCOPE_USER: ${{ secrets.NUTANIX_PROJECT_SCOPE_USER }}
+          NUTANIX_PROJECT_SCOPE_PASSWORD: ${{ secrets.NUTANIX_PROJECT_SCOPE_PASSWORD }}
+          NUTANIX_PROJECT_NAME: ${{ vars.NUTANIX_PROJECT_NAME }}
+          NUTANIX_INACCESSIBLE_PROJECT_NAME: ${{ vars.NUTANIX_INACCESSIBLE_PROJECT_NAME }}
+          NUTANIX_PROJECT_STORAGE_CONTAINER_NAME: ${{ vars.NUTANIX_PROJECT_STORAGE_CONTAINER_NAME }}
           NUTANIX_PORT: ${{ vars.NUTANIX_PORT }}
           NUTANIX_INSECURE: false
           NUTANIX_PRISM_ELEMENT_CLUSTER_NAME: ${{ vars.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME }}
@@ -104,7 +111,7 @@ jobs:
           KINDEST_NODE_IMAGE: ${{ (startsWith(inputs.kubernetes-version, 'v1.36') || startsWith(inputs.kubernetes-version, 'v1.37')) && 'ghcr.io/nutanix-cloud-native/kind-node' || 'ghcr.io/mesosphere/kind-node' }}
           E2E_KUBERNETES_VERSION: ${{ inputs.kubernetes-version }}
 
-      - if: success() || failure() # always run even if the previous step fails
+      - if: "!cancelled()" # Do not run if the workflow is cancelled, but otherwise run, even if the previous step fails.
         name: Publish e2e test report
         uses: mikepenz/action-junit-report@v6
         with:

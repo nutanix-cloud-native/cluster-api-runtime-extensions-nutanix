@@ -8,6 +8,13 @@ Configure Machine Details of Control plane and Worker nodes
 
 ### (Required) Set Machine details for Control Plane and Worker nodes
 
+Machine details can be configured in one of two ways:
+
+- using explicit resources (`vcpuSockets`, `vcpusPerSocket`, `memorySize`, `bootType`)
+- using a Prism Central VM profile (`vmProfile`)
+
+These two modes are mutually exclusive.
+
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -109,6 +116,59 @@ spec:
       systemDiskSize: 40Gi
       vcpuSockets: 2
       vcpusPerSocket: 1
+```
+
+### (Optional) Use a Prism Central VM Profile
+
+When `vmProfile` is set, it provides CPU, memory, and boot type configuration. In this mode,
+`vcpuSockets`, `vcpusPerSocket`, `memorySize`, `bootType`, and `gpus` must not be set.
+
+Example: set a VM profile for the control plane only, while keeping explicit sizing for workers:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          controlPlane:
+            nutanix:
+              machineDetails:
+                vmProfile:
+                  name: <VM_PROFILE_NAME>
+                  type: name
+                cluster:
+                  name: pe-cluster-name
+                  type: name
+                imageLookup:
+                  baseOS: rocky-9.6
+                  format: nkp-{{.BaseOS}}-release-{{.K8sVersion}}-*
+                systemDiskSize: 40Gi
+                subnets:
+                - name: subnet-name
+                  type: name
+      - name: workerConfig
+        value:
+          nutanix:
+            machineDetails:
+              bootType: legacy
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+              memorySize: 4Gi
+              cluster:
+                name: pe-cluster-name
+                type: name
+              imageLookup:
+                baseOS: rocky-9.6
+                format: nkp-{{.BaseOS}}-release-{{.K8sVersion}}-*
+              systemDiskSize: 40Gi
+              subnets:
+              - name: subnet-name
+                type: name
 ```
 
 ### Stretched Kubernetes clusters on an AHV Metro reject unsupported VM image OS versions

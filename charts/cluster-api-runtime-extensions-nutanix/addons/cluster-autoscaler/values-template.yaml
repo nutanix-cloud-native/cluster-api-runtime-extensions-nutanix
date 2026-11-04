@@ -3,8 +3,13 @@ fullnameOverride: "cluster-autoscaler-{{ index .Cluster.Annotations "caren.nutan
 cloudProvider: clusterapi
 
 image:
-  # TODO: Remove once https://github.com/kubernetes/autoscaler/issues/9439 is resolved.
-  tag: v1.34.3
+  # Cluster Autoscaler before 1.35.1 assumes the infrastructure provider serves the same API version
+  # as core CAPI, so with CAPI at v1beta2 and CAPX at v1beta1 it watches a resource that does not
+  # exist, never syncs, and crash-loops. Fixed by kubernetes/autoscaler#9458, released in 1.35.1.
+  # See https://github.com/kubernetes/autoscaler/issues/9439.
+  # Keep this override until the chart pinned in make/addons.mk ships appVersion >= 1.35.1;
+  # 9.59.0, the newest chart, still hard-codes image.tag v1.35.0, which is affected.
+  tag: v1.36.1
 
 # Always trigger a scale-out if replicas are less than the min.
 extraArgs:

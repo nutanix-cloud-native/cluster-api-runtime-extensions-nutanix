@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
+	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
 	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
@@ -36,17 +36,17 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
-	lifecycleutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
-	defaultHelmReleaseName          = "konnector-agent"
-	defaultHelmReleaseNamespace     = "ntnx-system"
-	defaultK8sAgentName             = "konnector-agent"
-	defaultCredentialsSecretName    = defaultK8sAgentName
-	defaultTrustBundleConfigMapName = "ntnx-additional-trust-bundle-konnector-agent"
+	defaultHelmReleaseName                  = "konnector-agent"
+	defaultHelmReleaseNamespace             = "ntnx-system"
+	defaultK8sAgentName                     = "konnector-agent"
+	defaultCredentialsSecretName            = defaultK8sAgentName
+	defaultTrustBundleConfigMapName         = "ntnx-additional-trust-bundle-konnector-agent"
+	defaultClusterRegistrationConfigMapName = "konnector-cluster-registration-status"
 
 	cleanupStatusCompleted  = "completed"
 	cleanupStatusInProgress = "in-progress"
@@ -85,6 +85,9 @@ type DefaultKonnectorAgent struct {
 	client              ctrlclient.Client
 	config              *Config
 	helmChartInfoGetter *config.HelmChartGetter
+	// clusterClientGetter builds a client for the workload cluster. Tests replace it
+	// to exercise BeforeClusterDelete without a real kubeconfig secret.
+	clusterClientGetter remote.ClusterClientGetter
 
 	variableName string   // points to the global config variable
 	variablePath []string // path of this variable on the global config variable
@@ -106,6 +109,7 @@ func New(
 		client:              c,
 		config:              cfg,
 		helmChartInfoGetter: helmChartInfoGetter,
+		clusterClientGetter: remote.NewClusterClient,
 		variableName:        v1alpha1.ClusterConfigVariableName,
 		variablePath:        []string{"addons", v1alpha1.KonnectorAgentVariableName},
 	}
@@ -338,6 +342,8 @@ func templateValuesFunc(
 			PrismCredentialsSecretName           string
 			EnableKubeconfigUpload               bool
 			ControlPlaneEndpoint                 string
+			ProjectID                            string
+			ProjectName                          string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -354,6 +360,8 @@ func templateValuesFunc(
 
 		// Extract categoryMappings from worker config additionalCategories
 		categoryMappings := extractCategoryMappings(cluster)
+
+		projectID, projectName := extractRegistrationProject(cluster)
 
 		// Default EnableKubeconfigUpload to true when not explicitly set.
 		enableKubeconfigUpload := true
@@ -405,6 +413,8 @@ func templateValuesFunc(
 			PrismCredentialsSecretName:           defaultCredentialsSecretName,
 			EnableKubeconfigUpload:               enableKubeconfigUpload,
 			ControlPlaneEndpoint:                 controlPlaneEndpoint,
+			ProjectID:                            projectID,
+			ProjectName:                          projectName,
 		}
 
 		var b bytes.Buffer
@@ -415,6 +425,41 @@ func templateValuesFunc(
 
 		return b.String(), nil
 	}
+}
+
+// extractRegistrationProject returns the Prism Central project the cluster registration should be
+// associated with, derived from the control plane machine details.
+func extractRegistrationProject(cluster *clusterv1.Cluster) (projectID, projectName string) {
+	if !cluster.Spec.Topology.IsDefined() || cluster.Spec.Topology.Variables == nil {
+		return "", ""
+	}
+
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err != nil || clusterConfigVar.ControlPlane == nil || clusterConfigVar.ControlPlane.Nutanix == nil {
+		return "", ""
+	}
+
+	project := clusterConfigVar.ControlPlane.Nutanix.MachineDetails.Project
+	if project == nil {
+		return "", ""
+	}
+
+	switch project.Type {
+	case capxv1.NutanixIdentifierUUID:
+		if project.UUID != nil {
+			return strings.TrimSpace(*project.UUID), ""
+		}
+	case capxv1.NutanixIdentifierName:
+		if project.Name != nil {
+			return "", strings.TrimSpace(*project.Name)
+		}
+	}
+
+	return "", ""
 }
 
 // extractCategoryMappings extracts additionalCategories from both control plane and worker config variables
@@ -604,16 +649,34 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, clusterWithStatus, log)
+	remoteClient, err := n.workloadClusterClient(ctx, cluster)
 	if err != nil {
-		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
+		log.Error(
+			err,
+			"Failed to create remote cluster client, continuing with deletion anyway",
+			"cluster",
+			clusterKey.String(),
+		)
+		// setting response status to success to allow cluster deletion to proceed
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	// Check cluster is registered in PC
+	clusterRegistered, err := isClusterRegisteredInPC(ctx, remoteClient, clusterWithStatus, log)
+	if err != nil {
+		log.Error(
+			err,
+			"Failed to check if cluster is registered in Prism Central, continuing with deletion anyway",
+			"cluster",
+			clusterKey.String(),
+		)
 		// setting response status to success to allow cluster deletion to proceed
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
 	if !clusterRegistered {
-		log.Info("Cluster is not registered in Prism Central, skipping cleanup")
+		log.Info("Cluster is not registered in Prism Central, skipping cleanup", "cluster", clusterKey.String())
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
@@ -677,6 +740,17 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
 	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
+}
+
+func (n *DefaultKonnectorAgent) workloadClusterClient(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+) (ctrlclient.Client, error) {
+	getter := n.clusterClientGetter
+	if getter == nil {
+		getter = remote.NewClusterClient
+	}
+	return getter(ctx, "", n.client, ctrlclient.ObjectKeyFromObject(cluster))
 }
 
 func (n *DefaultKonnectorAgent) deleteHelmChartProxy(
@@ -805,111 +879,61 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
 
-// isClusterRegisteredInPC checks if the cluster is registered in Prism Central by calling
-// the Konnector GetClusterRegistration API using the cluster's kube-system namespace UUID.
+// isClusterRegisteredInPC checks if the cluster is registered in Prism Central by checking
+// the Konnector's Cluster Registration ConfigMap exists or not.
 func isClusterRegisteredInPC(
 	ctx context.Context,
-	client ctrlclient.Client,
+	clusterClient ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) (bool, error) {
-	// Get cluster config to extract PC endpoint
-	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-	)
+	// Get Cluster Registration ConfigMap from the cluster
+	// ConfigMap is created by the Konnector Agent during cluster registration
+	// with fixed name "konnector-cluster-registration-status" in the addon's instance namespace.
+	clusterRegistrationConfigMap := &corev1.ConfigMap{}
+	configMapKey := types.NamespacedName{
+		Name:      defaultClusterRegistrationConfigMapName,
+		Namespace: defaultHelmReleaseNamespace,
+	}
+
+	err := clusterClient.Get(ctx, configMapKey, clusterRegistrationConfigMap)
 	if err != nil {
-		return false, fmt.Errorf("failed to read clusterConfig variable: %w", err)
+		if apierrors.IsNotFound(err) {
+			log.Info(
+				"Cluster registration config map not found, cluster is not registered in Prism Central",
+				"ConfigMap",
+				configMapKey.String(),
+				"clusterName",
+				cluster.Name,
+			)
+			return false, nil
+		}
+		return false, fmt.Errorf(
+			"failed to get cluster registration config map(%s) from cluster(%s) in Prism Central: %w",
+			configMapKey.String(),
+			cluster.Name,
+			err,
+		)
 	}
 
-	if clusterConfigVar.Nutanix == nil || clusterConfigVar.Nutanix.PrismCentralEndpoint.URL == "" {
-		return false, fmt.Errorf("prism central endpoint not configured")
-	}
-
-	prismCentralEndpointSpec := clusterConfigVar.Nutanix.PrismCentralEndpoint
-	host, port, err := prismCentralEndpointSpec.ParseURL()
-	if err != nil {
-		return false, fmt.Errorf("failed to parse prism central endpoint URL: %w", err)
-	}
-
-	// Get konnector agent variable to access its credentials secret
-	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-		"addons", v1alpha1.KonnectorAgentVariableName,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to read konnector agent variable: %w", err)
-	}
-
-	if k8sAgentVar.Credentials == nil || k8sAgentVar.Credentials.SecretRef.Name == "" {
-		return false, fmt.Errorf("konnector agent credentials secret not configured")
-	}
-
-	// Get credentials from konnector agent addon Secret
-	credentialsSecret := &corev1.Secret{}
-	err = client.Get(ctx, types.NamespacedName{
-		Namespace: cluster.Namespace,
-		Name:      k8sAgentVar.Credentials.SecretRef.Name,
-	}, credentialsSecret)
-	if err != nil {
-		return false, fmt.Errorf("failed to get credentials secret: %w", err)
-	}
-
-	usernameData, ok := credentialsSecret.Data["username"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'username' key")
-	}
-	passwordData, ok := credentialsSecret.Data["password"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'password' key")
-	}
-
-	// Create credentials struct
-	credentials := prismgoclient.Credentials{
-		Endpoint: fmt.Sprintf("%s:%d", host, port),
-		URL:      fmt.Sprintf("https://%s:%d", host, port),
-		Username: string(usernameData),
-		Password: string(passwordData),
-		Insecure: prismCentralEndpointSpec.Insecure,
-		Port:     fmt.Sprintf("%d", port),
-	}
-
-	// Get kube-system namespace UUID from the cluster
-	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-	remoteClient, err := remote.NewClusterClient(ctx, "", client, clusterKey)
-	if err != nil {
-		return false, fmt.Errorf("failed to create remote cluster client: %w", err)
-	}
-
-	kubeSystemNS := &corev1.Namespace{}
-	err = remoteClient.Get(ctx, types.NamespacedName{Name: "kube-system"}, kubeSystemNS)
-	if err != nil {
-		return false, fmt.Errorf("failed to get kube-system namespace from cluster(%s): %w", cluster.Name, err)
-	}
-
-	clusterUUID := string(kubeSystemNS.UID)
-
-	// Get trust bundle if insecure is false
-	var trustBundle string
-	if !prismCentralEndpointSpec.Insecure {
-		trustBundle = prismCentralEndpointSpec.AdditionalTrustBundle
-	}
-
-	// Create Prism Central Konnector client
-	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&credentials, trustBundle)
-	if err != nil {
-		return false, fmt.Errorf("failed to create prism central konnector client: %w", err)
-	}
-
-	// Call GetClusterRegistration API
-	_, err = prismCentralKonnectorClient.GetClusterRegistration(ctx, clusterUUID)
-	if err != nil {
-		return false, fmt.Errorf("failed to get cluster(%s) registration: %w", clusterUUID, err)
-	}
-
-	// If we got here, the cluster is registered
-	log.Info("Cluster is registered in Prism Central", "clusterUUID", clusterUUID)
+	// If ConfigMap exists, the cluster is registered in Prism Central
+	log.Info("Cluster is registered in Prism Central", "clusterName", cluster.Name)
 	return true, nil
+}
+
+func credentialsFromSecretData(data map[string][]byte) (*prismtypes.ApiCredentials, error) {
+	username := strings.TrimSpace(string(data["username"]))
+	password := strings.TrimSpace(string(data["password"]))
+	apiKey := strings.TrimSpace(string(data["apiKey"]))
+
+	credentials := &prismtypes.ApiCredentials{
+		Username: username,
+		Password: password,
+		APIKey:   apiKey,
+	}
+	if err := credentials.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid credentials secret data: %w", err)
+	}
+
+	return credentials, nil
 }

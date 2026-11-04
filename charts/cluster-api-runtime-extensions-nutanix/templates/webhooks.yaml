@@ -69,30 +69,6 @@ webhooks:
       service:
         name: '{{ include "chart.name" . }}-admission'
         namespace: '{{ .Release.Namespace }}'
-        path: /validate-cluster
-    failurePolicy: Fail
-    name: cluster-validator.caren.nutanix.com
-    rules:
-      - apiGroups:
-          - cluster.x-k8s.io
-        apiVersions:
-          - v1beta2
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - clusters
-    sideEffects: None
-    matchConditions:
-      - name: has-topology
-        expression: has(object.spec.topology)
-    matchPolicy: Equivalent
-  - admissionReviewVersions:
-      - v1
-    clientConfig:
-      service:
-        name: '{{ include "chart.name" . }}-admission'
-        namespace: '{{ .Release.Namespace }}'
         path: /preflight-cluster
     failurePolicy: Fail
     name: preflight.cluster.caren.nutanix.com
@@ -108,6 +84,30 @@ webhooks:
           - clusters
     sideEffects: None
     timeoutSeconds: 30
+    matchConditions:
+      - name: has-topology
+        expression: has(object.spec.topology)
+    matchPolicy: Equivalent
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: '{{ include "chart.name" . }}-admission'
+        namespace: '{{ .Release.Namespace }}'
+        path: /validate-cluster
+    failurePolicy: Fail
+    name: cluster-validator.caren.nutanix.com
+    rules:
+      - apiGroups:
+          - cluster.x-k8s.io
+        apiVersions:
+          - v1beta2
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusters
+    sideEffects: None
     matchConditions:
       - name: has-topology
         expression: has(object.spec.topology)

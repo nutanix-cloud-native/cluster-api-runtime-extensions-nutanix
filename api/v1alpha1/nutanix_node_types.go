@@ -28,18 +28,25 @@ type NutanixWorkerNodeSpec struct {
 }
 
 // +kubebuilder:validation:XValidation:rule="has(self.image) != has(self.imageLookup)",message="Either 'image' or 'imageLookup' must be set, but not both"
+// +kubebuilder:validation:XValidation:rule="!has(self.vmProfile) || (!has(self.vcpuSockets) && !has(self.vcpusPerSocket) && !has(self.memorySize) && !has(self.bootType) && (!has(self.gpus) || size(self.gpus) == 0))",message="When 'vmProfile' is set, 'vcpuSockets', 'vcpusPerSocket', 'memorySize', 'bootType', and 'gpus' must not be set"
+// +kubebuilder:validation:XValidation:rule="has(self.vmProfile) || (has(self.vcpuSockets) && has(self.vcpusPerSocket) && has(self.memorySize) && has(self.bootType))",message="When 'vmProfile' is not set, 'vcpuSockets', 'vcpusPerSocket', 'memorySize', and 'bootType' must be set"
 type NutanixMachineDetails struct {
 	// vcpusPerSocket is the number of vCPUs per socket of the VM
-	// +kubebuilder:validation:Required
-	VCPUsPerSocket int32 `json:"vcpusPerSocket"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	VCPUsPerSocket int32 `json:"vcpusPerSocket,omitzero"`
 
 	// vcpuSockets is the number of vCPU sockets of the VM
-	// +kubebuilder:validation:Required
-	VCPUSockets int32 `json:"vcpuSockets"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	VCPUSockets int32 `json:"vcpuSockets,omitzero"`
 
 	// memorySize is the memory size (in Quantity format) of the VM
-	// +kubebuilder:validation:Required
-	MemorySize resource.Quantity `json:"memorySize"`
+	// +kubebuilder:validation:Optional
+	// +optional
+	MemorySize resource.Quantity `json:"memorySize,omitzero"`
 
 	// image identifies the image uploaded to Prism Central (PC). The identifier
 	// (uuid or name) can be obtained from the console or API.
@@ -70,6 +77,7 @@ type NutanixMachineDetails struct {
 	// Defines the boot type of the virtual machine. Only supports UEFI and Legacy
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum:=legacy;uefi
+	// +optional
 	BootType capxv1.NutanixBootType `json:"bootType,omitempty"`
 
 	// systemDiskSize is size (in Quantity format) of the system disk of the VM
@@ -83,9 +91,20 @@ type NutanixMachineDetails struct {
 	Project *capxv1.NutanixResourceIdentifier `json:"project,omitempty"`
 
 	// List of GPU devices that need to be added to the machines.
+	// Mutually exclusive with VMProfile. When VMProfile is set, GPUs must not be set.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=32
+	// +optional
 	GPUs []capxv1.NutanixGPU `json:"gpus,omitempty"`
+
+	// VMProfile is to identify the VM profile in Prism Central (PC)
+	// The VM profile identifier (uuid or name) can be obtained from the Prism Central console
+	// or using the prism_central API.
+	// When VMProfile is set, it provides CPU, memory, and bootType configuration,
+	// making vcpusPerSocket, vcpuSockets, memorySize, bootType, and GPUs mutually exclusive.
+	// +kubebuilder:validation:Optional
+	// +optional
+	VMProfile *capxv1.NutanixResourceIdentifier `json:"vmProfile,omitempty"`
 }
 
 // HasClusterAndSubnets checks if cluster and subnets are configured in the machine details.
