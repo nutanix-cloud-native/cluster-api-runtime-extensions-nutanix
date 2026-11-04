@@ -1,6 +1,12 @@
 # Copyright 2026 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+.PHONY: handlers.check-frozen
+handlers.check-frozen: ## Checks that released golden output, handler code and handler names are unchanged
+handlers.check-frozen: ; $(info $(M) checking released handlers are unchanged)
+	hack/handlers/check-frozen-selftest.sh
+	hack/handlers/check-frozen.sh
+
 .PHONY: handlers.golden-update
 handlers.golden-update: ## Regenerates golden output of the open, unreleased handler version
 # TODO: Remove once https://github.com/golang/go/issues/75031 is fixed.
