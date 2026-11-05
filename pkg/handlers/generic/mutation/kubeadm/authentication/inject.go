@@ -47,6 +47,9 @@ type authPatchHandler struct {
 }
 
 // NewPatch creates a new authentication patch handler.
+//
+// It renders apiserver.config.k8s.io/v1 AuthenticationConfiguration
+// (requires Kubernetes >= 1.34) when clusterConfig.authentication is set;
 func NewPatch() *authPatchHandler {
 	return newAuthPatchHandler(v1alpha1.ClusterConfigVariableName, VariableName)
 }
@@ -218,13 +221,13 @@ func renderAuthenticationConfig(auth *v1alpha1.Authentication) (string, error) {
 	return string(out), nil
 }
 
-
 func stringPtrOrNil(s string) *string {
 	if s == "" {
 		return nil
 	}
 	return &s
 }
+
 func ensureFile(files []bootstrapv1.File, path, content string) []bootstrapv1.File {
 	for i := range files {
 		if files[i].Path == path {
