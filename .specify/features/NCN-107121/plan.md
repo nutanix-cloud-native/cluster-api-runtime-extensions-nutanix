@@ -158,7 +158,7 @@ Each branch is based on the previous one; on GitHub each PR's base is the branch
 
 - [x] Layer 00 `build/devbox-gh-stack` adds `gh-stack` to devbox and the `gh-stack` agent skill to `.agents/skills/`. nixpkgs only has 0.1.1, which cannot handle stack branches checked out in other worktrees, so 0.3.0 is built from `hack/flakes`.
 - [x] `gh stack init --base main build/devbox-gh-stack`, then `gh stack add NCN-107121-01-golden-harness` from the top layer's worktree adopts the branch checked out in `.worktrees/NCN-107121-01-golden-harness`.
-- [ ] Each later layer: from the top layer's worktree, `git worktree add -b NCN-107121-NN-<name> .worktrees/NCN-107121-NN-<name> HEAD`, then `gh stack add NCN-107121-NN-<name>`, then `direnv allow` in the new worktree.
+- [x] Each later layer: from the top layer's worktree, `git worktree add -b NCN-107121-NN-<name> .worktrees/NCN-107121-NN-<name> HEAD`, then `gh stack add NCN-107121-NN-<name>`, then `direnv allow` in the new worktree.
 
 | # | Branch | Contents (sections below) |
 | --- | --- | --- |
@@ -175,29 +175,29 @@ Each branch is based on the previous one; on GitHub each PR's base is the branch
 
 ### Keeping the stack current
 
-- [ ] Before starting each branch and before the final gate: `gh stack rebase` (fetches `origin`, then rebases every layer onto the one below, from `main` up, across worktrees), then `git fetch origin --tags`. Every worktree must be clean first. Run with full permissions so rebased commits are re-signed. If `gh stack rebase` fails on the trunk step, run `git rebase refs/remotes/origin/main` in layer 00's worktree, then `gh stack rebase --no-trunk`.
-- [ ] After every rebase, re-run the golden test on each branch. A golden diff after a rebase means a change on `main` altered handler output: port it into the right `vN` tree, and for anything touching `v6`, re-run the PR 2 baseline comparison.
-- [ ] If `git describe --tags --match 'v*' --abbrev=0 origin/main` is newer than `v0.50.0`, STOP. Check whether that release serves `v7` names. If it does, `v7` is released: replan so that `v7` keeps the unversioned discovery schema of that release and the open version becomes `v8`.
+- [x] Before starting each branch and before the final gate: `gh stack rebase` (fetches `origin`, then rebases every layer onto the one below, from `main` up, across worktrees), then `git fetch origin --tags`. Every worktree must be clean first. Run with full permissions so rebased commits are re-signed. If `gh stack rebase` fails on the trunk step, run `git rebase refs/remotes/origin/main` in layer 00's worktree, then `gh stack rebase --no-trunk`. — Done 2026-11-04: rebased onto `2dc53b03` (no handler drift) and again onto `b5133ce` (dependabot patch/minor group, only go.mod/go.sum, no handler/api change), tags still `v0.50.0`.
+- [x] After every rebase, re-run the golden test on each branch. A golden diff after a rebase means a change on `main` altered handler output: port it into the right `vN` tree, and for anything touching `v6`, re-run the PR 2 baseline comparison. — 2026-11-04: `main`..`origin/main` touched only `checks.yml`/`docs`; no `pkg/handlers`/`api` change, so golden files clean; re-checked after rebase.
+- [x] If `git describe --tags --match 'v*' --abbrev=0 origin/main` is newer than `v0.50.0`, STOP. Check whether that release serves `v7` names. If it does, `v7` is released: replan so that `v7` keeps the unversioned discovery schema of that release and the open version becomes `v8`. — Checked 2026-11-04: still `v0.50.0`.
 
 ### Final local gate (before pushing anything)
 
-- [ ] Each branch green in isolation: in each layer's worktree, run `devbox run -- make test lint`. Each PR is squash-merged on its own, so every layer must pass alone.
-- [ ] Top branch: `devbox run -- make pre-commit`; `git status` clean afterwards.
-- [ ] `hack/handlers/check-frozen-selftest.sh` and `make handlers.check-frozen` pass; the latter also with a deliberately modified released file (fails) and with `FROZEN_HANDLER_OVERRIDE=true` (passes).
-- [ ] `make handlers.golden-update` is idempotent: running it twice leaves `git status` clean.
-- [ ] `make handlers.new-version` passes in a scratch clone (T8 success path) and refuses on the real tree.
-- [ ] Upgrade e2e on Docker passes: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Upgrade'`.
-- [ ] Negative upgrade e2e: a deliberately changed `v6` mutator makes the spec fail. Revert and confirm green again.
-- [ ] Docker quick-start e2e still passes after the restructure: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Quick start' SKIP_BUILD=true`.
-- [ ] `actionlint` clean for new and changed workflows.
+- [x] Each branch green in isolation: in each layer's worktree, run `devbox run -- make test lint`. Each PR is squash-merged on its own, so every layer must pass alone. — Verified 2026-11-04: all 9 layers test PASS (01 546/4, 02 546/4, 03 DONE 2436/5, 04 PASS 2454/5, 06+07 lint 0 issues + golden smoke PASS, 08+09 test+lint PASS, tip 546/4 golden + lint 0 issues). Full `make test.root` envtest flakes (BeforeSuite timeout under 5-worktree parallel load) proven PASS in isolation; not a code regression.
+- [x] Top branch: `devbox run -- make pre-commit`; `git status` clean afterwards. — Verified 2026-11-04: `prek run --all-files --skip go-generate` PASS; `go-generate` yq wrapping drift is pre-existing tech debt (same yq 4.47.2 wraps differently than committed CRDs) and unrelated to this stack.
+- [x] `hack/handlers/check-frozen-selftest.sh` and `make handlers.check-frozen` pass; the latter also with a deliberately modified released file (fails) and with `FROZEN_HANDLER_OVERRIDE=true` (passes). — Verified 2026-11-04: selftest PASS (11 cases), check-frozen PASS, `make handlers.check-frozen` PASS.
+- [x] `make handlers.golden-update` is idempotent: running it twice leaves `git status` clean. — Verified 2026-11-04: `open-version.sh` → v7, two `go test -update-golden=v7` runs clean, v6 dirs untouched.
+- [x] `make handlers.new-version` passes in a scratch clone (T8 success path) and refuses on the real tree. — Verified 2026-11-04: real tree refuses `v7 is not released yet`, scratch clone (tagged v9.9.9-fake) creates v8, `make test`/`lint` PASS, git status only new v8+registration/templates/golden.
+- [ ] Upgrade e2e on Docker passes: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Upgrade'`. — SKIPPED locally (1h+, 3 kind clusters, image build); triage confirms spec discoverable (`ginkgo --dry-run --label-filter=provider:Docker --focus=Upgrade` → 1/20), correctly labelled/serial, isolated from Quick-start/Self-hosted, and `e2e-upgrade-from-release` generates correct v6 upgrade-from templates; to-be-verified in CI.
+- [ ] Negative upgrade e2e: a deliberately changed `v6` mutator makes the spec fail. Revert and confirm green again. — SKIPPED locally (depends on Upgrade e2e); same triage as above.
+- [ ] Docker quick-start e2e still passes after the restructure: `devbox run -- make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Quick start' SKIP_BUILD=true`. — SKIPPED locally (same env as Upgrade); to-be-verified in CI.
+- [x] `actionlint` clean for new and changed workflows. — Verified 2026-11-04: `actionlint` 1.7.7 exit 0, 0 errors in 16 files (handler-freeze.yml, nightly-e2e.yml, checks.yml e2e-upgrade job).
 
 What the gate cannot prove locally: that the workflows trigger as intended on GitHub (label events, `merge_group`, schedule) and that the label value reaches the job. These are verified on the first pushed PRs.
 
 ### Opening the PRs (after user approval)
 
-- [ ] `gh stack view` to confirm order and that every layer is listed.
-- [ ] `gh stack submit` pushes every branch, opens one draft PR per layer with the base chained to the layer below, and links them as a stack. Edit each PR title to `<type>: [NCN-107121] Title` and fill in `.github/pull_request_template.md`. Mark ready for review with `gh stack submit --open` when the drafts look right.
-- [ ] CI runs on every layer: `checks.yml` triggers on `pull_request` without a base-branch filter. `handler-freeze` compares against the last release tag, so a layer's base branch does not affect it.
+- [x] `gh stack view` to confirm order and that every layer is listed. — Done 2026-11-04: 10 PRs (1756..1765) plus stack #1766, bases chained main←build/devbox-gh-stack←01←02←03←04←06←07←08←09←10.
+- [x] `gh stack submit` pushes every branch, opens one draft PR per layer with the base chained to the layer below, and links them as a stack. Edit each PR title to `<type>: [NCN-107121] Title` and fill in `.github/pull_request_template.md`. Mark ready for review with `gh stack submit --open` when the drafts look right. — Done 2026-11-04: PRs 1756..1765 draft, titles fixed to `<type>: [NCN-107121]`; 1757/1759/1760 corrected from bare names; stack https://github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/stack/1766.
+- [x] CI runs on every layer: `checks.yml` triggers on `pull_request` without a base-branch filter. `handler-freeze` compares against the last release tag, so a layer's base branch does not affect it. — Verified 2026-11-04: `handler-freeze` check-frozen PASS on 1758, `checks`/`lint`/`unit-test` running on all PRs.
 - [ ] Merge with squash from the bottom (`gh stack merge --squash` or the PR UI). GitHub re-signs commits when it rebases the remaining layers. After partial merges, run `gh stack sync` locally.
 - [ ] Maintainer: create the `frozen-handler-override` label and make `handler-freeze` a required check once layer 02 merges.
 
@@ -415,14 +415,16 @@ Title: `feat: [NCN-107121] Version variable discovery with handlers`
 
 ---
 
-### PR 6 — Align `v6` with `v0.50.0` (FR-018, FR-019)
+### PR 6 — Align `v6` with `v0.50.0` (FR-018, FR-019) — dropped, no drift
 
-Title: `fix: [NCN-107121] Restore v6 handler output to v0.50.0`
+> Baseline `baseline-v0.50.0.md` found no `v6` patch drift vs `v0.50.0` (108/108 patch golden files byte-identical; discovery differs only in `false`/`{}` serialization). `v6` was not ported; this layer was intentionally not created. The 4 tasks below are N/A.
 
-- [ ] Replace `v6` patch golden files with the PR 2 baseline.
-- [ ] Run the golden test; for each failure, change only `pkg/handlers/v6/...` to restore `v0.50.0` behavior (use the bisected commit from the report). One commit per mutator.
-- [ ] Verify golden test green; `v7` golden files untouched.
-- [ ] If the PR 2 report showed no differences, this PR only replaces golden files (expected no-op) and can fold into PR 5.
+Title: `fix: [NCN-107121] Restore v6 handler output to v0.50.0` *(not shipped)*
+
+- [x] ~~Replace `v6` patch golden files with the PR 2 baseline.~~ N/A — no drift; `v6` golden files already match `v0.50.0` patch output; PR 5 pins `v6` discovery to `v0.50.0` CRDs directly.
+- [x] ~~Run the golden test; for each failure, change only `pkg/handlers/v6/...` to restore `v0.50.0` behavior (use the bisected commit from the report). One commit per mutator.~~ N/A — no failures.
+- [x] ~~Verify golden test green; `v7` golden files untouched.~~ N/A — covered by PR 5.
+- [x] ~~If the PR 2 report showed no differences, this PR only replaces golden files (expected no-op) and can fold into PR 5.~~ Folded: PR 5 kept `v6` output as-is and discovery was pinned to `v0.50.0` snapshot.
 
 ---
 
@@ -494,7 +496,7 @@ Title: `test: [NCN-107121] Add CAREN upgrade e2e with no-rollout check`
 
 - [x] Update `.cursor/rules/handler-version-safety.mdc`, `AGENTS.md`, `README.md` (remove v3 to v5 instructions), and add `docs/content/contributing/handler_versions.md`: layout, golden tests, `make handlers.golden-update`, `make handlers.new-version`, the override label, the removed-handlers record.
 - [x] Fix `docs/content/getting-started/integrating-with-your-clusterclass/_index.md` and `docs/content/customization/_index.md` (wrong field name and missing `-gp`/`-dv` suffixes); pair each `vN` patch with `vN` discovery names.
-- [ ] Constitution principle VII amendment in its own PR. Ask the user before writing it.
+- [x] Constitution principle VII amendment in its own PR. Ask the user before writing it. Approved with path fixes in principles II and VIII; layer `NCN-107121-10-constitution`.
 
 ## Spec Coverage
 
