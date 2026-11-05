@@ -16,203 +16,444 @@ spec:
     singular: kubeadmclusterconfig
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: KubeadmClusterConfig is the Schema for the kubeadmconfigs API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: KubeadmConfigSpec defines configuration that can be set when using kubeadm to bootstrap the cluster.
-              properties:
-                dns:
-                  description: DNS defines the DNS configuration for the cluster.
-                  properties:
-                    coreDNS:
-                      description: CoreDNS defines the CoreDNS configuration for the cluster.
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: KubeadmClusterConfig is the Schema for the kubeadmconfigs API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KubeadmConfigSpec defines configuration that can be set when
+              using kubeadm to bootstrap the cluster.
+            properties:
+              authentication:
+                description: |-
+                  Authentication configures API server JWT/OIDC authentication via
+                  Structured Authentication Configuration (KEP-3331). When unset no
+                  authentication file is rendered (no-op). Mutually exclusive with
+                  legacy --oidc-* API server flags.
+                properties:
+                  jwt:
+                    description: |-
+                      JWT is the ordered list of JWT authenticators. Each entry must have a
+                      unique issuer URL. Order defines the API server evaluation order.
+                    items:
+                      description: |-
+                        JWTAuthenticator is one OIDC/JWT authenticator entry in the
+                        AuthenticationConfiguration file, mirroring apiserver.config.k8s.io/v1.
                       properties:
-                        image:
-                          description: |-
-                            Image required for overriding Kubernetes DNS image details.
-                            If the image version is not specified,
-                            the default version based on the cluster's Kubernetes version will be used.
+                        claimMappings:
+                          description: ClaimMappings maps token claims to Kubernetes
+                            user info attributes.
                           properties:
-                            repository:
-                              description: Repository is used to override the image repository to pull from.
+                            extra:
+                              description: Extra maps additional claims to extra user
+                                info keys.
+                              items:
+                                description: ExtraMapping maps a CEL expression result
+                                  to an extra user-info key.
+                                properties:
+                                  key:
+                                    description: Key is the extra attribute key (domain-prefix
+                                      path, lowercase).
+                                    maxLength: 256
+                                    minLength: 1
+                                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[a-z0-9._-]+$
+                                    type: string
+                                  valueExpression:
+                                    description: ValueExpression is a CEL expression
+                                      whose result populates the extra value.
+                                    maxLength: 4096
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - key
+                                - valueExpression
+                                type: object
+                              maxItems: 32
+                              type: array
+                            groups:
+                              description: Groups maps a claim or CEL expression to
+                                the groups.
+                              properties:
+                                claim:
+                                  description: Claim is the JWT claim name to use.
+                                  maxLength: 256
+                                  minLength: 1
+                                  type: string
+                                expression:
+                                  description: |-
+                                    Expression is a CEL expression evaluated against token claims.
+                                    Mutually exclusive with claim and prefix.
+                                  maxLength: 4096
+                                  minLength: 1
+                                  type: string
+                                prefix:
+                                  description: |-
+                                    Prefix is prepended to the claim value to avoid name clashes.
+                                    \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
+                                    defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                  type: string
+                              type: object
+                            uid:
+                              description: UID maps a claim or CEL expression to the
+                                UID.
+                              properties:
+                                claim:
+                                  description: Claim is the JWT claim name to use.
+                                  maxLength: 256
+                                  minLength: 1
+                                  type: string
+                                expression:
+                                  description: Expression is a CEL expression evaluated
+                                    against token claims.
+                                  maxLength: 4096
+                                  minLength: 1
+                                  type: string
+                              type: object
+                            username:
+                              description: Username maps a claim or CEL expression
+                                to the username.
+                              properties:
+                                claim:
+                                  description: Claim is the JWT claim name to use.
+                                  maxLength: 256
+                                  minLength: 1
+                                  type: string
+                                expression:
+                                  description: |-
+                                    Expression is a CEL expression evaluated against token claims.
+                                    Mutually exclusive with claim and prefix.
+                                  maxLength: 4096
+                                  minLength: 1
+                                  type: string
+                                prefix:
+                                  description: |-
+                                    Prefix is prepended to the claim value to avoid name clashes.
+                                    \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
+                                    defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                  type: string
+                              type: object
+                          required:
+                          - username
+                          type: object
+                        claimValidationRules:
+                          description: ClaimValidationRules are applied after OIDC
+                            signature/issuer validation.
+                          items:
+                            description: ClaimValidationRule is one validation rule
+                              for token claims.
+                            properties:
+                              claim:
+                                description: Claim is the required claim name.
+                                maxLength: 256
+                                minLength: 1
+                                type: string
+                              expression:
+                                description: Expression is a CEL validation expression.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                              message:
+                                description: Message customizes the error when expression
+                                  returns false.
+                                maxLength: 1024
+                                minLength: 1
+                                type: string
+                              requiredValue:
+                                description: RequiredValue is the required value for
+                                  the claim.
+                                maxLength: 1024
+                                minLength: 1
+                                type: string
+                            type: object
+                            x-kubernetes-validations:
+                            - message: claimValidationRules entry must be either {claim
+                                + requiredValue} or {expression}
+                              rule: (has(self.claim) && has(self.requiredValue) &&
+                                !has(self.expression)) || (!has(self.claim) && !has(self.requiredValue)
+                                && has(self.expression))
+                          maxItems: 32
+                          type: array
+                        issuer:
+                          description: Issuer holds OIDC provider connection settings.
+                          properties:
+                            audienceMatchPolicy:
+                              description: |-
+                                AudienceMatchPolicy defines how audiences matches the aud claim.
+                                Valid values are \"\" (default, single-audience semantics) or MatchAny.
+                              enum:
+                              - ""
+                              - MatchAny
+                              type: string
+                            audiences:
+                              description: Audiences is the set of acceptable audiences
+                                the JWT must be issued to.
+                              items:
+                                type: string
+                              maxItems: 32
+                              minItems: 1
+                              type: array
+                              uniqueItems: true
+                            certificateAuthority:
+                              description: |-
+                                CertificateAuthority contains PEM-encoded CA certificates for
+                                validating the OIDC discovery connection.
+                              type: string
+                            discoveryURL:
+                              description: |-
+                                DiscoveryURL overrides the OIDC discovery URL.
+                                If set, discovery is fetched from this exact value instead of
+                                {url}/.well-known/openid-configuration.
                               maxLength: 2048
                               minLength: 1
-                              pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                              pattern: ^https://
                               type: string
-                            tag:
-                              description: Tag is used to override the default image tag.
-                              maxLength: 128
+                            url:
+                              description: |-
+                                URL is the OIDC issuer URL (must be https://).
+                                Must match the iss claim in presented JWTs.
+                              maxLength: 2048
                               minLength: 1
-                              pattern: ^[\w][\w.-]{0,127}$
+                              pattern: ^https://
                               type: string
+                          required:
+                          - audiences
+                          - url
+                          type: object
+                        userValidationRules:
+                          description: |-
+                            UserValidationRules are applied to the final user info before
+                            completing authentication.
+                          items:
+                            description: UserValidationRule validates final user info
+                              via CEL.
+                            properties:
+                              expression:
+                                description: Expression is a CEL expression evaluated
+                                  against the user object.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                              message:
+                                description: Message customizes the error when expression
+                                  returns false.
+                                maxLength: 1024
+                                minLength: 1
+                                type: string
+                            required:
+                            - expression
+                            type: object
+                          maxItems: 32
+                          type: array
+                      required:
+                      - claimMappings
+                      - issuer
+                      type: object
+                    maxItems: 32
+                    minItems: 1
+                    type: array
+                required:
+                - jwt
+                type: object
+                x-kubernetes-validations:
+                - message: issuer URLs must be unique across jwt authenticators
+                  rule: self.jwt.all(a, self.jwt.exists(b, b != a && b.issuer.url
+                    == a.issuer.url) == false)
+              dns:
+                description: DNS defines the DNS configuration for the cluster.
+                properties:
+                  coreDNS:
+                    description: CoreDNS defines the CoreDNS configuration for the
+                      cluster.
+                    properties:
+                      image:
+                        description: |-
+                          Image required for overriding Kubernetes DNS image details.
+                          If the image version is not specified,
+                          the default version based on the cluster's Kubernetes version will be used.
+                        properties:
+                          repository:
+                            description: Repository is used to override the image
+                              repository to pull from.
+                            maxLength: 2048
+                            minLength: 1
+                            pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                            type: string
+                          tag:
+                            description: Tag is used to override the default image
+                              tag.
+                            maxLength: 128
+                            minLength: 1
+                            pattern: ^[\w][\w.-]{0,127}$
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              encryptionAtRest:
+                description: |-
+                  EncryptionAtRest defines the configuration to enable encryption at REST
+                  This configuration is used by API server to encrypt data before storing it in ETCD.
+                  Currently the encryption only enabled for secrets and configmaps.
+                properties:
+                  providers:
+                    default:
+                    - aescbc: {}
+                    description: Encryption providers
+                    items:
+                      properties:
+                        aescbc:
+                          type: object
+                        secretbox:
                           type: object
                       type: object
-                  type: object
-                encryptionAtRest:
-                  description: |-
-                    EncryptionAtRest defines the configuration to enable encryption at REST
-                    This configuration is used by API server to encrypt data before storing it in ETCD.
-                    Currently the encryption only enabled for secrets and configmaps.
-                  properties:
-                    providers:
-                      default:
-                        - aescbc: {}
-                      description: Encryption providers
-                      items:
-                        properties:
-                          aescbc:
-                            type: object
-                          secretbox:
-                            type: object
-                        type: object
-                      maxItems: 1
-                      type: array
-                  type: object
-                etcd:
-                  properties:
-                    image:
-                      description: Image required for overriding etcd image details.
-                      properties:
-                        repository:
-                          description: Repository is used to override the image repository to pull from.
-                          maxLength: 2048
+                    maxItems: 1
+                    type: array
+                type: object
+              etcd:
+                properties:
+                  image:
+                    description: Image required for overriding etcd image details.
+                    properties:
+                      repository:
+                        description: Repository is used to override the image repository
+                          to pull from.
+                        maxLength: 2048
+                        minLength: 1
+                        pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                        type: string
+                      tag:
+                        description: Tag is used to override the default image tag.
+                        maxLength: 128
+                        minLength: 1
+                        pattern: ^[\w][\w.-]{0,127}$
+                        type: string
+                    type: object
+                type: object
+              kubernetesImageRepository:
+                description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
+                maxLength: 2048
+                minLength: 1
+                pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
+                type: string
+              maxParallelImagePullsPerNode:
+                description: |-
+                  Deprecated: Use controlPlane/worker kubeletConfiguration.maxParallelImagePulls instead.
+                  MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
+                  If not set, the default value of 1 will be used.
+                  If set to 0, the maximum number of parallel image pulls will be unlimited.
+                  When both this field and controlPlane/worker kubeletConfiguration.maxParallelImagePulls
+                  are set, the latter takes precedence.
+                format: int32
+                minimum: 0
+                type: integer
+              podSecurityAdmission:
+                description: |-
+                  PodSecurityAdmission configures the PodSecurity admission plugin
+                  with cluster-wide defaults.
+                  When not specified, no PodSecurity admission configuration is applied.
+                properties:
+                  audit:
+                    allOf:
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    default: privileged
+                    description: |-
+                      Audit sets the level for the audit mode.
+                      Violations are recorded in the API server audit log.
+                    type: string
+                  enforce:
+                    allOf:
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    default: privileged
+                    description: |-
+                      Enforce sets the level for the enforce mode.
+                      Pods that violate this level will be rejected.
+                    type: string
+                  exemptions:
+                    default:
+                      namespaces:
+                      - kube-system
+                    description: |-
+                      Exemptions defines the exemptions from pod security enforcement.
+                      Defaults to exempting only the kube-system namespace when the entire
+                      exemptions object is omitted from the cluster configuration.
+                    properties:
+                      namespaces:
+                        default:
+                        - kube-system
+                        description: Namespaces that are exempt from pod security
+                          enforcement.
+                        items:
+                          maxLength: 63
                           minLength: 1
-                          pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
                           type: string
-                        tag:
-                          description: Tag is used to override the default image tag.
-                          maxLength: 128
+                        maxItems: 64
+                        type: array
+                      runtimeClassNames:
+                        description: RuntimeClassNames that are exempt from pod security
+                          enforcement.
+                        items:
+                          maxLength: 63
                           minLength: 1
-                          pattern: ^[\w][\w.-]{0,127}$
                           type: string
-                      type: object
-                  type: object
-                kubernetesImageRepository:
-                  description: Sets the Kubernetes image repository used for the KubeadmControlPlane.
-                  maxLength: 2048
-                  minLength: 1
-                  pattern: ^((?:[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*|\[(?:[a-fA-F0-9:]+)\])(:[0-9]+)?/)?[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*(/[a-z0-9]+((?:[._]|__|[-]+)[a-z0-9]+)*)*$
-                  type: string
-                maxParallelImagePullsPerNode:
-                  description: |-
-                    Deprecated: Use controlPlane/worker kubeletConfiguration.maxParallelImagePulls instead.
-                    MaxParallelImagePullsPerNode defines the maximum number of parallel image pulls performed by each kubelet.
-                    If not set, the default value of 1 will be used.
-                    If set to 0, the maximum number of parallel image pulls will be unlimited.
-                    When both this field and controlPlane/worker kubeletConfiguration.maxParallelImagePulls
-                    are set, the latter takes precedence.
-                  format: int32
-                  minimum: 0
-                  type: integer
-                podSecurityAdmission:
-                  description: |-
-                    PodSecurityAdmission configures the PodSecurity admission plugin
-                    with cluster-wide defaults.
-                    When not specified, no PodSecurity admission configuration is applied.
-                  properties:
-                    audit:
-                      allOf:
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                      default: privileged
-                      description: |-
-                        Audit sets the level for the audit mode.
-                        Violations are recorded in the API server audit log.
-                      type: string
-                    enforce:
-                      allOf:
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                      default: privileged
-                      description: |-
-                        Enforce sets the level for the enforce mode.
-                        Pods that violate this level will be rejected.
-                      type: string
-                    exemptions:
-                      default:
-                        namespaces:
-                          - kube-system
-                      description: |-
-                        Exemptions defines the exemptions from pod security enforcement.
-                        Defaults to exempting only the kube-system namespace when the entire
-                        exemptions object is omitted from the cluster configuration.
-                      properties:
-                        namespaces:
-                          default:
-                            - kube-system
-                          description: Namespaces that are exempt from pod security enforcement.
-                          items:
-                            maxLength: 63
-                            minLength: 1
-                            type: string
-                          maxItems: 64
-                          type: array
-                        runtimeClassNames:
-                          description: RuntimeClassNames that are exempt from pod security enforcement.
-                          items:
-                            maxLength: 63
-                            minLength: 1
-                            type: string
-                          maxItems: 64
-                          type: array
-                        usernames:
-                          description: Usernames that are exempt from pod security enforcement.
-                          items:
-                            maxLength: 256
-                            minLength: 1
-                            type: string
-                          maxItems: 64
-                          type: array
-                      type: object
-                    warn:
-                      allOf:
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                        - enum:
-                            - privileged
-                            - baseline
-                            - restricted
-                      default: privileged
-                      description: |-
-                        Warn sets the level for the warn mode.
-                        Violations trigger a user-facing warning.
-                      type: string
-                  type: object
-              type: object
-          type: object
-      served: true
-      storage: true
+                        maxItems: 64
+                        type: array
+                      usernames:
+                        description: Usernames that are exempt from pod security enforcement.
+                        items:
+                          maxLength: 256
+                          minLength: 1
+                          type: string
+                        maxItems: 64
+                        type: array
+                    type: object
+                  warn:
+                    allOf:
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    - enum:
+                      - privileged
+                      - baseline
+                      - restricted
+                    default: privileged
+                    description: |-
+                      Warn sets the level for the warn mode.
+                      Violations trigger a user-facing warning.
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
