@@ -1,0 +1,22 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  topology:
+    classRef:
+      name: aws-quick-start
+    controlPlane:
+      replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+    variables:
+    - name: clusterConfig
+      value: {}
+    version: ${KUBERNETES_VERSION}
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        replicas: ${WORKER_MACHINE_COUNT}

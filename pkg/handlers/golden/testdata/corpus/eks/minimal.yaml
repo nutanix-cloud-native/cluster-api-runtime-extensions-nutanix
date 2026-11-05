@@ -1,0 +1,128 @@
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: ClusterClass
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start
+spec:
+  controlPlane:
+    templateRef:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedControlPlaneTemplate
+      name: eks-quick-start-control-plane
+  infrastructure:
+    templateRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedClusterTemplate
+      name: eks-quick-start
+  patches:
+    - external:
+        discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        generatePatchesExtension: eksclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
+      name: cluster-config
+    - external:
+        discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        generatePatchesExtension: eksworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
+      name: worker-config
+  workers:
+    machineDeployments:
+      - bootstrap:
+          templateRef:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+            kind: NodeadmConfigTemplate
+            name: eks-quick-start-worker-configtemplate
+        class: default-worker
+        infrastructure:
+          templateRef:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+            kind: AWSMachineTemplate
+            name: eks-quick-start-worker-machinetemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSManagedClusterTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start
+spec:
+  template:
+    spec: {}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+kind: AWSManagedControlPlaneTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-control-plane
+spec:
+  template:
+    spec:
+      bootstrapSelfManagedAddons: false
+      kubeProxy:
+        disable: true
+      vpcCni:
+        disable: true
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-worker-machinetemplate
+spec:
+  template:
+    spec:
+      ami:
+        eksLookupType: AmazonLinux2023
+      cloudInit:
+        insecureSkipSecretsManager: true
+      instanceMetadataOptions:
+        httpPutResponseHopLimit: 2
+        httpTokens: required
+      instanceType: PLACEHOLDER
+      sshKeyName: ""
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: NodeadmConfigTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/provider: eks
+  name: eks-quick-start-worker-configtemplate
+spec:
+  template:
+    spec: {}
+---
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: golden
+spec:
+  topology:
+    classRef:
+      name: eks-quick-start
+    variables:
+    - name: clusterConfig
+      value: {}
+    version: v1.35.3
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        replicas: 1
+---
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Created by the registry lifecycle hook before topology mutation runs.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: golden-registry-addon-ca
+stringData:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    Z29sZGVuLXJlZ2lzdHJ5LWFkZG9uLWNh
+    -----END CERTIFICATE-----

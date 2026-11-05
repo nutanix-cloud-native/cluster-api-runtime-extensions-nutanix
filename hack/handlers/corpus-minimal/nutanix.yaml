@@ -1,0 +1,60 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${CLUSTER_NAME}-pc-creds
+stringData:
+  credentials: |-
+    [
+      {
+        "type": "basic_auth",
+        "data": {
+          "prismCentral":{
+            "username": "${NUTANIX_USER}",
+            "password": "${NUTANIX_PASSWORD}"
+          },
+          "prismElements": null
+        }
+      }
+    ]
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  topology:
+    classRef:
+      name: nutanix-quick-start
+    controlPlane:
+      replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+    variables:
+    - name: clusterConfig
+      value:
+        controlPlane:
+          nutanix:
+            machineDetails:
+              imageLookup:
+                baseOS: ${NUTANIX_MACHINE_TEMPLATE_BASE_OS}
+                format: ${NUTANIX_MACHINE_TEMPLATE_LOOKUP_FORMAT}
+              memorySize: 4Gi
+              systemDiskSize: 40Gi
+              vcpuSockets: 2
+              vcpusPerSocket: 1
+        nutanix:
+          controlPlaneEndpoint:
+            host: ${CONTROL_PLANE_ENDPOINT_IP}
+            port: 6443
+          prismCentralEndpoint:
+            credentials:
+              secretRef:
+                name: ${CLUSTER_NAME}-pc-creds
+            url: https://${NUTANIX_ENDPOINT}:${NUTANIX_PORT}
+    version: ${KUBERNETES_VERSION}
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        replicas: ${WORKER_MACHINE_COUNT}

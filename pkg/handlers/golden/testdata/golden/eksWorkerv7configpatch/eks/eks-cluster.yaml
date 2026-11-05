@@ -1,0 +1,83 @@
+- holderRef:
+    apiVersion: cluster.x-k8s.io/v1beta2
+    fieldPath: spec.infrastructureRef
+    kind: Cluster
+    name: golden
+    namespace: golden-namespace
+  object:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSManagedClusterTemplate
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: eks
+      name: eks-quick-start
+      namespace: golden-namespace
+    spec:
+      template:
+        spec: {}
+- holderRef:
+    apiVersion: cluster.x-k8s.io/v1beta2
+    fieldPath: spec.controlPlaneRef
+    kind: Cluster
+    name: golden
+    namespace: golden-namespace
+  object:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+    kind: AWSManagedControlPlaneTemplate
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: eks
+      name: eks-quick-start-control-plane
+      namespace: golden-namespace
+    spec:
+      template:
+        spec:
+          bootstrapSelfManagedAddons: false
+          kubeProxy:
+            disable: true
+          vpcCni:
+            disable: true
+- holderRef:
+    apiVersion: cluster.x-k8s.io/v1beta2
+    fieldPath: spec.template.spec.bootstrap.configRef
+    kind: MachineDeployment
+    name: golden-md-0
+    namespace: golden-namespace
+  object:
+    apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+    kind: NodeadmConfigTemplate
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: eks
+      name: eks-quick-start-worker-configtemplate
+      namespace: golden-namespace
+    spec:
+      template:
+        spec: {}
+- holderRef:
+    apiVersion: cluster.x-k8s.io/v1beta2
+    fieldPath: spec.template.spec.infrastructureRef
+    kind: MachineDeployment
+    name: golden-md-0
+    namespace: golden-namespace
+  object:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSMachineTemplate
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: eks
+      name: eks-quick-start-worker-machinetemplate
+      namespace: golden-namespace
+    spec:
+      template:
+        spec:
+          ami:
+            eksLookupType: AmazonLinux2023
+          cloudInit:
+            insecureSkipSecretsManager: true
+          iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+          instanceMetadataOptions:
+            httpPutResponseHopLimit: 2
+            httpTokens: required
+          instanceType: m5.2xlarge
+          sshKeyName: ""
