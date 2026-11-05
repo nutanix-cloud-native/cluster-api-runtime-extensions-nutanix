@@ -31,7 +31,7 @@ const (
 	// VariableName is the external patch variable name.
 	VariableName = "authentication"
 
-	// AuthenticationConfigPath is the well-known path for the
+	// AuthenticationConfigPath is the path for the
 	// AuthenticationConfiguration file on control plane nodes.
 	AuthenticationConfigPath = "/etc/kubernetes/authentication.yaml"
 
@@ -106,11 +106,11 @@ func (h *authPatchHandler) Mutate(
 				}
 			}
 
-			// Conflict check: existing --authentication-config with different path.
+			// Conflict check: existing --authentication-config with unexpected path.
 			for _, arg := range apiServer.ExtraArgs {
 				if arg.Name == AuthenticationConfigArg && arg.Value != nil && *arg.Value != AuthenticationConfigPath {
 					return fmt.Errorf(
-						"existing --%s flag value %q conflicts with well-known path %q",
+						"existing --%s flag value %q does not match expected path %q",
 						AuthenticationConfigArg, *arg.Value, AuthenticationConfigPath,
 					)
 				}
