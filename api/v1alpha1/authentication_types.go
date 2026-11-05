@@ -13,9 +13,11 @@ const (
 )
 
 // Authentication configures API server JWT/OIDC authentication via
-// the Structured Authentication Configuration file. When set, CAREN renders
-// an AuthenticationConfiguration file and sets --authentication-config.
-// When unset the feature is a no-op for existing clusters.
+// the Structured Authentication Configuration file
+// (apiserver.config.k8s.io/v1, requires Kubernetes >= 1.34).
+// When set, CAREN renders an AuthenticationConfiguration file and sets
+// --authentication-config. When unset the feature is a no-op for existing
+// clusters.
 // +kubebuilder:validation:XValidation:rule="self.jwt.all(a, self.jwt.exists(b, b != a && b.issuer.url == a.issuer.url) == false)",message="issuer URLs must be unique across jwt authenticators"
 type Authentication struct {
 	// JWT is the ordered list of JWT authenticators. Each entry must have a

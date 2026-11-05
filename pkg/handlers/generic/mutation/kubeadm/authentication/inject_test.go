@@ -205,8 +205,8 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 		},
 		{
-			Name:                  "empty JWT produces no patches (no-op)",
-			RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Name:        "empty JWT produces no patches (no-op)",
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
