@@ -7,42 +7,48 @@ alwaysApply: true
 
 ## The Invariant
 
-Upgrading CAREN MUST be a no-op for existing Clusters. Any change that alters the
-patch output of a registered topology mutation handler will cause Machine rollouts
-across all managed clusters. This MUST be prevented.
+Upgrading CAREN MUST be a no-op for existing Clusters. Any change to what a released
+handler returns causes Machine rollouts across all managed clusters that use it. This
+MUST be prevented. Clusters opt in to new behavior only by naming a new handler version
+in their ClusterClass.
 
-## When You MUST Create a New Handler Version
+## Where Changes Go
 
-Before modifying any file under `pkg/handlers/*/mutation/`, ask yourself:
+All topology mutation handlers, their mutators, and variable discovery handlers live under
+`pkg/handlers/vN/`. The highest version is open until a release contains it; every other
+version is frozen. `hack/handlers/open-version.sh` prints the open version, or fails if
+there is none.
 
-1. Does this change alter the patches returned by `GeneratePatches` for any existing
-   input? (Including adding new patches, removing patches, or changing patch values.)
-2. Does this introduce a new handler that is enabled by default and produces patches?
+Before modifying anything under `pkg/handlers/vN/` or `api/v1alpha1/`, ask:
 
-If the answer to EITHER question is **yes**, you MUST:
+1. Does this change what `GeneratePatches` returns for any input? (New, removed or
+   changed patches, or a new mutator enabled by default.)
+2. Does this change what `DiscoverVariables` returns? (Schemas and defaults; defaults
+   change the variables passed to `GeneratePatches`.)
 
-1. Copy the current handler implementation to `pkg/handlers/v{current}/` (e.g. `v5/`).
-2. Bump the version in the handler name string (e.g. `awsClusterv5configpatch` ->
-   `awsClusterv6configpatch`) in the active handler under
-   `pkg/handlers/{provider}/mutation/`.
-3. Register both old and new handler versions in
-   `pkg/handlers/{provider}/handlers.go`.
-4. Update default ClusterClass definitions in
-   `charts/cluster-api-runtime-extensions-nutanix/defaultclusterclasses/` to reference
-   the new version.
-5. Update `hack/examples/overlays/clusterclasses/` kustomization templates.
+If yes to either:
 
-## When a Version Bump Is NOT Required
+1. Change only the open version. If there is none, run `make handlers.new-version` first.
+2. Run `make go-generate` after API changes; it copies the CRDs into the latest version only.
+3. Run `make handlers.golden-update` and check that the golden diff contains only the
+   intended change, and only for the open version.
 
-- Changes that do not alter patch output (e.g. refactoring internals, improving
-  logging, fixing a bug that doesn't change the generated patches).
-- Changes to lifecycle handlers (`pkg/handlers/lifecycle/`) that do not affect
-  topology mutation.
-- Changes to `DiscoverVariables` output only (variable discovery does not trigger
-  rollouts).
+Never modify a released `pkg/handlers/vN/`, its golden files, corpus inputs, or remove a
+released handler name to make a change fit. `make handlers.check-frozen` fails on all of
+these. The `frozen-handler-override` label only allows a fix to released handler code that
+leaves its golden output unchanged.
+
+## When a New Version Is NOT Required
+
+- Any change to the open version, with its golden files regenerated.
+- Changes to lifecycle handlers (`pkg/handlers/lifecycle/`) and webhooks, which are not
+  versioned.
 
 ## Verification
 
-When reviewing or implementing handler changes, compare the `GeneratePatches` output
-before and after the change for representative inputs. If the output differs, a
-version bump is mandatory.
+- `make test` runs the golden tests in `pkg/handlers/golden/`.
+- `make handlers.check-frozen` compares against the last release.
+- `make e2e-test E2E_LABEL='provider:Docker' E2E_FOCUS='Upgrade'` upgrades CAREN under a
+  Cluster created from the last release and fails on any topology change or rollout.
+
+See `docs/content/contributing/handler_versions.md`.

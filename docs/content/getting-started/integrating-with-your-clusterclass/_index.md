@@ -13,19 +13,23 @@ To integrate with your `ClusterClasses`, you will need to add the appropriate ex
 to specify the variables `clusterConfig` and `workerConfig`[^1] regardless of infrastructure provider, although remember
 that each variable will have provider-specific fields as part of the schema.
 
-The required values are shown below per provider.
+The handler names include a version, such as `v7`. Upgrading CAREN never changes what a released version does, so
+Clusters using it are not changed by an upgrade. To get new behavior, change both the patch and discovery names to a
+newer version; this can roll out Machines. Always use the same version for both.
+
+The required values are shown below per provider for a `cluster.x-k8s.io/v1beta2` `ClusterClass`.
 
 ## AWS
 
 ```yaml
   patches:
   - external:
-      discoverVariablesExtension: awsclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: awsclusterv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: awsclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: awsclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
-      discoverVariablesExtension: awsworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: awsworkerv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: awsworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: awsworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -34,12 +38,12 @@ The required values are shown below per provider.
 ```yaml
   patches:
   - external:
-      discoverVariablesExtension: nutanixclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixclusterv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: nutanixclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: nutanixclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
-      discoverVariablesExtension: nutanixworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: nutanixworkerv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: nutanixworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: nutanixworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -48,12 +52,12 @@ The required values are shown below per provider.
 ```yaml
   patches:
   - external:
-      discoverVariablesExtension: dockerclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerclusterv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: dockerclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: dockerclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
   - external:
-      discoverVariablesExtension: dockerworkerconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: dockerworkerv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: dockerworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: dockerworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: worker-config
 ```
 
@@ -62,8 +66,8 @@ The required values are shown below per provider.
 ```yaml
   patches:
   - external:
-      discoverVariablesExtension: genericclusterconfigvars.cluster-api-runtime-extensions-nutanix
-      generateExtension: genericclusterv7configpatch.cluster-api-runtime-extensions-nutanix
+      discoverVariablesExtension: genericclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
+      generatePatchesExtension: genericclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
     name: cluster-config
 ```
 
