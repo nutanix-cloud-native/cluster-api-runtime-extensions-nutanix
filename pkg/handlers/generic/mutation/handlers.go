@@ -52,8 +52,8 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		autorenewcerts.NewPatch(),
 		kubeproxymode.NewPatch(),
 		podsecurityadmission.NewPatch(),
-		authentication.NewPatch(),
 		ntp.NewPatch(),
+		authentication.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command
