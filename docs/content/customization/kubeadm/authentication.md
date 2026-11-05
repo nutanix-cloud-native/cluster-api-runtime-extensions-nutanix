@@ -1,11 +1,11 @@
++++
+title = "Authentication"
++++
+
 <!---
 Copyright 2026 Nutanix. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 --->
-
-+++
-title = "Authentication"
-+++
 
 This customization allows configuration of the Kubernetes API server's
 OIDC/JWT authentication through
