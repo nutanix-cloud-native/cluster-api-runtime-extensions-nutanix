@@ -21,14 +21,11 @@ unaffected.
 
 ## Kubernetes version requirement
 
-Structured Authentication Configuration was introduced as **beta in Kubernetes
-1.29** and went **GA in 1.31**. The `--authentication-config` flag is not
-recognised on clusters older than 1.29. CAREN does not gate on
-`Cluster.spec.topology.version`; the configuration is harmless to generate
-regardless of version, but the API server will fail to start on unsupported
-versions.
-
-> **Recommended:** Use Kubernetes **1.31 or later** (GA, enabled by default).
+Requires **Kubernetes >= 1.34** (`apiserver.config.k8s.io/v1` went GA in 1.34;
+1.29–1.33 only served `v1beta1`, which CAREN does not emit). The API server will
+fail to parse the file on older versions. CAREN does not gate on
+`Cluster.spec.topology.version`; document the minimum and let the API server fail
+fast.
 
 ## Mutual exclusivity with `--oidc-*` flags
 
@@ -42,7 +39,7 @@ CAREN enforces this at reconciliation time: if `APIServer.ExtraArgs` already
 contains any flag whose name starts with `oidc-` and `clusterConfig.authentication`
 is also set, the handler returns an error instructing the operator to remove the
 legacy flags and use `authentication` instead. Likewise, if `ExtraArgs` already
-contains `--authentication-config` with a value other than the well-known path
+contains `--authentication-config` with a value other than the expected path
 `/etc/kubernetes/authentication.yaml`, the handler returns an error rather than
 silently overwriting a user-managed path.
 
