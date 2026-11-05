@@ -95,7 +95,11 @@ func (h *authPatchHandler) Mutate(
 				spec := &obj.Spec.Template.Spec.KubeadmConfigSpec
 				spec.Files = removeFile(spec.Files, AuthenticationConfigPath)
 				apiServer := &spec.ClusterConfiguration.APIServer
-				apiServer.ExtraVolumes = removeVolumeMount(apiServer.ExtraVolumes, AuthenticationConfigPath, authenticationConfigVolumeName)
+				apiServer.ExtraVolumes = removeVolumeMount(
+					apiServer.ExtraVolumes,
+					AuthenticationConfigPath,
+					authenticationConfigVolumeName,
+				)
 				apiServer.ExtraArgs = removeArg(apiServer.ExtraArgs, AuthenticationConfigArg)
 				return nil
 			}
@@ -133,7 +137,11 @@ func (h *authPatchHandler) Mutate(
 
 			spec := &obj.Spec.Template.Spec.KubeadmConfigSpec
 			spec.Files = ensureFile(spec.Files, AuthenticationConfigPath, content)
-			apiServer.ExtraVolumes = ensureVolumeMount(apiServer.ExtraVolumes, AuthenticationConfigPath, authenticationConfigVolumeName)
+			apiServer.ExtraVolumes = ensureVolumeMount(
+				apiServer.ExtraVolumes,
+				AuthenticationConfigPath,
+				authenticationConfigVolumeName,
+			)
 			apiServer.ExtraArgs = ensureArg(apiServer.ExtraArgs, AuthenticationConfigArg, AuthenticationConfigPath)
 
 			return nil
