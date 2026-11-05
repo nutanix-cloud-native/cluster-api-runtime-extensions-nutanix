@@ -205,20 +205,8 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 		},
 		{
-			Name: "removal: file+volume+flag removed when variable empty",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
-				WithFiles(bootstrapv1.File{
-					Path:        AuthenticationConfigPath,
-					Permissions: "0600",
-					Content:     "apiVersion: apiserver.config.k8s.io/v1\nkind: AuthenticationConfiguration\njwt: []\n",
-				}).
-				WithAPIServerExtraArgs([]bootstrapv1.Arg{
-					{
-						Name:  AuthenticationConfigArg,
-						Value: func() *string { s := AuthenticationConfigPath; return &s }(),
-					},
-				}).
-				NewRequest(""),
+			Name:                  "empty JWT produces no patches (no-op)",
+			RequestItem:           request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -226,18 +214,7 @@ var _ = Describe("Generate Authentication patches", func() {
 					VariableName,
 				),
 			},
-			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				{
-					Operation:    "remove",
-					Path:         "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs",
-					ValueMatcher: gomega.BeNil(),
-				},
-				{
-					Operation:    "remove",
-					Path:         "/spec/template/spec/kubeadmConfigSpec/files",
-					ValueMatcher: gomega.BeNil(),
-				},
-			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
 		},
 		{
 			Name: "legacy oidc flag conflict returns error",

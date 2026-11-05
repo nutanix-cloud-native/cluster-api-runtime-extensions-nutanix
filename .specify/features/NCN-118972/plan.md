@@ -127,7 +127,7 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
   - `omitted variable → zero patches` (no-op, FR-001/FR-002 in spec context).
   - `one issuer → file added with correct YAML + ExtraVolumes + --authentication-config` (happy path).
   - `two issuers → order preserved in YAML`.
-  - `reconciliation after removal → file + volume + flag removed`.
+  - `nil/empty JWT → no-op (no patches)` — consistent with other handlers.
   - `both legacy oidc flag and new config present → error`.
   - `coexistence with admissionconfiguration — neither clobbers the other`.
   Use `common/pkg/testutils/capitest` builders and `capitest.JSONPatchMatcher` matchers as seen in `encryptionatrest/inject_test.go` and `podsecurityadmission/inject_test.go`. Run `devbox run -- go test ./pkg/handlers/generic/mutation/kubeadm/authentication/ -count=1` → FAIL (undefined handler).
@@ -147,7 +147,7 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
 
   `Mutate(ctx, obj, vars, holderRef, clusterKey, clusterGetter) error`:
   - `variables.Get[*v1alpha1.Authentication](vars, h.variableName, h.variableFieldPath...)` — `IsNotFoundError` → no-op.
-  - If nil or `JWT` empty → remove path: delete file with path==well-known, remove volume mount name==`authentication-config` or path==well-known, remove `ExtraArgs` entry where `Name==authentication-config`; return (idempotent cleanup).
+  - If nil or `JWT` empty → **no-op** — return nil immediately, consistent with other handlers (e.g. `podSecurityAdmission` returning nil for nil variable). No active deletion; absence of the variable means no patches.
   - Otherwise: read `obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` — if any `Name` startsWith `oidc-` → return error `use of --oidc-* flags is mutually exclusive with authentication; remove the --oidc-* extraArgs`.
   - Else: conflict check if any existing `ExtraArgs` entry has `Name==authentication-config` with a value != well-known path → error.
   - Render: map API types → local render struct (`authnConfig{APIVersion, Kind, JWT []jwtAuth}` with json tags matching upstream), marshal with `sigs.k8s.io/yaml.Marshal`, ensure `spec.Files` upsert on Path, ensure `ExtraVolumes` upsert, ensure `ExtraArgs` upsert.
