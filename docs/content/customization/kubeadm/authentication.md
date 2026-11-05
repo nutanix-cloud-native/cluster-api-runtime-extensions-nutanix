@@ -47,80 +47,6 @@ To migrate from flag-based OIDC, remove all `--oidc-*` entries from
 `KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` and express the
 same intent through `clusterConfig.authentication`.
 
-## Configuration
-
-`authentication` is set under `clusterConfig` and contains an ordered list of
-JWT authenticators. Order is the API server's evaluation order and is preserved
-exactly as declared.
-
-### Top-level
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `jwt` | `[]JWTAuthenticator` (1–32) | Yes | Ordered list of JWT authenticators. Issuer URLs must be unique across the list. |
-
-### Issuer (`jwt[].issuer`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `url` | `string` (1–2048, `https://` URL) | Yes | OIDC issuer URL. Must be unique within the `jwt` list. |
-| `audiences` | `[]string` (1–32, 1–256 each, unique) | Yes | Audiences the token must contain. Order is preserved. |
-| `discoveryURL` | `string` | No | Override for the OIDC discovery URL. Defaults to `{url}/.well-known/openid-configuration`. |
-| `certificateAuthority` | `string` | No | PEM-encoded CA bundle for TLS verification of the issuer. Inlined in the YAML, not mounted as a separate file. |
-| `audienceMatchPolicy` | `""` \| `"MatchAny"` | No | Audience matching policy. Empty (default) requires all audiences to match; `MatchAny` requires at least one. |
-
-### ClaimValidationRules (`jwt[].claimValidationRules`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `claim` | `string` | One of `claim`+`requiredValue` **or** `expression` | JWT claim name to validate. |
-| `requiredValue` | `string` | With `claim` | Value the claim must equal. |
-| `expression` | `string` (CEL) | One of | CEL expression evaluated against `claims`. See [CEL example](#cel-expression-example) below. |
-| `message` | `string` | No | Human-readable message when validation fails. For `expression` rules this is surfaced as the error detail. |
-
-Each entry must be **either** `{claim + requiredValue}` **or** `{expression}`
-(not both, not neither). Up to 32 rules per authenticator.
-
-### ClaimMappings (`jwt[].claimMappings`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `username` | `PrefixedClaimOrExpression` | Yes | How to derive the Kubernetes username from the token. |
-| `groups` | `ClaimOrExpression` | No | How to derive group memberships. |
-| `uid` | `ClaimOrExpression` | No | How to derive the UID. |
-| `extra` | `[]ExtraMapping` (0–32) | No | Additional mappings into `userInfo.extra`. |
-
-#### PrefixedClaimOrExpression (`claimMappings.username`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `claim` | `string` | One of `claim`+`prefix` **or** `expression` | JWT claim name. |
-| `prefix` | `string` \| `nil` | With `claim` | Prefix added to the claim value. `nil`/absent → default `<issuer.url>#`; `"-"` → no prefix. |
-| `expression` | `string` (CEL) | One of | CEL expression to compute the value (e.g. `claims.email + ":ext"`). When set, `claim` and `prefix` must not be set. |
-
-#### ClaimOrExpression (`claimMappings.groups`, `claimMappings.uid`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `claim` | `string` | One of `claim` **or** `expression` | JWT claim name. |
-| `expression` | `string` (CEL) | One of | CEL expression to compute the value. When set, `claim` must not be set. |
-
-#### ExtraMapping (`claimMappings.extra[]`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `key` | `string` | Yes | Key in `userInfo.extra` where the result is stored. |
-| `valueExpression` | `string` (CEL) | Yes | CEL expression whose result populates the key. |
-
-### UserValidationRules (`jwt[].userValidationRules`)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `expression` | `string` (CEL) | Yes | CEL expression validated against the derived `userInfo`. |
-| `message` | `string` | No | Message surfaced when the expression evaluates to `false`. |
-
-Up to 32 rules per authenticator.
-
 ## Examples
 
 ### Single-issuer OIDC
@@ -270,10 +196,9 @@ no API server restart is needed after CAREN updates the file.
 
 ## Removing authentication configuration
 
-Setting `authentication` back to absent (or removing the variable) reconciles the
-`KubeadmControlPlaneTemplate` by removing the file, its volume mount, and the
-`--authentication-config` flag. Legacy `--oidc-*` flags can then be used again
-if desired.
+Setting `authentication` back to absent (or removing the variable) is a no-op on
+the next reconciliation — the handler emits no patches, consistent with other
+handlers.
 
 ## See also
 
