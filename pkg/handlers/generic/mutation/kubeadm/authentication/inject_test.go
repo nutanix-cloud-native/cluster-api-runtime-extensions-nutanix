@@ -213,7 +213,10 @@ var _ = Describe("Generate Authentication patches", func() {
 					Content:     "apiVersion: apiserver.config.k8s.io/v1\nkind: AuthenticationConfiguration\njwt: []\n",
 				}).
 				WithAPIServerExtraArgs([]bootstrapv1.Arg{
-					{Name: AuthenticationConfigArg, Value: func() *string { s := AuthenticationConfigPath; return &s }()},
+					{
+						Name:  AuthenticationConfigArg,
+						Value: func() *string { s := AuthenticationConfigPath; return &s }(),
+					},
 				}).
 				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
@@ -237,8 +240,9 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 		},
 		{
-			Name:        "legacy oidc flag conflict returns error",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "oidc-issuer-url", Value: func() *string { s := "https://old.example.com"; return &s }()}}).NewRequest(""),
+			Name: "legacy oidc flag conflict returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "oidc-issuer-url", Value: func() *string { s := "https://old.example.com"; return &s }()}}).
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -249,8 +253,9 @@ var _ = Describe("Generate Authentication patches", func() {
 			ExpectedFailure: true,
 		},
 		{
-			Name:        "existing authentication-config with different path conflicts",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: func() *string { s := "/other/path.yaml"; return &s }()}}).NewRequest(""),
+			Name: "existing authentication-config with different path conflicts",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: func() *string { s := "/other/path.yaml"; return &s }()}}).
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -261,8 +266,10 @@ var _ = Describe("Generate Authentication patches", func() {
 			ExpectedFailure: true,
 		},
 		{
-			Name:        "coexistence with admissionconfiguration neither clobbers the other",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithFiles(bootstrapv1.File{Path: "/etc/kubernetes/admission.yaml", Permissions: "0600", Content: "apiVersion: apiserver.config.k8s.io/v1\nkind: AdmissionConfiguration\nplugins:\n- name: PodSecurity\n  path: /etc/kubernetes/pod-security-admission.yaml\n"}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "admission-control-config-file", Value: func() *string { s := "/etc/kubernetes/admission.yaml"; return &s }()}}).NewRequest(""),
+			Name: "coexistence with admissionconfiguration neither clobbers the other",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithFiles(bootstrapv1.File{Path: "/etc/kubernetes/admission.yaml", Permissions: "0600", Content: "apiVersion: apiserver.config.k8s.io/v1\nkind: AdmissionConfiguration\nplugins:\n- name: PodSecurity\n  path: /etc/kubernetes/pod-security-admission.yaml\n"}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "admission-control-config-file", Value: func() *string { s := "/etc/kubernetes/admission.yaml"; return &s }()}}).
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -272,8 +279,8 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/files/1",
+					Operation:    "add",
+					Path:         "/spec/template/spec/kubeadmConfigSpec/files/1",
 					ValueMatcher: authFileMatcher(gomega.ContainSubstring("AuthenticationConfiguration")),
 				},
 				{

@@ -13,7 +13,7 @@ const (
 )
 
 // Authentication configures API server JWT/OIDC authentication via
-// Structured Authentication Configuration (KEP-3331). When set, CAREN renders
+// the Structured Authentication Configuration file. When set, CAREN renders
 // an AuthenticationConfiguration file and sets --authentication-config.
 // When unset the feature is a no-op for existing clusters.
 // +kubebuilder:validation:XValidation:rule="self.jwt.all(a, self.jwt.exists(b, b != a && b.issuer.url == a.issuer.url) == false)",message="issuer URLs must be unique across jwt authenticators"

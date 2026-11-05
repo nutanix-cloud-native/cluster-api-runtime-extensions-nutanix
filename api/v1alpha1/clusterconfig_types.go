@@ -286,7 +286,7 @@ type KubeadmClusterConfigSpec struct {
 	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
 
 	// Authentication configures API server JWT/OIDC authentication via
-	// Structured Authentication Configuration (KEP-3331). When unset no
+	// the Structured Authentication Configuration file. When unset no
 	// authentication file is rendered (no-op). Mutually exclusive with
 	// legacy --oidc-* API server flags.
 	// +kubebuilder:validation:Optional
