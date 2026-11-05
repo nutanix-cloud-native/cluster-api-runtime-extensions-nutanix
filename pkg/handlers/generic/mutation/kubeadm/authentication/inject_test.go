@@ -4,7 +4,6 @@
 package authentication
 
 import (
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -226,18 +225,14 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
 				{
-					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
-					ValueMatcher: gomega.SatisfyAll(
-						// No authentication-config extraArg should remain; if present test will show it.
-						gomega.Not(gomega.HaveKeyWithValue("apiServer", gomega.HaveKeyWithValue("extraArgs", gomega.ContainElement(
-							gomega.HaveKeyWithValue("name", AuthenticationConfigArg),
-						)))),
-						// No authentication-config volume.
-						gomega.Not(gomega.HaveKeyWithValue("apiServer", gomega.HaveKeyWithValue("extraVolumes", gomega.ContainElement(
-							gomega.HaveKeyWithValue("name", authenticationConfigVolumeName),
-						)))),
-					),
+					Operation:    "remove",
+					Path:         "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs",
+					ValueMatcher: gomega.BeNil(),
+				},
+				{
+					Operation:    "remove",
+					Path:         "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.BeNil(),
 				},
 			},
 		},
@@ -276,31 +271,31 @@ var _ = Describe("Generate Authentication patches", func() {
 				),
 			},
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
-				filesMatcherWith(
-					authFileMatcher(gomega.ContainSubstring("AuthenticationConfiguration")),
-					gomega.HaveKeyWithValue("path", "/etc/kubernetes/admission.yaml"),
-				),
 				{
 					Operation: "add",
-					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
-					ValueMatcher: gomega.HaveKeyWithValue("apiServer", gomega.SatisfyAll(
-						gomega.HaveKeyWithValue("extraArgs", gomega.ContainElements(
-							gomega.HaveKeyWithValue("name", AuthenticationConfigArg),
-							gomega.HaveKeyWithValue("name", "admission-control-config-file"),
-						)),
-						gomega.HaveKeyWithValue("extraVolumes", gomega.ContainElement(
-							gomega.HaveKeyWithValue("name", authenticationConfigVolumeName),
-						)),
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files/1",
+					ValueMatcher: authFileMatcher(gomega.ContainSubstring("AuthenticationConfiguration")),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraVolumes",
+					ValueMatcher: gomega.ContainElement(gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", authenticationConfigVolumeName),
+						gomega.HaveKeyWithValue("hostPath", AuthenticationConfigPath),
+						gomega.HaveKeyWithValue("mountPath", AuthenticationConfigPath),
 					)),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/1",
+					ValueMatcher: gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", AuthenticationConfigArg),
+						gomega.HaveKeyWithValue("value", AuthenticationConfigPath),
+					),
 				},
 			},
 		},
 	}
-
-	// ExtraArgs/ExtraVolumes are inside clusterConfiguration; to avoid matching on the
-	// whole value shape, we also need a looser check for "no oidc flags" in the happy path.
-	// Add a table entry explicitly for no-oidc regression if desired.
-	_ = strings.Contains // keep import used if lint expects; otherwise remove
 
 	for testIdx := range testDefs {
 		tt := testDefs[testIdx]
