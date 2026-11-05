@@ -8,9 +8,9 @@ metadata:
   name: '{{ .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.name }}'
 data:
   calico-installation: |
-{{- if .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content -}}
-    {{ .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content | nindent 4 }}
-{{- else -}}
+    {{- if .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content }}
+    {{- .Values.hooks.cni.calico.crsStrategy.defaultInstallationConfigMaps.DockerCluster.configMap.content | nindent 4 }}
+    {{- else }}
     # This section includes base Calico installation configuration.
     # For more information, see: https://docs.projectcalico.org/reference/installation/api
     apiVersion: operator.tigera.io/v1

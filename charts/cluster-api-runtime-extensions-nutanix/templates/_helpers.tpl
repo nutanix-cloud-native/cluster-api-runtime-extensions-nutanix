@@ -49,3 +49,12 @@ Certificate issuer name
 {{ required "A valid .Values.certificates.issuer.name is required!" .Values.certificates.issuer.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Indent a multi-line addon values template by 4 spaces (with a leading newline, like `nindent 4`),
+while stripping whitespace from empty lines so `yamllint` does not report `trailing-spaces` errors
+on blank lines inside ConfigMap block scalars.
+*/}}
+{{- define "chart.indentValuesTemplate" -}}
+{{- regexReplaceAll "(?m)^ +$" (. | trim | nindent 4) "" -}}
+{{- end -}}

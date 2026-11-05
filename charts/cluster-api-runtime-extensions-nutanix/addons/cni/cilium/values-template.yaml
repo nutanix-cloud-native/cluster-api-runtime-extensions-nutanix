@@ -50,8 +50,8 @@ loadBalancer:
   dsrDispatch: geneve
 bpf:
   lbModeAnnotation: true
-  masquerade: true # Recommended when Cilium replaces kube-proxy
-{{ else }}
+  masquerade: true  # Recommended when Cilium replaces kube-proxy
+{{- else }}
 bpf:
   lbModeAnnotation: true
 {{- end }}

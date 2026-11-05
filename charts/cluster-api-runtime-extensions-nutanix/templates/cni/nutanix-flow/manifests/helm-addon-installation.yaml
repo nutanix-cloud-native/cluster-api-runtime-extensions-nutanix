@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.cni.nutanixFlow.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/nutanix-flow/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/nutanix-flow/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}

@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.cni.multus.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/multus/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/multus/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}
