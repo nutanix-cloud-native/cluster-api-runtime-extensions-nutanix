@@ -49,7 +49,7 @@ type authPatchHandler struct {
 // NewPatch creates a new authentication patch handler.
 //
 // It renders apiserver.config.k8s.io/v1 AuthenticationConfiguration
-// (requires Kubernetes >= 1.34) when clusterConfig.authentication is set;
+// (requires Kubernetes >= 1.34) when clusterConfig.authentication is set.
 func NewPatch() *authPatchHandler {
 	return newAuthPatchHandler(v1alpha1.ClusterConfigVariableName, VariableName)
 }
@@ -151,7 +151,8 @@ func renderAuthenticationConfig(auth *v1alpha1.Authentication) (string, error) {
 		},
 		JWT: make([]apiserverv1.JWTAuthenticator, 0, len(auth.JWT)),
 	}
-	for _, j := range auth.JWT {
+	for i := range auth.JWT {
+		j := auth.JWT[i]
 		r := apiserverv1.JWTAuthenticator{
 			Issuer: apiserverv1.Issuer{
 				URL:                  j.Issuer.URL,
