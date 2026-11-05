@@ -1,0 +1,17 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Handler names that were registered in a release and are no longer served, with the last release that served them.
+# Clusters whose ClusterClass still references one of these names fail topology reconciliation.
+#
+# name                          last release
+awsClusterv5configpatch         v0.50.0
+awsWorkerv5configpatch          v0.50.0
+dockerClusterv5configpatch      v0.50.0
+dockerWorkerv5configpatch       v0.50.0
+eksClusterv5configpatch         v0.50.0
+eksWorkerv5configpatch          v0.50.0
+genericClusterv5configpatch     v0.50.0
+genericWorkerv5configpatch      v0.50.0
+nutanixClusterv5configpatch     v0.50.0
+nutanixWorkerv5configpatch      v0.50.0
