@@ -317,6 +317,220 @@ spec:
                         - provider
                       type: object
                   type: object
+                authentication:
+                  description: |-
+                    Authentication configures API server JWT/OIDC authentication via
+                    the Structured Authentication Configuration file
+                    (apiserver.config.k8s.io/v1, requires Kubernetes >= 1.34).
+                    When unset no authentication file is rendered (no-op). Mutually
+                    exclusive with legacy --oidc-* API server flags.
+                  properties:
+                    jwt:
+                      description: |-
+                        JWT is the ordered list of JWT authenticators. Each entry must have a
+                        unique issuer URL. Order defines the API server evaluation order.
+                      items:
+                        description: |-
+                          JWTAuthenticator is one OIDC/JWT authenticator entry in the
+                          AuthenticationConfiguration file, mirroring apiserver.config.k8s.io/v1.
+                        properties:
+                          claimMappings:
+                            description: ClaimMappings maps token claims to Kubernetes user info attributes.
+                            properties:
+                              extra:
+                                description: Extra maps additional claims to extra user info keys.
+                                items:
+                                  description: ExtraMapping maps a CEL expression result to an extra user-info key.
+                                  properties:
+                                    key:
+                                      description: Key is the extra attribute key (domain-prefix path, lowercase).
+                                      maxLength: 256
+                                      minLength: 1
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[a-z0-9._-]+$
+                                      type: string
+                                    valueExpression:
+                                      description: ValueExpression is a CEL expression whose result populates the extra value.
+                                      maxLength: 4096
+                                      minLength: 1
+                                      type: string
+                                  required:
+                                    - key
+                                    - valueExpression
+                                  type: object
+                                maxItems: 32
+                                type: array
+                              groups:
+                                description: Groups maps a claim or CEL expression to the groups.
+                                properties:
+                                  claim:
+                                    description: Claim is the JWT claim name to use.
+                                    maxLength: 256
+                                    minLength: 1
+                                    type: string
+                                  expression:
+                                    description: |-
+                                      Expression is a CEL expression evaluated against token claims.
+                                      Mutually exclusive with claim and prefix.
+                                    maxLength: 4096
+                                    minLength: 1
+                                    type: string
+                                  prefix:
+                                    description: |-
+                                      Prefix is prepended to the claim value to avoid name clashes.
+                                      \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
+                                      defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                    type: string
+                                type: object
+                              uid:
+                                description: UID maps a claim or CEL expression to the UID.
+                                properties:
+                                  claim:
+                                    description: Claim is the JWT claim name to use.
+                                    maxLength: 256
+                                    minLength: 1
+                                    type: string
+                                  expression:
+                                    description: Expression is a CEL expression evaluated against token claims.
+                                    maxLength: 4096
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              username:
+                                description: Username maps a claim or CEL expression to the username.
+                                properties:
+                                  claim:
+                                    description: Claim is the JWT claim name to use.
+                                    maxLength: 256
+                                    minLength: 1
+                                    type: string
+                                  expression:
+                                    description: |-
+                                      Expression is a CEL expression evaluated against token claims.
+                                      Mutually exclusive with claim and prefix.
+                                    maxLength: 4096
+                                    minLength: 1
+                                    type: string
+                                  prefix:
+                                    description: |-
+                                      Prefix is prepended to the claim value to avoid name clashes.
+                                      \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
+                                      defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                    type: string
+                                type: object
+                            required:
+                              - username
+                            type: object
+                          claimValidationRules:
+                            description: ClaimValidationRules are applied after OIDC signature/issuer validation.
+                            items:
+                              description: ClaimValidationRule is one validation rule for token claims.
+                              properties:
+                                claim:
+                                  description: Claim is the required claim name.
+                                  maxLength: 256
+                                  minLength: 1
+                                  type: string
+                                expression:
+                                  description: Expression is a CEL validation expression.
+                                  maxLength: 4096
+                                  minLength: 1
+                                  type: string
+                                message:
+                                  description: Message customizes the error when expression returns false.
+                                  maxLength: 1024
+                                  minLength: 1
+                                  type: string
+                                requiredValue:
+                                  description: RequiredValue is the required value for the claim.
+                                  maxLength: 1024
+                                  minLength: 1
+                                  type: string
+                              type: object
+                              x-kubernetes-validations:
+                                - message: claimValidationRules entry must be either {claim + requiredValue} or {expression}
+                                  rule: (has(self.claim) && has(self.requiredValue) && !has(self.expression)) || (!has(self.claim) && !has(self.requiredValue) && has(self.expression))
+                            maxItems: 32
+                            type: array
+                          issuer:
+                            description: Issuer holds OIDC provider connection settings.
+                            properties:
+                              audienceMatchPolicy:
+                                description: |-
+                                  AudienceMatchPolicy defines how audiences matches the aud claim.
+                                  Valid values are \"\" (default, single-audience semantics) or MatchAny.
+                                enum:
+                                  - ""
+                                  - MatchAny
+                                type: string
+                              audiences:
+                                description: Audiences is the set of acceptable audiences the JWT must be issued to.
+                                items:
+                                  type: string
+                                maxItems: 32
+                                minItems: 1
+                                type: array
+                                uniqueItems: true
+                              certificateAuthority:
+                                description: |-
+                                  CertificateAuthority contains PEM-encoded CA certificates for
+                                  validating the OIDC discovery connection.
+                                type: string
+                              discoveryURL:
+                                description: |-
+                                  DiscoveryURL overrides the OIDC discovery URL.
+                                  If set, discovery is fetched from this exact value instead of
+                                  {url}/.well-known/openid-configuration.
+                                maxLength: 2048
+                                minLength: 1
+                                pattern: ^https://
+                                type: string
+                              url:
+                                description: |-
+                                  URL is the OIDC issuer URL (must be https://).
+                                  Must match the iss claim in presented JWTs.
+                                maxLength: 2048
+                                minLength: 1
+                                pattern: ^https://
+                                type: string
+                            required:
+                              - audiences
+                              - url
+                            type: object
+                          userValidationRules:
+                            description: |-
+                              UserValidationRules are applied to the final user info before
+                              completing authentication.
+                            items:
+                              description: UserValidationRule validates final user info via CEL.
+                              properties:
+                                expression:
+                                  description: Expression is a CEL expression evaluated against the user object.
+                                  maxLength: 4096
+                                  minLength: 1
+                                  type: string
+                                message:
+                                  description: Message customizes the error when expression returns false.
+                                  maxLength: 1024
+                                  minLength: 1
+                                  type: string
+                              required:
+                                - expression
+                              type: object
+                            maxItems: 32
+                            type: array
+                        required:
+                          - claimMappings
+                          - issuer
+                        type: object
+                      maxItems: 32
+                      minItems: 1
+                      type: array
+                  required:
+                    - jwt
+                  type: object
+                  x-kubernetes-validations:
+                    - message: issuer URLs must be unique across jwt authenticators
+                      rule: self.jwt.all(a, self.jwt.exists(b, b != a && b.issuer.url == a.issuer.url) == false)
                 controlPlane:
                   description: DockerControlPlaneSpec defines the desired state of the control plane for a Docker cluster.
                   properties:

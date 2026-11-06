@@ -285,6 +285,14 @@ type KubeadmClusterConfigSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	MaxParallelImagePullsPerNode *int32 `json:"maxParallelImagePullsPerNode,omitempty"`
 
+	// Authentication configures API server JWT/OIDC authentication via
+	// the Structured Authentication Configuration file
+	// (apiserver.config.k8s.io/v1, requires Kubernetes >= 1.34).
+	// When unset no authentication file is rendered (no-op). Mutually
+	// exclusive with legacy --oidc-* API server flags.
+	// +kubebuilder:validation:Optional
+	Authentication *Authentication `json:"authentication,omitempty"`
+
 	// PodSecurityAdmission configures the PodSecurity admission plugin
 	// with cluster-wide defaults.
 	// When not specified, no PodSecurity admission configuration is applied.
