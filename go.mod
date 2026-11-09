@@ -24,12 +24,12 @@ require (
 	github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4 v4.4.1
 	github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4 v4.4.1
 	github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4 v4.3.1
-	github.com/onsi/ginkgo/v2 v2.33.1
+	github.com/onsi/ginkgo/v2 v2.34.0
 	github.com/onsi/gomega v1.44.0
 	github.com/pkg/errors v0.9.1
 	github.com/regclient/regclient v0.11.7
 	github.com/samber/lo v1.53.0
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/stretchr/testify v1.12.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -43,7 +43,7 @@ require (
 	k8s.io/kubelet v0.36.6
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	sigs.k8s.io/cluster-api v1.14.3
-	sigs.k8s.io/cluster-api/api v1.14.3
+	sigs.k8s.io/cluster-api/api v1.14.4
 	sigs.k8s.io/cluster-api/test v1.14.3
 	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/kind v0.33.0
@@ -65,21 +65,21 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.47.5 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.47.7 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.8 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.14 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.5 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.8 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.10 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.10 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.22 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.343.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/eks v1.105.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.23 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.344.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/eks v1.105.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.24 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.13 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.21 // indirect
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.3 // indirect
-	github.com/aws/smithy-go v1.28.7 // indirect
+	github.com/aws/smithy-go v1.28.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
