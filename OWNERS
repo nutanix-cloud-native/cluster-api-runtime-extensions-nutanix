@@ -2,16 +2,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
 reviewers:
-  - deepakm-ntnx
-  - dlipovetsky
-  - shubham2g
-  - supershal
   - thunderboltsid
-  - yanhua121
+  - dkoshkin
+  - Vedansh074
+  - jimmidyson
+  - vijayaraghavanr31
+  - supershal
+  - abhay-nutanix
+  - dlipovetsky
+  - manoj-nutanix
+  - legacyrj
 approvers:
-  - deepakm-ntnx
-  - dlipovetsky
-  - shubham2g
-  - supershal
   - thunderboltsid
-  - yanhua121
+  - dkoshkin
+  - Vedansh074
+  - jimmidyson
+  - vijayaraghavanr31
+  - supershal
+  - abhay-nutanix
+  - dlipovetsky
+  - manoj-nutanix
+  - legacyrj
