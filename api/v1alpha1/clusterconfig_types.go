@@ -298,6 +298,11 @@ type KubeadmClusterConfigSpec struct {
 	// When not specified, no PodSecurity admission configuration is applied.
 	// +kubebuilder:validation:Optional
 	PodSecurityAdmission *PodSecurityAdmission `json:"podSecurityAdmission,omitempty"`
+
+	// ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
+	// When unset, no issuer flags are set (API server uses kubeadm defaults).
+	// +kubebuilder:validation:Optional
+	ServiceAccountIssuer *ServiceAccountIssuer `json:"serviceAccountIssuer,omitempty"`
 }
 
 // +kubebuilder:object:root=true
