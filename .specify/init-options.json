@@ -1,8 +1,8 @@
 {
-  "ai": "cursor-agent",
+  "ai": "generic",
   "branch_numbering": "sequential",
   "here": true,
-  "integration": "cursor-agent",
+  "integration": "generic",
   "preset": null,
   "script": "sh",
   "speckit_version": "0.5.2.dev0"
