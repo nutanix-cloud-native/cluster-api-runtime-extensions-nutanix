@@ -422,6 +422,38 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "same host different schemes should error",
+			configs: []containerdConfig{
+				{
+					URL: "http://myregistry.com",
+				},
+				{
+					URL: "https://myregistry.com",
+				},
+			},
+			wantErr: ErrConflictingRegistrySchemes,
+		},
+		{
+			name: "same host same http scheme with different paths should not error",
+			configs: []containerdConfig{
+				{
+					URL: "http://myregistry.com/library",
+				},
+				{
+					URL: "http://myregistry.com/app-images",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/myregistry.com/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://myregistry.com"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

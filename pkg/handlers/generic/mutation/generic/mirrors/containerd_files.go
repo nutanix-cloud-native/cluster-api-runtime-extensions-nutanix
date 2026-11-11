@@ -159,6 +159,32 @@ func generateContainerdPerHostHostsFiles(
 		hostURL string
 	}
 
+	// Validate that the same host is not used with different schemes.
+	// Containerd's per-host namespace is keyed by host:port, so mixed http/https
+	// for the same host would be ambiguous (hosts.toml can only define one transport).
+	hostSchemes := make(map[string]string)
+	for _, config := range configs {
+		if config.Mirror {
+			continue
+		}
+		registryURL, err := url.ParseRequestURI(config.URL)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing registry URL: %w", err)
+		}
+		host := registryURL.Host
+		scheme := registryURL.Scheme
+		if existing, ok := hostSchemes[host]; ok && existing != scheme {
+			return nil, fmt.Errorf(
+				"%w: %q (schemes %q and %q)",
+				ErrConflictingRegistrySchemes,
+				host,
+				existing,
+				scheme,
+			)
+		}
+		hostSchemes[host] = scheme
+	}
+
 	// Deduplicate by host.
 	hosts := make(map[string]perHostEntry)
 	for _, config := range configs {
@@ -280,6 +306,10 @@ type containerdConfigFile struct {
 
 var ErrConflictingRegistryCACertificates = errors.New(
 	"conflicting CA certificate specified for registry host",
+)
+
+var ErrConflictingRegistrySchemes = errors.New(
+	"conflicting scheme specified for registry host",
 )
 
 // registryCACertFiles returns a list of CA certificate files
