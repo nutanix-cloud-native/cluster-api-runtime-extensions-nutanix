@@ -52,7 +52,7 @@ spec:
       - name: clusterConfig
         value:
           globalImageRegistryMirror:
-            url: http://10.111.45.34/library
+            url: http://registry.example.com/library
             # credentials omitted for non-authenticated registry
 ```
 
@@ -69,7 +69,7 @@ spec:
       - name: clusterConfig
         value:
           globalImageRegistryMirror:
-            url: http://10.111.45.34/library
+            url: http://registry.example.com/library
             credentials:
               secretRef:
                 name: my-mirror-credentials

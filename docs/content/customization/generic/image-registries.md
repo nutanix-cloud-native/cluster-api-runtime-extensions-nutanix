@@ -69,9 +69,9 @@ spec:
       - name: clusterConfig
         value:
           globalImageRegistryMirror:
-            url: http://10.111.45.34/library
+            url: http://registry.example.com/library
           imageRegistries:
-            - url: http://10.111.45.34/app-images
+            - url: http://registry.example.com/app-images
 ```
 
 With authentication:
@@ -87,12 +87,12 @@ spec:
       - name: clusterConfig
         value:
           globalImageRegistryMirror:
-            url: http://10.111.45.34/library
+            url: http://registry.example.com/library
             credentials:
               secretRef:
                 name: registry-a-credentials
           imageRegistries:
-            - url: http://10.111.45.34/app-images
+            - url: http://registry.example.com/app-images
               credentials:
                 secretRef:
                   name: registry-b-credentials
