@@ -56,5 +56,29 @@ spec:
                   name: my-registry-credentials
 ```
 
+Both `https://` and `http://` URL schemes are supported. When `http://` is used, containerd is configured to access the registry over plain HTTP (insecure registry). This is useful for internal registries without TLS:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          globalImageRegistryMirror:
+            url: http://10.111.45.34/library
+            credentials:
+              secretRef:
+                name: registry-a-credentials
+          imageRegistries:
+            - url: http://10.111.45.34/app-images
+              credentials:
+                secretRef:
+                  name: registry-b-credentials
+```
+
 Applying this configuration will result in new files and preKubeadmCommands
 on the `KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`.
