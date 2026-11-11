@@ -339,9 +339,7 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				{
 					Path:        "/etc/containerd/certs.d/myregistry.internal:5000/hosts.toml",
 					Permissions: "0600",
-					Content: `server = "http://myregistry.internal:5000"
-
-[host."http://myregistry.internal:5000"]
+					Content: `[host."http://myregistry.internal:5000"]
   capabilities = ["pull", "resolve"]
 `,
 				},
@@ -358,9 +356,7 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				{
 					Path:        "/etc/containerd/certs.d/10.111.45.34/hosts.toml",
 					Permissions: "0600",
-					Content: `server = "http://10.111.45.34"
-
-[host."http://10.111.45.34"]
+					Content: `[host."http://10.111.45.34"]
   capabilities = ["pull", "resolve"]
 `,
 				},
@@ -380,9 +376,7 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				{
 					Path:        "/etc/containerd/certs.d/10.111.45.34/hosts.toml",
 					Permissions: "0600",
-					Content: `server = "http://10.111.45.34"
-
-[host."http://10.111.45.34"]
+					Content: `[host."http://10.111.45.34"]
   capabilities = ["pull", "resolve"]
 `,
 				},
@@ -422,9 +416,7 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				{
 					Path:        "/etc/containerd/certs.d/myregistry.internal:5000/hosts.toml",
 					Permissions: "0600",
-					Content: `server = "http://myregistry.internal:5000"
-
-[host."http://myregistry.internal:5000"]
+					Content: `[host."http://myregistry.internal:5000"]
   capabilities = ["pull", "resolve"]
 `,
 				},
@@ -554,7 +546,7 @@ func Test_generateFiles_UserExample_NoCA(t *testing.T) {
 	}
 	require.NotNil(t, defaultHosts)
 	assert.Contains(t, defaultHosts.Content, `host."http://10.111.45.34/v2/library"`)
-	// Verify per-host hosts.toml contains http server
+	// Verify per-host hosts.toml contains http host
 	var perHost *cabpkv1.File
 	for _, f := range files {
 		if f.Path == "/etc/containerd/certs.d/10.111.45.34/hosts.toml" {
@@ -563,6 +555,5 @@ func Test_generateFiles_UserExample_NoCA(t *testing.T) {
 		}
 	}
 	require.NotNil(t, perHost)
-	assert.Contains(t, perHost.Content, `server = "http://10.111.45.34"`)
 	assert.Contains(t, perHost.Content, `[host."http://10.111.45.34"]`)
 }

@@ -155,9 +155,8 @@ func generateContainerdPerHostHostsFiles(
 	}
 
 	type perHostEntry struct {
-		host      string
-		serverURL string
-		hostURL   string
+		host    string
+		hostURL string
 	}
 
 	// Deduplicate by host.
@@ -177,15 +176,13 @@ func generateContainerdPerHostHostsFiles(
 			continue
 		}
 
-		serverURL := fmt.Sprintf("%s://%s", registryURL.Scheme, host)
-		// For per-registry http, the host entry is the same as server URL.
-		// The repository path is not part of the host configuration; enabling http for the host covers all paths.
-		hostURL := serverURL
+		// For per-registry http, the repository path is not part of the host
+		// configuration; enabling http for the host covers all paths.
+		hostURL := fmt.Sprintf("%s://%s", registryURL.Scheme, host)
 
 		hosts[host] = perHostEntry{
-			host:      host,
-			serverURL: serverURL,
-			hostURL:   hostURL,
+			host:    host,
+			hostURL: hostURL,
 		}
 	}
 
@@ -196,13 +193,11 @@ func generateContainerdPerHostHostsFiles(
 	var files []bootstrapv1.File
 	for _, entry := range hosts {
 		type templateInput struct {
-			ServerURL string
-			HostURL   string
+			HostURL string
 		}
 
 		input := templateInput{
-			ServerURL: entry.serverURL,
-			HostURL:   entry.hostURL,
+			HostURL: entry.hostURL,
 		}
 
 		var b bytes.Buffer
