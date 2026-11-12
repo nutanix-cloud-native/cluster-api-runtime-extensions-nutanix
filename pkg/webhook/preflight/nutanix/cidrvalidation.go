@@ -11,6 +11,7 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 
 	capxv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/github.com/nutanix-cloud-native/cluster-api-provider-nutanix/api/v1beta1"
+	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
@@ -19,11 +20,15 @@ const (
 	clusterNetworkServicesFieldPath = "$.spec.clusterNetwork.services.cidrBlocks"
 )
 
-// nutanixSubnet pairs a Nutanix subnet identifier with its JSONPath field and the PE cluster it belongs to.
+// nutanixSubnet pairs a Nutanix subnet identifier with its JSONPath field, the PE cluster it belongs
+// to, and the project (if any) its machine details are scoped to. The project is needed to resolve
+// a name-based PE cluster reference for project-scoped Prism Central users, matching NutanixSubnet
+// and NutanixFailureDomain.
 type nutanixSubnet struct {
-	id      capxv1.NutanixResourceIdentifier
-	field   string
-	cluster *capxv1.NutanixResourceIdentifier
+	id         capxv1.NutanixResourceIdentifier
+	field      string
+	cluster    *capxv1.NutanixResourceIdentifier
+	projectRef *capxv1.NutanixResourceIdentifier
 }
 
 // resolvedNodeSubnet holds a resolved IPv4 prefix for a node subnet along with its field path and display name.
@@ -39,6 +44,7 @@ type cidrValidationCheck struct {
 
 	resolveNodeSubnetsFunc func(
 		ctx context.Context,
+		cd *checkDependencies,
 		nclient client,
 		subnets []nutanixSubnet,
 	) ([]resolvedNodeSubnet, []string, error)
@@ -94,7 +100,7 @@ func (c *cidrValidationCheck) Run(ctx context.Context) preflight.CheckResult {
 		return result
 	}
 
-	resolvedSubnets, resolveWarnings, err := c.resolveNodeSubnetsFunc(ctx, c.cd.nclient, nutanixSubnets)
+	resolvedSubnets, resolveWarnings, err := c.resolveNodeSubnetsFunc(ctx, c.cd, c.cd.nclient, nutanixSubnets)
 	result.Warnings = append(result.Warnings, resolveWarnings...)
 	if err != nil {
 		result.Allowed = false
@@ -331,8 +337,8 @@ func prefixesOverlap(a, b netip.Prefix) bool {
 	return a.Overlaps(b)
 }
 
-// collectNutanixSubnets gathers subnet identifiers from control plane and worker machine deployment
-// configs, paired with their field paths and PE cluster references.
+// collectNutanixSubnets gathers subnet identifiers from control-plane and worker configurations,
+// paired with their field paths and direct Prism Element context.
 func collectNutanixSubnets(cd *checkDependencies) []nutanixSubnet {
 	if cd == nil {
 		return nil
@@ -343,7 +349,8 @@ func collectNutanixSubnets(cd *checkDependencies) []nutanixSubnet {
 	if cd.nutanixClusterConfigSpec != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane != nil &&
 		cd.nutanixClusterConfigSpec.ControlPlane.Nutanix != nil {
-		cpDetails := &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails
+		controlPlaneNutanix := cd.nutanixClusterConfigSpec.ControlPlane.Nutanix
+		cpDetails := &controlPlaneNutanix.MachineDetails
 		for i, subnetID := range cpDetails.Subnets {
 			subnets = append(subnets, nutanixSubnet{
 				id: subnetID,
@@ -351,7 +358,8 @@ func collectNutanixSubnets(cd *checkDependencies) []nutanixSubnet {
 					"$.spec.topology.variables[?@.name==\"clusterConfig\"].value.controlPlane.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
 					i,
 				),
-				cluster: cpDetails.Cluster,
+				cluster:    cpDetails.Cluster,
+				projectRef: cpDetails.Project,
 			})
 		}
 	}
@@ -361,15 +369,17 @@ func collectNutanixSubnets(cd *checkDependencies) []nutanixSubnet {
 			continue
 		}
 		workerDetails := &worker.Nutanix.MachineDetails
+		machineDetailsField := fmt.Sprintf(
+			"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix.machineDetails", //nolint:lll // Field is long.
+			mdName,
+			carenv1.WorkerConfigVariableName,
+		)
 		for i, subnetID := range workerDetails.Subnets {
 			subnets = append(subnets, nutanixSubnet{
-				id: subnetID,
-				field: fmt.Sprintf(
-					"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails.subnets[%d]", //nolint:lll // Field path is long.
-					mdName,
-					i,
-				),
-				cluster: workerDetails.Cluster,
+				id:         subnetID,
+				field:      fmt.Sprintf("%s.subnets[%d]", machineDetailsField, i),
+				cluster:    workerDetails.Cluster,
+				projectRef: workerDetails.Project,
 			})
 		}
 	}
@@ -389,10 +399,24 @@ func subnetIdentifierKey(id capxv1.NutanixResourceIdentifier) string {
 	}
 }
 
+// nutanixSubnetCacheKey returns the cache key used to avoid re-resolving the same subnet lookup. A
+// subnet UUID is globally unique in Prism Central, so it always resolves to the same subnet
+// regardless of PE cluster scope. A subnet name, however, can be reused across different PE
+// clusters, so name-based lookups also key on the PE cluster to avoid one cluster's resolved subnet
+// being incorrectly served for a different cluster's lookup of the same name.
+func nutanixSubnetCacheKey(subnet nutanixSubnet) string {
+	key := subnetIdentifierKey(subnet.id)
+	if subnet.id.IsName() && subnet.cluster != nil {
+		key += "|cluster:" + subnetIdentifierKey(*subnet.cluster)
+	}
+	return key
+}
+
 // resolveNodeSubnets fetches subnet details from Prism Central and extracts IPv4 prefixes,
 // with caching to avoid duplicate API calls.
 func resolveNodeSubnets(
 	ctx context.Context,
+	cd *checkDependencies,
 	nclient client,
 	subnets []nutanixSubnet,
 ) ([]resolvedNodeSubnet, []string, error) {
@@ -403,7 +427,7 @@ func resolveNodeSubnets(
 	prefixCache := map[string][]netip.Prefix{}
 
 	for _, subnet := range subnets {
-		cacheKey := subnetIdentifierKey(subnet.id)
+		cacheKey := nutanixSubnetCacheKey(subnet)
 
 		cached, ok := prefixCache[cacheKey]
 		if !ok {
@@ -419,13 +443,29 @@ func resolveNodeSubnets(
 				)
 			}
 
-			if subnet.id.IsName() && len(pcSubnets) > 1 {
-				pcSubnets = filterSubnetsByPECluster(ctx, nclient, pcSubnets, subnet.cluster)
+			if subnet.cluster != nil || (subnet.id.IsName() && len(pcSubnets) > 1) {
+				pcSubnets, err = filterSubnetsByPECluster(
+					ctx,
+					cd,
+					nclient,
+					pcSubnets,
+					subnet.cluster,
+					subnet.projectRef,
+				)
+				if err != nil {
+					return nil, warnings, err
+				}
 				if len(pcSubnets) != 1 {
+					if subnet.id.IsName() {
+						return nil, warnings, fmt.Errorf(
+							"found %d subnets matching name %q on the target Prism Element cluster; "+
+								"there must be exactly 1; use subnet UUID instead",
+							len(pcSubnets), *subnet.id.Name,
+						)
+					}
 					return nil, warnings, fmt.Errorf(
-						"found %d subnets matching name %q on the target Prism Element cluster; "+
-							"there must be exactly 1; use subnet UUID instead",
-						len(pcSubnets), *subnet.id.Name,
+						"subnet %q is not attached to the target Prism Element cluster",
+						subnetIdentifierForMessage(subnet.id),
 					)
 				}
 			}
@@ -471,37 +511,71 @@ func resolveNodeSubnets(
 // or to no PE (overlay subnets).
 func filterSubnetsByPECluster(
 	ctx context.Context,
+	cd *checkDependencies,
 	nclient client,
 	subnets []netv4.Subnet,
 	clusterID *capxv1.NutanixResourceIdentifier,
-) []netv4.Subnet {
+	projectRef *capxv1.NutanixResourceIdentifier,
+) ([]netv4.Subnet, error) {
 	if clusterID == nil {
-		return subnets
+		return subnets, nil
 	}
 
-	peUUID, err := resolvePEClusterUUID(ctx, nclient, clusterID)
-	if err != nil || peUUID == "" {
-		return subnets
+	peUUID, err := resolvePEClusterUUID(ctx, cd, nclient, clusterID, projectRef)
+	if err != nil {
+		return nil, err
 	}
-
-	filtered := make([]netv4.Subnet, 0)
-	for i := range subnets {
-		if subnets[i].ClusterReference == nil || *subnets[i].ClusterReference == peUUID {
-			filtered = append(filtered, subnets[i])
-		}
+	if peUUID == "" {
+		return nil, fmt.Errorf("resolved Prism Element cluster UUID is empty")
 	}
-	return filtered
+	return filterSubnetsForPrismElement(subnets, peUUID), nil
 }
 
-// resolvePEClusterUUID resolves a PE cluster identifier to its UUID, looking it up by name if necessary.
+// resolvePEClusterUUID resolves a PE cluster identifier to its UUID, looking it up by name if
+// necessary. A UUID reference is used directly, avoiding a cluster-management API call entirely. A
+// name reference is resolved via the project's resource groups when the user is project-scoped (the
+// global cluster-management APIs used by getClusters are typically forbidden for project-scoped
+// users), and via getClusters otherwise - matching NutanixSubnet and NutanixFailureDomain.
 func resolvePEClusterUUID(
 	ctx context.Context,
+	cd *checkDependencies,
 	nclient client,
 	clusterID *capxv1.NutanixResourceIdentifier,
+	projectRef *capxv1.NutanixResourceIdentifier,
 ) (string, error) {
 	if clusterID.IsUUID() {
 		return *clusterID.UUID, nil
 	}
+
+	var pcVersion string
+	if cd != nil {
+		pcVersion = cd.pcVersion
+	}
+	scopeCtx, err := resolveProjectScopeContext(ctx, nclient, pcVersion, projectRef)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to resolve project scope for PE cluster %q: %w",
+			subnetIdentifierForMessage(*clusterID), err,
+		)
+	}
+
+	if scopeCtx != nil && scopeCtx.scope == userScopeProjectScoped {
+		peUUID, err := resolvePrismElementUUIDInProject(ctx, nclient, scopeCtx.projectUUID, clusterID)
+		if err != nil {
+			return "", fmt.Errorf(
+				"failed to resolve PE cluster %q within the project scope: %w",
+				subnetIdentifierForMessage(*clusterID), err,
+			)
+		}
+		if peUUID == "" {
+			return "", fmt.Errorf(
+				"prism element cluster %q is not available in the selected project scope",
+				subnetIdentifierForMessage(*clusterID),
+			)
+		}
+		return peUUID, nil
+	}
+
 	clusters, err := getClusters(ctx, nclient, clusterID)
 	if err != nil {
 		return "", fmt.Errorf(

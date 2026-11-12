@@ -108,6 +108,10 @@ providers:
       targetName: clusterclass-nutanix-quick-start.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon.yaml"
       targetName: cluster-template-topology-cilium-helm-addon.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon-with-project.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon-with-project.yaml
+    - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-helm-addon-with-project-scoped-user.yaml"
+      targetName: cluster-template-topology-cilium-helm-addon-with-project-scoped-user.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-cilium-crs.yaml"
       targetName: cluster-template-topology-cilium-crs.yaml
     - sourcePath: "../../../examples/capi-quick-start/nutanix-cluster-with-failuredomains-cilium-helm-addon.yaml"
@@ -203,6 +207,12 @@ variables:
   NUTANIX_USER: ""
   # # Prism Central password
   NUTANIX_PASSWORD: ""
+  # # Prism Central API key (used when username/password are not provided)
+  NUTANIX_API_KEY: ""
+  # # Prism Central user restricted to NUTANIX_PROJECT_NAME, and its password. Required by the
+  # # project-scoped-user scenarios in the "Nutanix projects" suite; those specs skip when unset.
+  NUTANIX_PROJECT_SCOPE_USER: ""
+  NUTANIX_PROJECT_SCOPE_PASSWORD: ""
   # # Port of the CAPX Kubernetes cluster. Default: 6443
   # CONTROL_PLANE_ENDPOINT_PORT: 6443
   # # Name of the Prism Element cluster.
@@ -212,6 +222,15 @@ variables:
   NUTANIX_MACHINE_TEMPLATE_BASE_OS: "rocky-9.7"
   # # Name of the subnet to be assigned to the VMs.
   # NUTANIX_SUBNET_NAME: ""
+  # # Name of a non-default Prism Central project used by the project e2e scenarios.
+  # # NUTANIX_PROJECT_SCOPE_USER must be granted on this project.
+  NUTANIX_PROJECT_NAME: ""
+  # # Name of a Prism Central project NUTANIX_PROJECT_SCOPE_USER is *not* granted on, used by the
+  # # negative project-scope scenario.
+  NUTANIX_INACCESSIBLE_PROJECT_NAME: ""
+  # # Name of the storage container CSI provisions from for clusters in NUTANIX_PROJECT_NAME. A
+  # # project has its own container, so this differs from NUTANIX_STORAGE_CONTAINER_NAME.
+  NUTANIX_PROJECT_STORAGE_CONTAINER_NAME: ""
   # # Name of the storage container to CSI driver
   # NUTANIX_STORAGE_CONTAINER_NAME: ""
   # # Username/Password of dockerhub account to avoid download rate limiting

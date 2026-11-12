@@ -69,6 +69,7 @@ func TestControlPlaneEndpointCheck_EndpointAcceptsConnection(t *testing.T) {
 	require.Len(t, result.Causes, 1)
 	assert.Contains(t, result.Causes[0].Message, expectedAddr)
 	assert.Contains(t, result.Causes[0].Message, "established a TCP connection")
+	assert.Equal(t, "$.spec.controlPlaneEndpoint", result.Causes[0].Field)
 }
 
 func TestControlPlaneEndpointCheck_EndpointRefusesConnection(t *testing.T) {

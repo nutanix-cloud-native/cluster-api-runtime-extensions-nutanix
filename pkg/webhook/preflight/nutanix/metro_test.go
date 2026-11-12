@@ -168,10 +168,11 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// 1 per-metro check + 1 cluster PE-scale check + 1 project-policy
+			// check + 1 project-reference check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
 			// check + 1 vHA category name check + 1 control-plane VM image check.
-			expectedChecksCount: 8,
+			expectedChecksCount: 10,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -187,10 +188,11 @@ func TestNewMetroChecks(t *testing.T) {
 				FailureDomain: metroFailureDomainPrefix + metroName,
 			}},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// 1 per-metro check + 1 cluster PE-scale check + 1 project-policy
+			// check + 1 project-reference check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
 			// check + 1 vHA category name check + 1 control-plane VM image check.
-			expectedChecksCount: 8,
+			expectedChecksCount: 10,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -207,10 +209,11 @@ func TestNewMetroChecks(t *testing.T) {
 			}},
 			nclient: &clientWrapper{},
 			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
+			// + 1 project-policy check + 1 project-reference check
 			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
 			// + 1 metro-sites identity check + 1 vHA category name check
 			// + 1 control-plane VM image check.
-			expectedChecksCount: 10,
+			expectedChecksCount: 12,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -228,11 +231,12 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
+			// 1 per-metro check + 1 cluster PE-scale check + 1 project-policy
+			// check + 1 project-reference check + 1 PC-hosting check
 			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
 			// check + 1 vHA category name check. No VM image check: this case has
 			// no control-plane Nutanix spec and no worker machine details.
-			expectedChecksCount: 7,
+			expectedChecksCount: 9,
 		},
 	}
 
@@ -1100,6 +1104,182 @@ func TestClusterPrismElementScaleCheck(t *testing.T) {
 			result := check.Run(context.TODO())
 
 			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			if !tc.expectedAllowed {
+				require.NotEmpty(t, result.Causes)
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+			} else {
+				assert.Empty(t, result.Causes)
+			}
+		})
+	}
+}
+
+func TestMetroProjectPolicyCheck(t *testing.T) {
+	testCases := []struct {
+		name            string
+		policy          string
+		expectedAllowed bool
+	}{
+		{
+			name:            "default-only policy is allowed",
+			policy:          "default-only",
+			expectedAllowed: true,
+		},
+		{
+			name:            "unrestricted policy is rejected",
+			policy:          "unrestricted",
+			expectedAllowed: false,
+		},
+		{
+			name:            "single-project policy is rejected",
+			policy:          "single-project",
+			expectedAllowed: false,
+		},
+		{
+			name:            "missing policy is rejected",
+			policy:          "",
+			expectedAllowed: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			check := &metroProjectPolicyCheck{policy: tc.policy, field: field}
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			if !tc.expectedAllowed {
+				require.NotEmpty(t, result.Causes)
+				assert.Contains(t, result.Causes[0].Message, "Project Policy Violation")
+				assert.Equal(t, field, result.Causes[0].Field)
+			} else {
+				assert.Empty(t, result.Causes)
+			}
+		})
+	}
+}
+
+func TestMetroProjectReferenceCheck(t *testing.T) {
+	defaultProjectNClient := func() *clientWrapper {
+		return &clientWrapper{
+			ResolvePCDefaultProjectFunc: func(context.Context, string) (*PCDefaultProject, error) {
+				return &PCDefaultProject{UUID: "def-uuid", Name: "default"}, nil
+			},
+		}
+	}
+
+	// unresolvedDefaultProjectNClient simulates a project-scoped user that cannot read the default
+	// project; the check must fall back to the zero-UUID default rather than raise an internal error.
+	unresolvedDefaultProjectNClient := func() *clientWrapper {
+		return &clientWrapper{
+			ResolvePCDefaultProjectFunc: func(context.Context, string) (*PCDefaultProject, error) {
+				return nil, assert.AnError
+			},
+		}
+	}
+
+	testCases := []struct {
+		name                  string
+		refs                  []projectRefWithField
+		nclient               client
+		expectedAllowed       bool
+		expectedInternalError bool
+		expectedCauseMessage  string
+	}{
+		{
+			name:            "no project references is allowed",
+			refs:            nil,
+			nclient:         defaultProjectNClient(),
+			expectedAllowed: true,
+		},
+		{
+			name: "default project reference is allowed",
+			refs: []projectRefWithField{
+				{
+					id: &capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierUUID,
+						UUID: new("def-uuid"),
+					},
+					field: field,
+				},
+			},
+			nclient:         defaultProjectNClient(),
+			expectedAllowed: true,
+		},
+		{
+			name: "non-default project reference is rejected",
+			refs: []projectRefWithField{
+				{
+					id: &capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierUUID,
+						UUID: new("other"),
+					},
+					field: field,
+				},
+			},
+			nclient:              defaultProjectNClient(),
+			expectedAllowed:      false,
+			expectedCauseMessage: "non-default project reference is set",
+		},
+		{
+			name: "nil client is an internal error",
+			refs: []projectRefWithField{
+				{
+					id: &capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierUUID,
+						UUID: new("other"),
+					},
+					field: field,
+				},
+			},
+			nclient:               nil,
+			expectedAllowed:       false,
+			expectedInternalError: true,
+			expectedCauseMessage:  "client is not initialized",
+		},
+		{
+			name: "unresolved default project falls back to zero-UUID and rejects non-default ref",
+			refs: []projectRefWithField{
+				{
+					id: &capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierUUID,
+						UUID: new("other"),
+					},
+					field: field,
+				},
+			},
+			nclient:               unresolvedDefaultProjectNClient(),
+			expectedAllowed:       false,
+			expectedInternalError: false,
+			expectedCauseMessage:  "non-default project reference is set",
+		},
+		{
+			name: "unresolved default project falls back to zero-UUID and allows zero-UUID ref",
+			refs: []projectRefWithField{
+				{
+					id: &capxv1.NutanixResourceIdentifier{
+						Type: capxv1.NutanixIdentifierUUID,
+						UUID: new(zeroProjectUUID),
+					},
+					field: field,
+				},
+			},
+			nclient:         unresolvedDefaultProjectNClient(),
+			expectedAllowed: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			check := &metroProjectReferenceCheck{
+				refs:    tc.refs,
+				nclient: tc.nclient,
+				field:   field,
+			}
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			assert.Equal(t, tc.expectedInternalError, result.InternalError)
 			if !tc.expectedAllowed {
 				require.NotEmpty(t, result.Causes)
 				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
