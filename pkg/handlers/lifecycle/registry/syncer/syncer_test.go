@@ -5,6 +5,7 @@ package syncer
 
 import (
 	_ "embed"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,13 +20,22 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 )
 
-var (
-	//go:embed testdata/registry-syncer-template.yaml.tmpl
-	testRegistrySyncerTemplate string
+func testRegistrySyncerTemplate(t *testing.T) string {
+	t.Helper()
+	// We use the actual template from the chart so we can test the template values.
+	template, err := os.ReadFile(
+		"../../../../../charts/cluster-api-runtime-extensions-nutanix/addons/registry-syncer/values-template.yaml",
+	)
+	require.NoError(t, err)
+	return string(template)
+}
 
-	//go:embed testdata/registry-syncer-values.yaml
-	expectedRegistrySyncerValues string
-)
+func testRegistrySyncerValues(t *testing.T) string {
+	t.Helper()
+	values, err := os.ReadFile("testdata/registry-syncer-values.yaml")
+	require.NoError(t, err)
+	return string(values)
+}
 
 func Test_shouldApplyRegistrySyncer(t *testing.T) {
 	// Pre-create a cluster so it can be used in a test case that requires the same name and namespace.
@@ -104,18 +114,18 @@ func Test_shouldApplyRegistrySyncer(t *testing.T) {
 }
 
 func Test_templateValues(t *testing.T) {
-	result, err := templateValues(namedClusterWithRegistry(t, "test-cluster"), testRegistrySyncerTemplate)
+	result, err := templateValues(namedClusterWithRegistry(t, "test-cluster"), testRegistrySyncerTemplate(t))
 	require.NoError(t, err)
-	assert.Equal(t, expectedRegistrySyncerValues, result)
+	assert.Equal(t, testRegistrySyncerValues(t), result)
 }
 
 func Test_templateValues_KubernetesVersionTag(t *testing.T) {
 	cluster := namedClusterWithRegistry(t, "test-cluster")
 	cluster.Spec.Topology.Version = "v1.30.100-rc.0+build.1"
 
-	result, err := templateValues(cluster, testRegistrySyncerTemplate)
+	result, err := templateValues(cluster, testRegistrySyncerTemplate(t))
 	require.NoError(t, err)
-	assert.Equal(t, expectedRegistrySyncerValues, result)
+	assert.Equal(t, testRegistrySyncerValues(t), result)
 }
 
 func clusterWithRegistry(t *testing.T) *clusterv1beta2.Cluster {
