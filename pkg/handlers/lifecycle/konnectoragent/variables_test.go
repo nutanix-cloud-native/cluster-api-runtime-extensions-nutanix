@@ -361,16 +361,17 @@ enableKubeconfigUpload: {{ .EnableKubeconfigUpload }}
 		assert.Contains(t, result, "enableKubeconfigUpload: true")
 	})
 
-	t.Run("template with joinQuoted function", func(t *testing.T) {
-		// Use a different approach since 'list' function is not available in the template
+	t.Run("template with joinQuoted and slice functions", func(t *testing.T) {
+		// The joinQuoted and slice functions are supported by the Helm template engine,
+		// but not by the Go standard library template engine, so we need to use the
+		// custom functions defined in the templateValuesFunc function.
 		valuesTemplate := `
 		{{- $items := slice "item1" "item2" "item3" -}}
 		items: [{{ joinQuoted $items }}]`
 
 		result, err := templateFunc(cluster, valuesTemplate)
 		if err != nil {
-			// Skip this test if slice function is not available either
-			t.Skip("Advanced template functions not available in this context")
+			t.Fatalf("%s", err)
 		}
 
 		assert.Contains(t, result, `items: ["item1", "item2", "item3"]`)

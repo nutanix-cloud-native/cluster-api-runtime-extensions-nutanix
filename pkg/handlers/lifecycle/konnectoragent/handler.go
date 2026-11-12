@@ -312,15 +312,19 @@ func templateValuesFunc(
 	k8sAgentVar apivariables.NutanixKonnectorAgent,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
-		joinQuoted := template.FuncMap{
+		funcs := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
 					items[i] = fmt.Sprintf("%q", item)
 				}
 				return strings.Join(items, ", ")
 			},
+			"slice": func(items ...string) []string {
+				return items
+			},
 		}
-		helmValuesTemplate, err := template.New("").Funcs(joinQuoted).Parse(valuesTemplate)
+
+		helmValuesTemplate, err := template.New("").Funcs(funcs).Parse(valuesTemplate)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse Helm values template: %w", err)
 		}
