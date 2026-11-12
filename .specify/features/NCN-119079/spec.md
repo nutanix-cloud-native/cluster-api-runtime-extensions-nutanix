@@ -128,4 +128,3 @@ An operator upgrades CAREN on a management cluster with many running workload cl
 - Adding `insecureSkipVerify` or TLS configuration for https with self-signed without CA
 - Modifying kubelet credential provider logic for http (credentials handling already scheme-agnostic)
 - Lifecycle handlers or other registry-related addons
-

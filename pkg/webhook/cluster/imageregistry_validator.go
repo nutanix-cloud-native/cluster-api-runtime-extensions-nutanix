@@ -85,7 +85,8 @@ func validateImageRegistries(spec v1alpha1.GenericClusterConfigSpec) error {
 		scheme := u.Scheme
 		if existing, ok := hostSchemes[host]; ok && existing != scheme {
 			return fmt.Errorf(
-				"clusterConfig.imageRegistries[%d].url: conflicting scheme for host %q (schemes %q and %q are used for the same host)",
+				"clusterConfig.imageRegistries[%d].url: conflicting scheme for host %q"+
+					" (schemes %q and %q are used for the same host)",
 				idx,
 				host,
 				existing,
