@@ -56,5 +56,49 @@ spec:
                   name: my-registry-credentials
 ```
 
+Both `https://` and `http://` URL schemes are supported. When `http://` is used, containerd is configured to access the registry over plain HTTP (insecure registry). `credentials` are optional — non-authenticated `http://` registries work without `secretRef`. This is useful for internal registries without TLS:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          globalImageRegistryMirror:
+            url: http://registry.example.com/library
+          imageRegistries:
+            - url: http://registry.example.com/app-images
+```
+
+With authentication:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          globalImageRegistryMirror:
+            url: http://registry.example.com/library
+            credentials:
+              secretRef:
+                name: registry-a-credentials
+          imageRegistries:
+            - url: http://registry.example.com/app-images
+              credentials:
+                secretRef:
+                  name: registry-b-credentials
+```
+
+NOTE: The same `host:port` must use a consistent scheme across all `imageRegistries` entries. Configuring `http://myregistry.com` and `https://myregistry.com` for the same host will be rejected by admission webhook (`conflicting scheme for host`).
+
 Applying this configuration will result in new files and preKubeadmCommands
 on the `KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`.

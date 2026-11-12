@@ -263,3 +263,329 @@ func Test_generateContainerdRegistryConfigDropInFile(t *testing.T) {
 	file := generateContainerdRegistryConfigDropInFile()
 	assert.Equal(t, want, file)
 }
+
+func Test_generateContainerdDefaultHostsFile_HTTP(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		configs []containerdConfig
+		want    *cabpkv1.File
+	}{
+		{
+			name: "http mirror without CA",
+			configs: []containerdConfig{
+				{
+					URL:    "http://10.111.45.34/library",
+					Mirror: true,
+				},
+			},
+			want: &cabpkv1.File{
+				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
+				Permissions: "0600",
+				Content: `[host."http://10.111.45.34/v2/library"]
+  capabilities = ["pull", "resolve"]
+  # don't rely on Containerd to add the v2/ suffix
+  # there is a bug where it is added incorrectly for mirrors with a path
+  override_path = true
+`,
+			},
+		},
+		{
+			name: "http mirror with port",
+			configs: []containerdConfig{
+				{
+					URL:    "http://my-registry.internal:5000",
+					Mirror: true,
+				},
+			},
+			want: &cabpkv1.File{
+				Path:        "/etc/containerd/certs.d/_default/hosts.toml",
+				Permissions: "0600",
+				Content: `[host."http://my-registry.internal:5000/v2"]
+  capabilities = ["pull", "resolve"]
+  # don't rely on Containerd to add the v2/ suffix
+  # there is a bug where it is added incorrectly for mirrors with a path
+  override_path = true
+`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			file, err := generateContainerdDefaultHostsFile(tt.configs)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, file)
+		})
+	}
+}
+
+func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		configs []containerdConfig
+		want    []cabpkv1.File
+		wantErr error
+	}{
+		{
+			name: "http image registry without CA",
+			configs: []containerdConfig{
+				{
+					URL: "http://myregistry.internal:5000",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/myregistry.internal:5000/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://myregistry.internal:5000"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
+		{
+			name: "http image registry with path is deduplicated to host",
+			configs: []containerdConfig{
+				{
+					URL: "http://10.111.45.34/app-images",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/10.111.45.34/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://10.111.45.34"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
+		{
+			name: "two http image registries same host different paths deduplicated",
+			configs: []containerdConfig{
+				{
+					URL: "http://10.111.45.34/library",
+				},
+				{
+					URL: "http://10.111.45.34/app-images",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/10.111.45.34/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://10.111.45.34"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
+		{
+			name: "https image registry does not generate per-host hosts.toml",
+			configs: []containerdConfig{
+				{
+					URL: "https://myregistry.com",
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "http mirror does not generate per-host hosts.toml",
+			configs: []containerdConfig{
+				{
+					URL:    "http://myregistry.com",
+					Mirror: true,
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "mixed https mirror and http registry",
+			configs: []containerdConfig{
+				{
+					URL:    "https://mymirror.com",
+					Mirror: true,
+				},
+				{
+					URL: "http://myregistry.internal:5000",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/myregistry.internal:5000/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://myregistry.internal:5000"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
+		{
+			name: "same host different schemes should error",
+			configs: []containerdConfig{
+				{
+					URL: "http://myregistry.com",
+				},
+				{
+					URL: "https://myregistry.com",
+				},
+			},
+			wantErr: ErrConflictingRegistrySchemes,
+		},
+		{
+			name: "same host same http scheme with different paths should not error",
+			configs: []containerdConfig{
+				{
+					URL: "http://myregistry.com/library",
+				},
+				{
+					URL: "http://myregistry.com/app-images",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/myregistry.com/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://myregistry.com"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			files, err := generateContainerdPerHostHostsFiles(tt.configs)
+			require.ErrorIs(t, err, tt.wantErr)
+			// Sort for deterministic comparison if needed, but single file cases are ordered.
+			assert.Equal(t, tt.want, files)
+		})
+	}
+}
+
+func Test_needContainerdConfiguration_HTTP(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		configs []containerdConfig
+		want    bool
+	}{
+		{
+			name: "http image registry without CA should need configuration",
+			configs: []containerdConfig{
+				{URL: "http://myregistry.internal:5000"},
+			},
+			want: true,
+		},
+		{
+			name: "https image registry without CA should not need configuration",
+			configs: []containerdConfig{
+				{URL: "https://myregistry.com"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := needContainerdConfiguration(tt.configs)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_generateFiles_HTTPExample(t *testing.T) {
+	t.Parallel()
+	configs := []containerdConfig{
+		{
+			URL:          "http://10.111.45.34/library",
+			Mirror:       true,
+			CASecretName: "registry-a-credentials",
+			CACert:       "cert-a",
+		},
+		{
+			URL:          "http://10.111.45.34/app-images",
+			CASecretName: "registry-b-credentials",
+			CACert:       "cert-b",
+		},
+	}
+	_, err := generateFiles(configs)
+	require.ErrorIs(t, err, ErrConflictingRegistryCACertificates)
+}
+
+func Test_generateFiles_HTTP_NoCAConflict(t *testing.T) {
+	t.Parallel()
+	configs := []containerdConfig{
+		{
+			URL:          "http://10.111.45.34/library",
+			Mirror:       true,
+			CASecretName: "registry-a-credentials",
+			CACert:       "same-cert",
+		},
+		{
+			URL:          "http://10.111.45.34/app-images",
+			CASecretName: "registry-b-credentials",
+			CACert:       "same-cert",
+		},
+	}
+	files, err := generateFiles(configs)
+	require.NoError(t, err)
+	// Expect 4 files: _default/hosts.toml, per-host hosts.toml, ca.crt, registry-config.toml
+	// But CA deduplicates to single ca.crt file for same host with same cert.
+	assert.Len(t, files, 4)
+	var paths []string
+	for _, f := range files {
+		paths = append(paths, f.Path)
+	}
+	assert.Contains(t, paths, "/etc/containerd/certs.d/_default/hosts.toml")
+	assert.Contains(t, paths, "/etc/containerd/certs.d/10.111.45.34/hosts.toml")
+	assert.Contains(t, paths, "/etc/containerd/certs.d/10.111.45.34/ca.crt")
+	assert.Contains(t, paths, "/etc/caren/containerd/patches/registry-config.toml")
+}
+
+func Test_generateFiles_UserExample_NoCA(t *testing.T) {
+	t.Parallel()
+	// User example: global mirror http with path, and imageRegistry http with different path, no CA, different credentials
+	configs := []containerdConfig{
+		{
+			URL:    "http://10.111.45.34/library",
+			Mirror: true,
+		},
+		{
+			URL: "http://10.111.45.34/app-images",
+		},
+	}
+	files, err := generateFiles(configs)
+	require.NoError(t, err)
+	assert.Len(t, files, 3)
+	var paths []string
+	for _, f := range files {
+		paths = append(paths, f.Path)
+	}
+	assert.Contains(t, paths, "/etc/containerd/certs.d/_default/hosts.toml")
+	assert.Contains(t, paths, "/etc/containerd/certs.d/10.111.45.34/hosts.toml")
+	assert.Contains(t, paths, "/etc/caren/containerd/patches/registry-config.toml")
+	// Verify _default/hosts.toml contains http mirror
+	var defaultHosts *cabpkv1.File
+	for _, f := range files {
+		if f.Path == "/etc/containerd/certs.d/_default/hosts.toml" {
+			defaultHosts = &f
+			break
+		}
+	}
+	require.NotNil(t, defaultHosts)
+	assert.Contains(t, defaultHosts.Content, `host."http://10.111.45.34/v2/library"`)
+	// Verify per-host hosts.toml contains http host
+	var perHost *cabpkv1.File
+	for _, f := range files {
+		if f.Path == "/etc/containerd/certs.d/10.111.45.34/hosts.toml" {
+			perHost = &f
+			break
+		}
+	}
+	require.NotNil(t, perHost)
+	assert.Contains(t, perHost.Content, `[host."http://10.111.45.34"]`)
+}
