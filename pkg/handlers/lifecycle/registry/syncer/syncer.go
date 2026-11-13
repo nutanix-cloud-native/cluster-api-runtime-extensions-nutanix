@@ -216,7 +216,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	type input struct {
-		CusterName string
+		ClusterName string
 
 		KubernetesVersion string
 
@@ -231,7 +231,7 @@ func templateValues(cluster *clusterv1.Cluster, text string) (string, error) {
 	}
 
 	templateInput := input{
-		CusterName:        cluster.Name,
+		ClusterName:       cluster.Name,
 		KubernetesVersion: "v" + kubernetesVersion.FinalizeVersion(),
 		// FIXME: This assumes that the source and destination registry names are the same.
 		// This is true now with a single registry addon provider, but may not be true in the future.

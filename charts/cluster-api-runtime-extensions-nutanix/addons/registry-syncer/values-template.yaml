@@ -49,7 +49,7 @@ extraVolumes:
       items:
         - key: value
           path: admin.conf
-      secretName: {{ .CusterName }}-kubeconfig
+      secretName: {{ .ClusterName }}-kubeconfig
   - name: ca-cert
     secret:
       secretName: {{ .RegistryCASecretName }}
