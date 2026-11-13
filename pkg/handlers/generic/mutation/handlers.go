@@ -30,6 +30,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/kubernetesimagerepository"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/noderegistration"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/podsecurityadmission"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/sortextraargs"
 )
 
@@ -54,6 +55,7 @@ func MetaMutators(mgr manager.Manager) []mutation.MetaMutator {
 		podsecurityadmission.NewPatch(),
 		ntp.NewPatch(),
 		authentication.NewPatch(),
+		serviceaccountissuer.NewPatch(),
 
 		// Some patches may have changed containerd configuration.
 		// We write the configuration changes to disk, and must run a command

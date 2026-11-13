@@ -426,6 +426,44 @@ spec:
                         Violations trigger a user-facing warning.
                       type: string
                   type: object
+                serviceAccountIssuer:
+                  description: |-
+                    ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
+                    When unset, no issuer flags are set (API server uses kubeadm defaults).
+                  properties:
+                    audiences:
+                      description: |-
+                        Audiences is an optional list of audiences tokens are bound to.
+                        When set, rendered as comma-joined --api-audiences in declared order.
+                        When absent, --api-audiences is not set (API server defaults to issuer URL).
+                      items:
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                      maxItems: 50
+                      type: array
+                      uniqueItems: true
+                    issuer:
+                      description: |-
+                        Issuer is the identifier asserted in ServiceAccount JWT iss claims.
+                        Must be an https:// URL. Triggers --service-account-issuer.
+                      format: uri
+                      maxLength: 2048
+                      minLength: 1
+                      pattern: ^https://
+                      type: string
+                    jwksURI:
+                      description: |-
+                        JWKSURI overrides the JWKS URI advertised in the OIDC discovery document.
+                        When set, must be an https:// URL. Triggers --service-account-jwks-uri.
+                      format: uri
+                      maxLength: 2048
+                      minLength: 1
+                      pattern: ^https://
+                      type: string
+                  required:
+                    - issuer
+                  type: object
               type: object
           type: object
       served: true
