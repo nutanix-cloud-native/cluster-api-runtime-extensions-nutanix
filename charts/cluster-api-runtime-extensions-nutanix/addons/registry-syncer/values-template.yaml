@@ -6,8 +6,8 @@ initContainers:
     image: ghcr.io/nutanix-cloud-native/kubectl-betterwait:{{ .KubernetesVersion }}
     args:
       - --for=condition=Ready
-      - --timeout=-1s # a negative number here means wait forever
-      - --interval=5s # poll every 5 seconds to the resources to be created
+      - --timeout=-1s  # a negative number here means wait forever
+      - --interval=5s  # poll every 5 seconds to the resources to be created
       - --namespace={{ .DestinationRegistryHeadlessServiceNamespace }}
       - --kubeconfig=/kubeconfig/admin.conf
       # Ideally we would wait for the Service to be ready, but Kubernetes does not have a condition for that.

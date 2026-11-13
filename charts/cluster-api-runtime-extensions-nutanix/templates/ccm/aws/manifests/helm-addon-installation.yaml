@@ -12,8 +12,8 @@ data:
   # This simplifies the templating required in the values-template.yaml.
   values.yaml: |-
     {{ "{{" }}
-    {{- tpl (.Files.Get "addons/ccm/aws/map-template.yaml") . | nindent 4 -}}
-    {{ "}}" }}
-    {{- .Files.Get "addons/ccm/aws/image-selection.yaml" | nindent 4 -}}
-    {{- .Files.Get "addons/ccm/aws/values-template.yaml" | nindent 4 -}}
+    {{- tpl (.Files.Get "addons/ccm/aws/map-template.yaml") . | include "chart.indentValuesTemplate" -}}
+    {{ "-}}" }}
+    {{- .Files.Get "addons/ccm/aws/image-selection.yaml" | include "chart.indentValuesTemplate" -}}
+    {{- .Files.Get "addons/ccm/aws/values-template.yaml" | include "chart.indentValuesTemplate" -}}
 {{- end -}}

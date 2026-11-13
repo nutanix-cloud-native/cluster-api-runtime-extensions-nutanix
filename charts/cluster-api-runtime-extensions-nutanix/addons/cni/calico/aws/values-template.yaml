@@ -3,7 +3,7 @@ installation:
     type: Calico
   calicoNetwork:
     bgp: Enabled
-    ipPools: {{ range $cidr := .Cluster.spec.clusterNetwork.pods.cidrBlocks }}
+    ipPools:{{ range $cidr := .Cluster.spec.clusterNetwork.pods.cidrBlocks }}
     - cidr: "{{ $cidr }}"
       encapsulation: None
       natOutgoing: Enabled

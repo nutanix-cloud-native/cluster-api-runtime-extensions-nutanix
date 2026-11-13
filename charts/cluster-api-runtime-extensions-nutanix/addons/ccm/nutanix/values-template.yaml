@@ -5,7 +5,7 @@ prismCentralInsecure: {{ .PrismCentralInsecure }}
 prismCentralAdditionalTrustBundle: "{{ . }}"
 {{- end }}
 {{- with .IPsToIgnore }}
-ignoredNodeIPs: [ {{ joinQuoted . }} ]
+ignoredNodeIPs: [{{ joinQuoted . }}]
 {{- end }}
 
 # The Secret containing the credentials will be created by the handler.

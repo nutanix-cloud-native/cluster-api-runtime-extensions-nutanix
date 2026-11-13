@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.registry.cncfDistribution.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/registry/cncf-distribution/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/registry/cncf-distribution/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}
