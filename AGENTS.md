@@ -151,6 +151,9 @@ commit message that lands on `main`.
   `style`, `test`. Keep it under 72 characters.
 - Fill in `.github/pull_request_template.md`: the problem, the issue it fixes,
   and how it was tested.
+- For stacked PRs, devbox provides `gh-stack`. Where the `gh-stack` skill in
+  `.agents/skills/` says `gh stack <cmd>`, run `devbox run -- gh-stack <cmd>`
+  instead, and skip its `gh extension install` step.
 - Before opening a PR, run `make test`, `make lint`, and `make pre-commit`, and
   confirm `git status` shows only the changes you intended plus regenerated
   files from the table above.
