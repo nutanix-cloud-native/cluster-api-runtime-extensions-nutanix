@@ -351,39 +351,38 @@ Every task ends with: build, `make test.root GOTEST_RUN=TestGolden`, and `git st
 
 #### T4.1 — Move live code to `v7`
 
-- [ ] `git mv pkg/handlers/<p>/mutation pkg/handlers/v7/<p>/mutation` for each provider.
-- [ ] Rewrite import paths (`rg -l` plus `sed` on `pkg/handlers/<p>/mutation` to `pkg/handlers/v7/<p>/mutation`), then `devbox run -- make fmt`.
-- [ ] Verify golden files unchanged.
+- [x] `git mv pkg/handlers/<p>/mutation pkg/handlers/v7/<p>/mutation` for each provider.
+- [x] Rewrite import paths (`rg -l` plus `sed` on `pkg/handlers/<p>/mutation` to `pkg/handlers/v7/<p>/mutation`), then `devbox run -- make fmt`.
+- [x] Verify golden files unchanged.
 
 #### T4.2 — Per-version registration
 
 **Files:** Create `pkg/handlers/v7/handlers.go`, `pkg/handlers/v6/handlers.go`, `pkg/handlers/versions.go`; modify `cmd/main.go`; delete `pkg/handlers/<p>/handlers.go`.
 
-- [ ] `vN.AllHandlers(mgr)` returns that version's patch handlers and, for now, the unversioned discovery handlers are registered once from `versions.go`.
-- [ ] `versions.go` contains a `// new-version:imports` and `// new-version:entries` marker for the script.
-- [ ] Switch the golden matrix to `handlers.AllHandlers(mgr)`.
-- [ ] Verify golden files unchanged and the set of registered names is identical (golden directory test).
+- [x] `vN.AllHandlers(mgr)` returns that version's patch handlers and, for now, the unversioned discovery handlers are registered once from `versions.go`.
+- [x] `versions.go` contains a `// new-version:entries` marker for the script. An import-block marker does not survive `gci`, so the script adds the import after the existing `pkg/handlers/vN"` line.
+- [x] Switch the golden matrix to `handlers.AllHandlers(mgr)`.
+- [x] Verify golden files unchanged and the set of registered names is identical (golden directory test).
 
 #### T4.3 — Full `v6` copy
 
-- [ ] Save `pkg/handlers/v6/generic/mutation/generic/imageregistries/credentials` aside; delete `pkg/handlers/v6`.
-- [ ] `cp -R pkg/handlers/v7 pkg/handlers/v6`; rewrite imports `/v7/` to `/v6/` and names `v7configpatch` to `v6configpatch` inside `v6`.
-- [ ] Restore the saved `credentials` package over the copy.
-- [ ] Verify golden files unchanged for both versions. This proves the copy reproduces `main`'s `v6` output exactly.
+- [x] Remove `pkg/handlers/v6` (`git rm`), keeping its `handlers.go` and `generic/mutation/generic/imageregistries/credentials` in `HEAD`.
+- [x] `cp -R pkg/handlers/v7 pkg/handlers/v6`; rewrite imports `/v7/` to `/v6/` and names `v7configpatch` to `v6configpatch` inside `v6`.
+- [x] Restore `handlers.go` and the `credentials` package from `HEAD` with `git checkout HEAD --`.
+- [x] Verify golden files unchanged for both versions. This proves the copy reproduces `main`'s `v6` output exactly.
 
 #### T4.4 — Expose mutator lists and the coverage test (FR-004)
 
-**Files:** Modify `pkg/handlers/v{6,7}/<p>/mutation/metapatch_handler.go`; create `pkg/handlers/golden/coverage_test.go`; add corpus inputs.
+Done in PR 1 (T1.7): the meta handler exposes `Mutators()`, so no per-provider accessors are needed, and `TestGoldenMutatorCoverage` lives in `golden_test.go`.
 
-- [ ] Each provider exposes `ClusterMutators(mgr)` and `WorkerMutators(mgr)`; `MetaPatchHandler` and `MetaWorkerPatchHandler` use them. Verify golden files unchanged.
-- [ ] Write the coverage test: for each version, provider, and mutator, wrap the mutator alone in `NewMetaGeneratePatchesHandler` and assert non-empty patches for at least one corpus input; name failures by `%T`.
-- [ ] Add corpus inputs (new files, new golden files) until it passes.
-- [ ] Verify: deleting the NTP input makes the coverage test fail.
+- [x] Write the coverage test: for each version, provider, and mutator, wrap the mutator alone in `NewMetaGeneratePatchesHandler` and assert non-empty patches for at least one corpus input; name failures by `%T`.
+- [x] Add corpus inputs (new files, new golden files) until it passes.
+- [x] Verify: removing every `ntp` block from the corpus makes the coverage test fail for `*ntp.ntpPatchHandler` in every `v6` and `v7` cluster handler.
 
 #### T4.5 — Remove the dead hardcoded version
 
-- [ ] In `hack/tools/clusterclass-v1beta2/main.go`, delete `deriveGeneratePatchesExtension` if no template under `hack/examples/overlays/clusterclasses/` lacks `generatePatchesExtension`; otherwise leave it for `new-version.sh`.
-- [ ] Verify `devbox run -- make examples.sync` produces no diff.
+- [x] In `hack/tools/clusterclass-v1beta2/main.go`, delete `deriveGeneratePatchesExtension`. It was not dead: the AWS, EKS, and Nutanix bases are `v1beta1` ClusterClasses, whose field is `generateExtension`, so the overlays' `generatePatchesExtension` was dropped on conversion and re-derived with a hardcoded `v7`. Those three overlays now use `generateExtension`, which CAPI conversion maps to `generatePatchesExtension`.
+- [x] Verify `devbox run -- make examples.sync` produces no diff.
 
 ---
 
@@ -445,7 +444,7 @@ Title: `build: [NCN-107121] Add make target to cut a handler version`
 **Files:** Create `hack/handlers/new-version.sh`; add `handlers.new-version` to `make/handlers.mk`.
 
 - [ ] Refuse when `open-version.sh` prints a version: exit 1 naming it. Verify on this branch (`v7` is open).
-- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import and entry at the `versions.go` markers; add a depguard rule; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
+- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
 - [ ] Verify the success path in a scratch clone: `git clone --local . /tmp/caren-newversion`, tag `HEAD` there as a fake release, run the target, then `make test` and `make lint` pass with no hand edits and `git status` shows only `pkg/handlers/v8/`, registration, lint config, templates, examples, and new golden files.
 
 ---

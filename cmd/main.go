@@ -39,12 +39,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/failuredomainrollout"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/cluster"
@@ -100,26 +96,6 @@ func main() {
 
 	lifecycleHandlers := lifecycle.New(globalOptions)
 
-	// awsMetaHandlers combines all AWS patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	awsMetaHandlers := aws.New(globalOptions)
-
-	// dockerMetaHandlers combines all Docker patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	dockerMetaHandlers := docker.New(globalOptions)
-
-	// nutanixMetaHandlers combines all Nutanix patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	nutanixMetaHandlers := nutanix.New(globalOptions)
-
-	// eksMetaHandlers combines all EKS patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	eksMetaHandlers := eks.New(globalOptions)
-
-	// genericMetaHandlers combines all generic patch and variable handlers under a single handler.
-	// It allows to specify configuration under a single variable.
-	genericMetaHandlers := generic.New()
-
 	namespacesyncOptions := namespacesync.Options{}
 	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
 	failureDomainRolloutOptions := failuredomainrollout.Options{}
@@ -130,9 +106,6 @@ func main() {
 	globalOptions.AddFlags(pflag.CommandLine)
 	runtimeWebhookServerOpts.AddFlags(pflag.CommandLine)
 	lifecycleHandlers.AddFlags(pflag.CommandLine)
-	awsMetaHandlers.AddFlags(pflag.CommandLine)
-	dockerMetaHandlers.AddFlags(pflag.CommandLine)
-	nutanixMetaHandlers.AddFlags(pflag.CommandLine)
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
 	enforceClusterAutoscalerLimitsOptions.AddFlags(pflag.CommandLine)
 	failureDomainRolloutOptions.AddFlags(pflag.CommandLine)
@@ -172,11 +145,7 @@ func main() {
 
 	allHandlers := slices.Concat(
 		lifecycleHandlers.AllHandlers(mgr),
-		awsMetaHandlers.AllHandlers(mgr),
-		dockerMetaHandlers.AllHandlers(mgr),
-		nutanixMetaHandlers.AllHandlers(mgr),
-		eksMetaHandlers.AllHandlers(mgr),
-		genericMetaHandlers.AllHandlers(mgr),
+		handlers.AllHandlers(mgr),
 	)
 
 	if err := server.AddHandlers(mgr.GetWebhookServer(), allHandlers...); err != nil {
