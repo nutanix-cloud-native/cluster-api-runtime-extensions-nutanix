@@ -444,9 +444,9 @@ Title: `build: [NCN-107121] Add make target to cut a handler version`
 
 **Files:** Create `hack/handlers/new-version.sh`; add `handlers.new-version` to `make/handlers.mk`.
 
-- [ ] Refuse when `open-version.sh` prints a version: exit 1 naming it. Verify on this branch (`v7` is open).
-- [ ] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule at the `.golangci.yml` marker; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
-- [ ] Verify the success path in a scratch clone: `git clone --local . /tmp/caren-newversion`, tag `HEAD` there as a fake release, run the target, then `make test` and `make lint` pass with no hand edits and `git status` shows only `pkg/handlers/v8/`, registration, lint config, templates, examples, and new golden files.
+- [x] Refuse when `open-version.sh` prints a version: exit 1 naming it. Verify on this branch (`v7` is open). `new-version.sh` runs `git describe` first so that a missing release tag fails instead of reading as "released".
+- [x] Steps: `cp -R vN v(N+1)`; rewrite `/vN/` imports and `vNconfigpatch`, `ConfigVarsvN` names; replace `variables/crds` with current `api/v1alpha1/crds`; add an import after the `pkg/handlers/vN"` import and an entry at the `versions.go` marker; add a depguard rule at the `.golangci.yml` marker; replace `vN` with `v(N+1)` names in `hack/examples/overlays/clusterclasses/*/kustomization.yaml.tmpl`; run `make examples.sync` and `make handlers.golden-update`.
+- [x] Verify the success path in a scratch clone: `git clone --local` into an ignored `.worktrees/` directory, tag `HEAD` there as a fake release (`git tag -m`, since `tag.gpgsign` makes tags annotated), run the target, then `make test` and `make lint` pass with no hand edits and `git status` shows only `pkg/handlers/v8/`, registration, lint config, templates, default ClusterClasses, and 19 new golden directories. The `v8` golden files equal the `v7` ones and the freeze check passes.
 
 ---
 
