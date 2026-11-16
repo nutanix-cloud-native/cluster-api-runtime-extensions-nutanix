@@ -22,6 +22,7 @@ import (
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -132,7 +133,9 @@ func (p *provider) Apply(
 		),
 		p.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
+	).WithValueTemplater(
+		templateValuesFunc(clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer),
+	)
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
@@ -141,8 +144,23 @@ func (p *provider) Apply(
 	return nil
 }
 
+// autoIPAMConfig returns the automatic Service address configuration when the
+// cluster uses it. MetalLB is the only provider that advertises the pools the
+// CCM creates, so any other provider leaves the Service controller off.
+func autoIPAMConfig(
+	slb *v1alpha1.ServiceLoadBalancer,
+) *v1alpha1.ServiceLoadBalancerAutoIPAM {
+	if slb == nil ||
+		slb.Provider != v1alpha1.ServiceLoadBalancerProviderMetalLB ||
+		slb.Configuration == nil {
+		return nil
+	}
+	return slb.Configuration.AutoIPAM
+}
+
 func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
+	serviceLoadBalancer *v1alpha1.ServiceLoadBalancer,
 ) func(*clusterv1.Cluster, string) (string, error) {
 	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
@@ -166,6 +184,14 @@ func templateValuesFunc(
 			PrismCentralAdditionalTrustBundle string
 			IPsToIgnore                       []string
 			ControlPlaneEndpoint              v1alpha1.ControlPlaneEndpointSpec
+
+			// ServiceLoadBalancerAutoIPAM is nil unless the cluster reserves
+			// Service addresses automatically. It is the only switch for the CCM
+			// LoadBalancer strategy, so the two cannot disagree.
+			ServiceLoadBalancerAutoIPAM *v1alpha1.ServiceLoadBalancerAutoIPAM
+			// MetalLBNamespace is where the CCM creates its per-Service pools. It
+			// must be the namespace CAREN installs MetalLB into.
+			MetalLBNamespace string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -180,6 +206,8 @@ func templateValuesFunc(
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
 			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
 			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
+			ServiceLoadBalancerAutoIPAM:       autoIPAMConfig(serviceLoadBalancer),
+			MetalLBNamespace:                  metallb.DefaultHelmReleaseNamespace,
 		}
 
 		var b bytes.Buffer

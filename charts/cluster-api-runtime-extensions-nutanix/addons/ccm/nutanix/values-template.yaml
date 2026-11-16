@@ -8,6 +8,25 @@ prismCentralAdditionalTrustBundle: "{{ . }}"
 ignoredNodeIPs: [ {{ joinQuoted . }} ]
 {{- end }}
 
+# The Service LoadBalancer controller runs only in automatic mode, where the CCM
+# reserves each Service address on Prism Central. In static mode MetalLB owns
+# allocation, status and advertisement, so the controller stays off: running it
+# as a no-op would still add the load-balancer-cleanup finalizer to every
+# LoadBalancer Service, which existing clusters do not have today.
+loadBalancer:
+{{- with .ServiceLoadBalancerAutoIPAM }}
+  enabled: true
+  defaultStrategy: AutoIPAMMetalLB
+  autoIPAMMetalLB:
+    subnet: "{{ .Subnet }}"
+{{- with .Cluster }}
+    cluster: "{{ . }}"
+{{- end }}
+    metalLBNamespace: "{{ $.MetalLBNamespace }}"
+{{- else }}
+  enabled: false
+{{- end }}
+
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
