@@ -49,6 +49,17 @@ func (c *controlPlaneEndpointCheck) Run(ctx context.Context) preflight.CheckResu
 		}
 	}
 
+	if c.cluster.Spec.ControlPlaneEndpoint.Host == "" {
+		// The address has not been chosen yet, which is the case while it is
+		// being reserved from a subnet. There is nothing to dial, and dialing
+		// anyway would join an empty host to the port and probe localhost, where
+		// the management cluster's own API server usually answers on 6443 and
+		// would read as "the endpoint is in use by another cluster".
+		return preflight.CheckResult{
+			Allowed: true,
+		}
+	}
+
 	// If the control plane reference is not defined, then no control plane
 	// nodes have been created.
 	//

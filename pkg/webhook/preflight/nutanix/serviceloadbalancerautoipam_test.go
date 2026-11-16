@@ -135,9 +135,12 @@ func TestAutoIPAMCheckSubnetName(t *testing.T) {
 			// Prism Central rejects a filter holding non-ASCII characters, so the
 			// name must still resolve from a full listing. Without this the check
 			// would block a cluster the CCM handles fine.
-			name:           "a non-ascii name resolves without the server filter",
-			subnetName:     "aßa",
-			subnets:        []netv4.Subnet{namedSubnet("aẞa", "s-other", peAUUID), namedSubnet("aßa", "s-sharp", peAUUID)},
+			name:       "a non-ascii name resolves without the server filter",
+			subnetName: "aßa",
+			subnets: []netv4.Subnet{
+				namedSubnet("aẞa", "s-other", peAUUID),
+				namedSubnet("aßa", "s-sharp", peAUUID),
+			},
 			wantProbed:     "s-sharp",
 			wantAllowed:    true,
 			wantUnfiltered: true,

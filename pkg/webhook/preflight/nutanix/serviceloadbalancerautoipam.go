@@ -6,6 +6,7 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -90,7 +91,8 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Subnet %q is not IP address managed, so the Nutanix CCM cannot reserve addresses from it. Use an IPAM-managed subnet, or configure static addressRanges instead. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet, err,
+					c.autoIPAM.Subnet,
+					err,
 				),
 				Field: autoIPAMField + ".subnet",
 			})
@@ -98,7 +100,8 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Subnet %q does not exist on this Prism Central, or these credentials cannot see it. Review the Cluster. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet, err,
+					c.autoIPAM.Subnet,
+					err,
 				),
 				Field: autoIPAMField + ".subnet",
 			})
@@ -106,7 +109,8 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"The Prism Central credentials are not permitted to read IP reservations on subnet %q, so the Nutanix CCM cannot reserve addresses from it. Grant the role the IP reservation privileges on this subnet. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet, err,
+					c.autoIPAM.Subnet,
+					err,
 				),
 				Field: autoIPAMField + ".subnet",
 			})
@@ -115,7 +119,8 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Failed to read IP reservations on subnet %q: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet, err,
+					c.autoIPAM.Subnet,
+					err,
 				),
 				Field: autoIPAMField + ".subnet",
 			})
@@ -271,12 +276,7 @@ func subnetMatchesCluster(subnet *netv4.Subnet, clusterExtID string) bool {
 	if subnet.ClusterReference != nil && *subnet.ClusterReference == clusterExtID {
 		return true
 	}
-	for _, ref := range subnet.ClusterReferenceList {
-		if ref == clusterExtID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(subnet.ClusterReferenceList, clusterExtID)
 }
 
 // isUnmanagedSubnetError reports whether Prism refused because the subnet has

@@ -237,7 +237,13 @@ func templateValuesFunc(
 }
 
 func ipsToIgnore(nutanixConfig *v1alpha1.NutanixSpec) []string {
-	toIgnore := []string{nutanixConfig.ControlPlaneEndpoint.Host}
+	// An empty host means the API server address is still being reserved. An
+	// empty string in this list would be rendered into the CCM's ignoredNodeIPs
+	// and compared against every node address.
+	toIgnore := []string{}
+	if host := nutanixConfig.ControlPlaneEndpoint.Host; host != "" {
+		toIgnore = append(toIgnore, host)
+	}
 	// Also ignore the virtual IP if it is set.
 	if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
 		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil &&

@@ -1193,7 +1193,10 @@ spec:
                         host can be either DNS name or ip address
                       properties:
                         host:
-                          description: The hostname on which the API server is serving.
+                          description: |-
+                            The hostname on which the API server is serving.
+                            Optional when virtualIP.configuration.ipReservation names a subnet to
+                            reserve the address from; it is then filled in with the reserved address.
                           maxLength: 253
                           minLength: 1
                           type: string
@@ -1216,6 +1219,36 @@ spec:
                                   format: ipv4
                                   minLength: 1
                                   type: string
+                                ipReservation:
+                                  description: |-
+                                    IPReservation reserves the API server address from a Nutanix subnet
+                                    instead of requiring the operator to pick a free address themselves.
+                                  properties:
+                                    cluster:
+                                      description: |-
+                                        Cluster is the Prism Element cluster used to resolve a subnet name, as
+                                        either a name or a UUID. Required only when subnet is a name.
+                                        Immutable, for the same reason as subnet.
+                                      type: string
+                                      x-kubernetes-validations:
+                                        - message: Value cannot be changed after cluster creation
+                                          rule: self == oldSelf
+                                    subnet:
+                                      description: |-
+                                        Subnet is the Nutanix subnet the API server address is reserved from, as
+                                        either a UUID or the name of a subnet. The subnet must be IPAM-managed.
+                                        When a name is used, cluster must identify the Prism Element cluster that
+                                        resolves it.
+                                        Immutable: the address is reserved once, and changing the subnet would
+                                        orphan that reservation while the API server still answers on it.
+                                      minLength: 1
+                                      type: string
+                                      x-kubernetes-validations:
+                                        - message: Value cannot be changed after cluster creation
+                                          rule: self == oldSelf
+                                  required:
+                                    - subnet
+                                  type: object
                                 port:
                                   description: |-
                                     The port on which the API server is serving.
@@ -1233,9 +1266,11 @@ spec:
                               type: string
                           type: object
                       required:
-                        - host
                         - port
                       type: object
+                      x-kubernetes-validations:
+                        - message: either host or virtualIP.configuration.ipReservation must be set
+                          rule: has(self.host) || (has(self.virtualIP) && has(self.virtualIP.configuration) && has(self.virtualIP.configuration.ipReservation))
                     prismCentralEndpoint:
                       description: Nutanix Prism Central endpoint configuration.
                       properties:

@@ -65,10 +65,10 @@ rules:
       - cluster.x-k8s.io
     resources:
       - clusters
-      - machines
     verbs:
       - get
       - list
+      - patch
       - watch
   - apiGroups:
       - cluster.x-k8s.io
@@ -87,6 +87,14 @@ rules:
       - update
       - watch
   - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - machines
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - controlplane.cluster.x-k8s.io
     resources:
       - kubeadmcontrolplanes
@@ -95,6 +103,33 @@ rules:
       - list
       - patch
       - update
+      - watch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - ipaddressclaims
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - ipaddresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - nutanixippools
+    verbs:
+      - create
+      - get
+      - list
       - watch
   - apiGroups:
       - storage.k8s.io
