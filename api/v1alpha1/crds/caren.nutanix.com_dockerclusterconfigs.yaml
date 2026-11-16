@@ -287,6 +287,7 @@ spec:
                               description: |-
                                 AddressRanges is a list of IPv4 address ranges the
                                 provider uses to choose an address for a load balancer.
+                                Mutually exclusive with autoIPAM.
                               items:
                                 description: AddressRange defines an IPv4 range.
                                 properties:
@@ -303,9 +304,41 @@ spec:
                               maxItems: 10
                               minItems: 1
                               type: array
-                          required:
-                            - addressRanges
+                            autoIPAM:
+                              description: |-
+                                AutoIPAM reserves one address per LoadBalancer-type Service from a Nutanix
+                                subnet, instead of drawing from a static range. The CCM owns reservation
+                                and release; MetalLB only advertises what the CCM reserved.
+                                Mutually exclusive with addressRanges.
+                              properties:
+                                cluster:
+                                  description: |-
+                                    Cluster is the Prism Element cluster used to resolve a subnet name, as
+                                    either a name or a UUID. Required only when subnet is a name.
+                                    Immutable, for the same reason as subnet.
+                                  type: string
+                                  x-kubernetes-validations:
+                                    - message: Value cannot be changed after cluster creation
+                                      rule: self == oldSelf
+                                subnet:
+                                  description: |-
+                                    Subnet is the Nutanix subnet addresses are reserved from, as either a UUID
+                                    or the name of a subnet. The subnet must be IPAM-managed. When a name is
+                                    used, cluster must identify the Prism Element cluster that resolves it.
+                                    Immutable: changing it would orphan the reservations already held on the
+                                    previous subnet.
+                                  minLength: 1
+                                  type: string
+                                  x-kubernetes-validations:
+                                    - message: Value cannot be changed after cluster creation
+                                      rule: self == oldSelf
+                              required:
+                                - subnet
+                              type: object
                           type: object
+                          x-kubernetes-validations:
+                            - message: exactly one of addressRanges or autoIPAM must be set
+                              rule: has(self.addressRanges) != has(self.autoIPAM)
                         provider:
                           description: |-
                             The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
