@@ -143,6 +143,17 @@ type client interface {
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
+
+	// ListReservedIpsBySubnetId lists the reserved addresses on a subnet. One
+	// call answers three questions at once: the subnet exists, it is
+	// IPAM-managed (an unmanaged subnet is rejected outright), and the
+	// credentials may read its reservations, which is the permission the CCM
+	// needs to reserve one.
+	ListReservedIpsBySubnetId(
+		ctx context.Context,
+		subnetExtID string,
+		limit_ *int,
+	) error
 }
 
 // clientWrapper implements the client interface and wraps converged v4 client.
@@ -246,6 +257,12 @@ type clientWrapper struct {
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
+
+	ListReservedIpsBySubnetIdFunc func(
+		ctx context.Context,
+		subnetExtID string,
+		limit_ *int,
+	) error
 }
 
 var _ = client(&clientWrapper{})
@@ -507,7 +524,27 @@ func newClient(
 			}
 			return resp, nil
 		},
+		ListReservedIpsBySubnetIdFunc: func(
+			ctx context.Context,
+			subnetExtID string,
+			limit_ *int,
+		) error {
+			opts := buildODataOptions(nil, limit_, nil, nil, nil)
+			_, err := convergedc.Subnets.ListReservedIpsBySubnetId(ctx, subnetExtID, opts...)
+			return err
+		},
 	}, nil
+}
+
+func (c *clientWrapper) ListReservedIpsBySubnetId(
+	ctx context.Context,
+	subnetExtID string,
+	limit_ *int,
+) error {
+	_, err := callWithContext(ctx, func() (struct{}, error) {
+		return struct{}{}, c.ListReservedIpsBySubnetIdFunc(ctx, subnetExtID, limit_)
+	})
+	return err
 }
 
 func (c *clientWrapper) ValidateCredentials(

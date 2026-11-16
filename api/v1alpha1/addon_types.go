@@ -369,6 +369,15 @@ type CCMCredentials struct {
 	SecretRef LocalObjectReference `json:"secretRef"`
 }
 
+// ServiceLoadBalancer selects the LoadBalancer-type Service provider and where
+// its addresses come from.
+//
+// autoIPAM is tied to MetalLB: the CCM reserves the address and labels a pool,
+// and only the MetalLB advertisement CAREN installs announces it. The provider
+// enum admits MetalLB alone today, so the rule is unreachable; it is here so
+// that adding a provider fails loudly instead of silently leaving automatic
+// addresses reserved and unannounced.
+// +kubebuilder:validation:XValidation:rule="!has(self.configuration) || !has(self.configuration.autoIPAM) || self.provider == 'MetalLB'",message="autoIPAM requires the MetalLB provider"
 type ServiceLoadBalancer struct {
 	// The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
 	// the CCM acts as the provider.
