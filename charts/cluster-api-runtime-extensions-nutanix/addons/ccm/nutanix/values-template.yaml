@@ -22,6 +22,7 @@ loadBalancer:
 {{- with .Cluster }}
     cluster: "{{ . }}"
 {{- end }}
+    clusterUID: "{{ $.ClusterUID }}"
     metalLBNamespace: "{{ $.MetalLBNamespace }}"
 {{- else }}
   enabled: false

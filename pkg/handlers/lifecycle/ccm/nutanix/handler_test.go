@@ -13,7 +13,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -109,6 +112,7 @@ loadBalancer:
   defaultStrategy: AutoIPAMMetalLB
   autoIPAMMetalLB:
     subnet: "e3f4a1b2-0000-4000-8000-abcdefabcdef"
+    clusterUID: "7c2d1e40-5f3a-4b21-9d8e-11aa22bb33cc"
     metalLBNamespace: "metallb-system"
 
 # The Secret containing the credentials will be created by the handler.
@@ -133,6 +137,20 @@ var expectedWithAutoIPAMSubnetName = strings.Replace(
 	`    subnet: "vlan170-dhcp"`+"\n"+`    cluster: "pe-cluster-1"`,
 	1,
 )
+
+// testClusterUID is the Cluster UID the rendered values must carry: it is the
+// cluster half of the reservation context the CCM stores on Prism Central.
+const testClusterUID = "7c2d1e40-5f3a-4b21-9d8e-11aa22bb33cc"
+
+func testCluster() *clusterv1.Cluster {
+	return &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-cluster",
+			Namespace: "default",
+			UID:       types.UID(testClusterUID),
+		},
+	}
+}
 
 func serviceLoadBalancerAutoIPAM(subnet string, cluster *string) *v1alpha1.ServiceLoadBalancer {
 	return &v1alpha1.ServiceLoadBalancer{
@@ -344,7 +362,7 @@ func Test_templateValues(t *testing.T) {
 			out, err := templateValuesFunc(
 				tt.clusterConfig.Nutanix,
 				tt.clusterConfig.Addons.ServiceLoadBalancer,
-			)(nil, tt.in)
+			)(testCluster(), tt.in)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, out)
 		})
