@@ -381,13 +381,48 @@ type ServiceLoadBalancer struct {
 	Configuration *ServiceLoadBalancerConfiguration `json:"configuration,omitempty"`
 }
 
+// ServiceLoadBalancerConfiguration selects where LoadBalancer-type Service
+// addresses come from. Exactly one source must be set: a static list of ranges
+// the operator maintains, or automatic reservation from a Nutanix subnet.
+// +kubebuilder:validation:XValidation:rule="has(self.addressRanges) != has(self.autoIPAM)",message="exactly one of addressRanges or autoIPAM must be set"
 type ServiceLoadBalancerConfiguration struct {
 	// AddressRanges is a list of IPv4 address ranges the
 	// provider uses to choose an address for a load balancer.
-	// +kubebuilder:validation:Required
+	// Mutually exclusive with autoIPAM.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=10
-	AddressRanges []AddressRange `json:"addressRanges"`
+	AddressRanges []AddressRange `json:"addressRanges,omitempty"`
+
+	// AutoIPAM reserves one address per LoadBalancer-type Service from a Nutanix
+	// subnet, instead of drawing from a static range. The CCM owns reservation
+	// and release; MetalLB only advertises what the CCM reserved.
+	// Mutually exclusive with addressRanges.
+	// +kubebuilder:validation:Optional
+	AutoIPAM *ServiceLoadBalancerAutoIPAM `json:"autoIPAM,omitempty"`
+}
+
+// ServiceLoadBalancerAutoIPAM configures automatic address reservation for
+// LoadBalancer-type Services. The subnet is identified the same way as
+// NutanixIPPool identifies the control plane endpoint's subnet, so both halves
+// of automatic addressing take the same input.
+type ServiceLoadBalancerAutoIPAM struct {
+	// Subnet is the Nutanix subnet addresses are reserved from, as either a UUID
+	// or the name of a subnet. The subnet must be IPAM-managed. When a name is
+	// used, cluster must identify the Prism Element cluster that resolves it.
+	// Immutable: changing it would orphan the reservations already held on the
+	// previous subnet.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Subnet string `json:"subnet"`
+
+	// Cluster is the Prism Element cluster used to resolve a subnet name, as
+	// either a name or a UUID. Required only when subnet is a name.
+	// Immutable, for the same reason as subnet.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Cluster *string `json:"cluster,omitempty"`
 }
 
 // AddressRange defines an IPv4 range.

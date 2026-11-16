@@ -138,6 +138,7 @@ func (n *MetalLB) Apply(
 		Name:          DefaultHelmReleaseName,
 		Namespace:     DefaultHelmReleaseNamespace,
 		AddressRanges: slb.Configuration.AddressRanges,
+		AutoIPAM:      slb.Configuration.AutoIPAM,
 	}
 	cos, err := ConfigurationObjects(configInput)
 	if err != nil {
@@ -179,6 +180,14 @@ func (n *MetalLB) Apply(
 							err,
 						)
 					case *metallbv1.L2Advertisement:
+						if configInput.AutoIPAM != nil {
+							err = fmt.Errorf(
+								"%w. This resource has been modified in the workload cluster: it must select the IP Address Pools the Nutanix CCM creates for reserved Service addresses", //nolint:lll // Long error message,
+								err,
+							)
+							break
+						}
+
 						err = fmt.Errorf(
 							"%w. This resource has been modified in the workload cluster, it must only contain the %q IP Address Pool", //nolint:lll // Long error message,
 							err,
