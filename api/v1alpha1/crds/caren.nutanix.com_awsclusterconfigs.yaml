@@ -280,6 +280,15 @@ spec:
                         - provider
                       type: object
                     serviceLoadBalancer:
+                      description: |-
+                        ServiceLoadBalancer selects the LoadBalancer-type Service provider and where
+                        its addresses come from.
+
+                        autoIPAM is tied to MetalLB: the CCM reserves the address and labels a pool,
+                        and only the MetalLB advertisement CAREN installs announces it. The provider
+                        enum admits MetalLB alone today, so the rule is unreachable; it is here so
+                        that adding a provider fails loudly instead of silently leaving automatic
+                        addresses reserved and unannounced.
                       properties:
                         configuration:
                           description: Configuration for the chosen ServiceLoadBalancer provider.
@@ -350,6 +359,9 @@ spec:
                       required:
                         - provider
                       type: object
+                      x-kubernetes-validations:
+                        - message: autoIPAM requires the MetalLB provider
+                          rule: '!has(self.configuration) || !has(self.configuration.autoIPAM) || self.provider == ''MetalLB'''
                   type: object
                 aws:
                   description: AWS cluster configuration.

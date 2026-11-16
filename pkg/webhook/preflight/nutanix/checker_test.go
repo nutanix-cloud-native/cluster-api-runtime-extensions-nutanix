@@ -208,6 +208,10 @@ func TestNutanixChecker_Init(t *testing.T) {
 				return checks
 			}
 
+			checker.serviceLoadBalancerAutoIPAMChecksFactory = func(cd *checkDependencies) []preflight.Check {
+				return nil
+			}
+
 			checker.storageContainerChecksFactory = func(cd *checkDependencies) []preflight.Check {
 				checks := []preflight.Check{}
 				for i := 0; i < tt.storageContainerCheckCount; i++ {
@@ -458,6 +462,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				serviceLoadBalancerAutoIPAMChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 				controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {

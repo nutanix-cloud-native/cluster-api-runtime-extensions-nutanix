@@ -20,16 +20,17 @@ import (
 )
 
 var Checker = &nutanixChecker{
-	configurationCheckFactory:             newConfigurationCheck,
-	credentialsCheckFactory:               newCredentialsCheck,
-	prismCentralVersionCheckFactory:       newPrismCentralVersionCheck,
-	failureDomainCheckFactory:             newFailureDomainChecks,
-	vmImageChecksFactory:                  newVMImageChecks,
-	vmImageKubernetesVersionChecksFactory: newVMImageKubernetesVersionChecks,
-	cidrValidationChecksFactory:           newCIDRValidationChecks,
-	storageContainerChecksFactory:         newStorageContainerChecks,
-	controlPlaneEndpointChecksFactory:     newControlPlaneEndpointChecks,
-	metroChecksFactory:                    newMetroChecks,
+	configurationCheckFactory:                newConfigurationCheck,
+	credentialsCheckFactory:                  newCredentialsCheck,
+	prismCentralVersionCheckFactory:          newPrismCentralVersionCheck,
+	failureDomainCheckFactory:                newFailureDomainChecks,
+	vmImageChecksFactory:                     newVMImageChecks,
+	vmImageKubernetesVersionChecksFactory:    newVMImageKubernetesVersionChecks,
+	cidrValidationChecksFactory:              newCIDRValidationChecks,
+	storageContainerChecksFactory:            newStorageContainerChecks,
+	serviceLoadBalancerAutoIPAMChecksFactory: newServiceLoadBalancerAutoIPAMChecks,
+	controlPlaneEndpointChecksFactory:        newControlPlaneEndpointChecks,
+	metroChecksFactory:                       newMetroChecks,
 }
 
 type nutanixChecker struct {
@@ -69,6 +70,10 @@ type nutanixChecker struct {
 	) []preflight.Check
 
 	storageContainerChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	serviceLoadBalancerAutoIPAMChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 
@@ -128,6 +133,7 @@ func (n *nutanixChecker) Init(
 		n.vmImageKubernetesVersionChecksFactory(cd),
 		n.cidrValidationChecksFactory(cd),
 		n.storageContainerChecksFactory(cd),
+		n.serviceLoadBalancerAutoIPAMChecksFactory(cd),
 		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
 	)
