@@ -158,11 +158,21 @@ func autoIPAMConfig(
 	return slb.Configuration.AutoIPAM
 }
 
+// clusterUID is the cluster half of the reservation context the CCM stores on
+// Prism Central. An empty value renders empty and the CCM refuses to reserve,
+// rather than reserving an address no cluster teardown could release.
+func clusterUID(cluster *clusterv1.Cluster) string {
+	if cluster == nil {
+		return ""
+	}
+	return string(cluster.GetUID())
+}
+
 func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
 	serviceLoadBalancer *v1alpha1.ServiceLoadBalancer,
 ) func(*clusterv1.Cluster, string) (string, error) {
-	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+	return func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
@@ -192,6 +202,11 @@ func templateValuesFunc(
 			// MetalLBNamespace is where the CCM creates its per-Service pools. It
 			// must be the namespace CAREN installs MetalLB into.
 			MetalLBNamespace string
+			// ClusterUID identifies this cluster in the reservation context the
+			// CCM stores on Prism Central. It is what lets the management cluster
+			// release this cluster's addresses once the cluster is gone, so it
+			// must be the Cluster UID and not a name, which is reusable.
+			ClusterUID string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
@@ -208,6 +223,7 @@ func templateValuesFunc(
 			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
 			ServiceLoadBalancerAutoIPAM:       autoIPAMConfig(serviceLoadBalancer),
 			MetalLBNamespace:                  metallb.DefaultHelmReleaseNamespace,
+			ClusterUID:                        clusterUID(cluster),
 		}
 
 		var b bytes.Buffer
