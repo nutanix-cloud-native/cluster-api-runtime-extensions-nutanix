@@ -22,6 +22,7 @@ import (
 	crsv1 "sigs.k8s.io/cluster-api/api/addons/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -65,6 +66,9 @@ func main() {
 	utilruntime.Must(caaphv1.AddToScheme(clientScheme))
 	utilruntime.Must(capxv1.AddToScheme(clientScheme))
 	utilruntime.Must(metallbv1.AddToScheme(clientScheme))
+	// The IPAM types are how the API server address is reserved, and they are
+	// only registered in envtest otherwise.
+	utilruntime.Must(ipamv1.AddToScheme(clientScheme))
 
 	mgrOptions := &ctrl.Options{
 		Scheme: clientScheme,
