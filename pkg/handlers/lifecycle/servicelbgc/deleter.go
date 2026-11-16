@@ -130,6 +130,26 @@ func isV1Beta2ConditionTrue(cluster *clusterv1.Cluster, condType string) bool {
 	return false
 }
 
+// loadBalancerGCEnabled reports whether the operator has opted out of load
+// balancer cleanup. It is read separately from the phase and reachability
+// checks because it is the only one that expresses operator intent: the others
+// only say that deleting Services cannot work right now, which is precisely
+// when the Prism Central reservations still have to be released.
+//
+// An unparseable value is treated as opted in, the same default as no
+// annotation at all; shouldDeleteServicesWithLoadBalancer reports the error.
+func loadBalancerGCEnabled(cluster *clusterv1.Cluster) bool {
+	val, found := cluster.GetAnnotations()[LoadBalancerGCAnnotation]
+	if !found {
+		return true
+	}
+	enabled, err := strconv.ParseBool(val)
+	if err != nil {
+		return true
+	}
+	return enabled
+}
+
 func shouldDeleteServicesWithLoadBalancer(cluster *clusterv1.Cluster) (bool, error) {
 	// Use the Cluster annotations to skip deleting
 	val, found := cluster.GetAnnotations()[LoadBalancerGCAnnotation]
