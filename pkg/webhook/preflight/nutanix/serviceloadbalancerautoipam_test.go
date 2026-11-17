@@ -55,7 +55,9 @@ func TestAutoIPAMCheckSubnetUUID(t *testing.T) {
 
 	var probed string
 	check := &serviceLoadBalancerAutoIPAMCheck{
-		autoIPAM: &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: autoIPAMSubnetUUID},
+		name: "NutanixServiceLoadBalancerAutoIPAM", field: autoIPAMField,
+		purpose: "Service LoadBalancer", component: "Nutanix CCM",
+		subnet: autoIPAMSubnetUUID,
 		nclient: &clientWrapper{
 			ListReservedIpsBySubnetIdFunc: func(_ context.Context, subnetExtID string, limit *int) error {
 				probed = subnetExtID
@@ -197,7 +199,9 @@ func TestAutoIPAMCheckSubnetName(t *testing.T) {
 			var probed string
 			var usedFilter, usedUnfiltered bool
 			check := &serviceLoadBalancerAutoIPAMCheck{
-				autoIPAM:            &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: tt.subnetName},
+				name: "NutanixServiceLoadBalancerAutoIPAM", field: autoIPAMField,
+				purpose: "Service LoadBalancer", component: "Nutanix CCM",
+				subnet:              tt.subnetName,
 				prismElementCluster: tt.peCluster,
 				nclient: &clientWrapper{
 					ListClustersFunc: func(
@@ -298,7 +302,9 @@ func TestAutoIPAMCheckProbeFailures(t *testing.T) {
 			t.Parallel()
 
 			check := &serviceLoadBalancerAutoIPAMCheck{
-				autoIPAM: &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: autoIPAMSubnetUUID},
+				name: "NutanixServiceLoadBalancerAutoIPAM", field: autoIPAMField,
+				purpose: "Service LoadBalancer", component: "Nutanix CCM",
+				subnet: autoIPAMSubnetUUID,
 				nclient: &clientWrapper{
 					ListReservedIpsBySubnetIdFunc: func(context.Context, string, *int) error {
 						return tt.probeErr
@@ -320,7 +326,9 @@ func TestAutoIPAMCheckEmptySubnet(t *testing.T) {
 	t.Parallel()
 
 	check := &serviceLoadBalancerAutoIPAMCheck{
-		autoIPAM: &carenv1.ServiceLoadBalancerAutoIPAM{},
+		name: "NutanixServiceLoadBalancerAutoIPAM", field: autoIPAMField,
+		purpose: "Service LoadBalancer", component: "Nutanix CCM",
+		subnet: "",
 		nclient: &clientWrapper{
 			ListReservedIpsBySubnetIdFunc: func(context.Context, string, *int) error {
 				t.Fatal("Prism Central was called with no subnet configured")
@@ -430,3 +438,91 @@ func TestNewServiceLoadBalancerAutoIPAMChecks(t *testing.T) {
 }
 
 var _ preflight.Check = &serviceLoadBalancerAutoIPAMCheck{}
+
+// The gap this closes: only the Service LoadBalancer subnet was preflighted, so
+// an unmanaged or absent subnet on the API server reservation produced no
+// failure at create time. The cluster was accepted and then waited forever,
+// with the real cause ("no IP prefix found for subnet") only in the IPAM
+// provider's log. Measured against a live unmanaged subnet.
+func TestReservationChecksCoverBothSubnets(t *testing.T) {
+	t.Parallel()
+
+	autoIPAM := &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: "lb-subnet"}
+	reservation := &carenv1.ControlPlaneIPReservation{Subnet: "cp-subnet"}
+
+	names := func(cfg *carenv1.NutanixClusterConfigSpec) []string {
+		checks := newServiceLoadBalancerAutoIPAMChecks(&checkDependencies{
+			nutanixClusterConfigSpec: cfg,
+			nclient:                  &clientWrapper{},
+		})
+		out := make([]string, 0, len(checks))
+		for _, c := range checks {
+			out = append(out, c.Name())
+		}
+		return out
+	}
+
+	withCP := func() *carenv1.NutanixClusterConfigSpec {
+		return &carenv1.NutanixClusterConfigSpec{
+			Nutanix: &carenv1.NutanixSpec{
+				ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+					Port: 6443,
+					VirtualIPSpec: &carenv1.ControlPlaneVirtualIPSpec{
+						Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
+							IPReservation: reservation,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("the API server reservation alone is checked", func(t *testing.T) {
+		t.Parallel()
+		assert.Equal(t, []string{"NutanixControlPlaneEndpointIPReservation"}, names(withCP()))
+	})
+
+	t.Run("both reservations are checked", func(t *testing.T) {
+		t.Parallel()
+		cfg := withCP()
+		cfg.Addons = &carenv1.NutanixAddons{
+			GenericAddons: carenv1.GenericAddons{
+				ServiceLoadBalancer: &carenv1.ServiceLoadBalancer{
+					Provider:      carenv1.ServiceLoadBalancerProviderMetalLB,
+					Configuration: &carenv1.ServiceLoadBalancerConfiguration{AutoIPAM: autoIPAM},
+				},
+			},
+		}
+		assert.Equal(t, []string{
+			"NutanixServiceLoadBalancerAutoIPAM",
+			"NutanixControlPlaneEndpointIPReservation",
+		}, names(cfg))
+	})
+
+	t.Run("a cluster reserving nothing is checked for nothing", func(t *testing.T) {
+		t.Parallel()
+		assert.Empty(t, names(&carenv1.NutanixClusterConfigSpec{Nutanix: &carenv1.NutanixSpec{}}))
+	})
+
+	// The message has to name the right component, or it sends the operator to
+	// the wrong place.
+	t.Run("an unmanaged subnet blames the IPAM provider, not the CCM", func(t *testing.T) {
+		t.Parallel()
+		check := &serviceLoadBalancerAutoIPAMCheck{
+			name: "NutanixControlPlaneEndpointIPReservation", field: ipReservationField,
+			purpose: "API server address", component: "Nutanix IPAM provider",
+			subnet: autoIPAMSubnetUUID,
+			nclient: &clientWrapper{
+				ListReservedIpsBySubnetIdFunc: func(context.Context, string, *int) error {
+					return errors.New("NETWORKING-10056 Cannot fetch reserved IP addresses for unmanaged subnets")
+				},
+			},
+		}
+		result := check.Run(context.Background())
+		require.False(t, result.Allowed)
+		require.Len(t, result.Causes, 1)
+		assert.Contains(t, result.Causes[0].Message, "not IP address managed")
+		assert.Contains(t, result.Causes[0].Message, "Nutanix IPAM provider")
+		assert.Contains(t, result.Causes[0].Field, "ipReservation")
+	})
+}
