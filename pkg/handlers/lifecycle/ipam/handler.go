@@ -132,24 +132,18 @@ func (h *ControlPlaneEndpointIPAM) BeforeClusterCreate(
 		return
 	}
 
-	recorded, err := h.recordAddress(ctx, cluster, address, log)
-	if err != nil {
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
-		resp.SetRetryAfterSeconds(retryAfterSeconds)
-		return
-	}
-	if recorded {
-		// The variable was only just written, and this reconcile already read the
-		// cluster without it. Succeeding now would let CAPI template kube-vip
-		// from the stale value for one cycle. Retry instead: the next pass finds
-		// the address recorded and succeeds without writing anything.
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("recorded the reserved API server address %s; continuing", address))
-		resp.SetRetryAfterSeconds(retryAfterSeconds)
-		return
-	}
-
+	// The address is deliberately not written back into the Cluster. NKP owns
+	// the CAPI Cluster topology through its NKPCluster resource, and its webhook
+	// rejects the patch outright:
+	//
+	//	spec.topology: Forbidden: CAPI Cluster topology spec is managed by
+	//	NKPCluster ... and must not be modified directly.
+	//
+	// The reservation lives in the IPAddress instead, and the control plane
+	// endpoint and virtual IP mutations read it from there on every topology
+	// reconcile. Succeeding here is safe precisely because this hook does not
+	// return success until the address exists, so the mutations always find one.
+	log.Info("The API server address is reserved", "address", address)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
@@ -336,80 +330,6 @@ func (h *ControlPlaneEndpointIPAM) ensureClaim(
 	return claim, nil
 }
 
-// recordAddress writes the reserved address into the cluster's topology
-// variable, where kube-vip, the CNI and the CCM all read it from. It is a no-op
-// once the address is already recorded, which is what makes the hook idempotent
-// across the retries that reaching this point requires.
-func (h *ControlPlaneEndpointIPAM) recordAddress(
-	ctx context.Context,
-	cluster *clusterv1.Cluster,
-	address string,
-	log logr.Logger,
-) (bool, error) {
-	live := &clusterv1.Cluster{}
-	if err := h.client.Get(ctx, ctrlclient.ObjectKeyFromObject(cluster), live); err != nil {
-		return false, fmt.Errorf("%w: get cluster: %w", ErrAddressReservationFailed, err)
-	}
-
-	clusterConfig, err := apivariables.UnmarshalClusterConfigVariable(live.Spec.Topology.Variables)
-	if err != nil {
-		return false, fmt.Errorf("%w: read cluster config: %w", ErrAddressReservationFailed, err)
-	}
-	if clusterConfig == nil || clusterConfig.Nutanix == nil {
-		return false, fmt.Errorf("%w: cluster has no nutanix configuration", ErrAddressReservationFailed)
-	}
-
-	endpoint := &clusterConfig.Nutanix.ControlPlaneEndpoint
-	if endpoint.Host == address {
-		return false, nil
-	}
-	switch {
-	case endpoint.Host == "":
-		// The usual shape: the reserved address becomes the endpoint. host is
-		// what kube-vip, the CNI and the CCM are all templated from.
-		endpoint.Host = address
-	case virtualIPAddress(endpoint) == address:
-		return false, nil
-	case virtualIPAddress(endpoint) == "":
-		// host is already a name the operator chose, which is the external
-		// endpoint shape: an FQDN or a floating address that resolves to the
-		// cluster. kube-vip cannot raise that, so the reserved address becomes
-		// the virtual IP and host is left alone.
-		if endpoint.VirtualIPSpec == nil {
-			endpoint.VirtualIPSpec = &carenv1.ControlPlaneVirtualIPSpec{}
-		}
-		if endpoint.VirtualIPSpec.Configuration == nil {
-			endpoint.VirtualIPSpec.Configuration = &carenv1.ControlPlaneVirtualIPConfiguration{}
-		}
-		log.Info("Recording the reserved address as the virtual IP",
-			"host", endpoint.Host, "virtualIP", address)
-		endpoint.VirtualIPSpec.Configuration.Address = address
-	default:
-		// Both are already set to something else. The operator chose them, so
-		// they are left alone and the reservation is simply held.
-		log.Info("The API server address is already configured; keeping it",
-			"host", endpoint.Host, "virtualIP", virtualIPAddress(endpoint), "reserved", address)
-		return false, nil
-	}
-	variable, err := apivariables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, clusterConfig)
-	if err != nil {
-		return false, fmt.Errorf("%w: write cluster config: %w", ErrAddressReservationFailed, err)
-	}
-
-	patch := ctrlclient.MergeFrom(live.DeepCopy())
-	for i := range live.Spec.Topology.Variables {
-		if live.Spec.Topology.Variables[i].Name == carenv1.ClusterConfigVariableName {
-			live.Spec.Topology.Variables[i] = *variable
-			break
-		}
-	}
-	log.Info("Recorded the reserved API server address", "host", address)
-	if err := h.client.Patch(ctx, live, patch); err != nil {
-		return false, fmt.Errorf("%w: patch cluster: %w", ErrAddressReservationFailed, err)
-	}
-	return true, nil
-}
-
 // assertNotPrismCentral refuses an address that is the Prism Central's own.
 // The existing webhook compares the configured host against Prism Central, but
 // it cannot see an address that does not exist yet, so this is the only place
@@ -429,14 +349,6 @@ func assertNotPrismCentral(address string, clusterConfig *apivariables.ClusterCo
 			ErrAddressReservationFailed, address)
 	}
 	return nil
-}
-
-// virtualIPAddress is the address kube-vip is given, which falls back to host.
-func virtualIPAddress(endpoint *carenv1.ControlPlaneEndpointSpec) string {
-	if endpoint.VirtualIPSpec != nil && endpoint.VirtualIPSpec.Configuration != nil {
-		return endpoint.VirtualIPSpec.Configuration.Address
-	}
-	return ""
 }
 
 func clusterOwnerReference(cluster *clusterv1.Cluster) metav1.OwnerReference {

@@ -247,7 +247,7 @@ var _ = Describe("Generate ControlPlane virtual IP patches", func() {
 				return mutation.NewMetaGeneratePatchesHandler(
 					"",
 					client,
-					NewControlPlaneVirtualIP(v1alpha1.ClusterConfigVariableName, VariableName),
+					NewControlPlaneVirtualIP(client, v1alpha1.ClusterConfigVariableName, VariableName),
 				).(mutation.GeneratePatches)
 			}
 

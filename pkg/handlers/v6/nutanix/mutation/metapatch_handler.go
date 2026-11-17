@@ -20,8 +20,8 @@ import (
 func MetaPatchHandler(mgr manager.Manager) handlers.Named {
 	//nolint:prealloc // Only set up once on startup, prealloc is unnecessary.
 	patchHandlers := []mutation.MetaMutator{
-		controlplaneendpoint.NewPatch(),
-		nutanixcontrolplanevirtualip.NewPatch(),
+		controlplaneendpoint.NewPatch(mgr.GetClient()),
+		nutanixcontrolplanevirtualip.NewPatch(mgr.GetClient()),
 		prismcentralendpoint.NewPatch(),
 		machinedetails.NewControlPlanePatch(),
 		controlplanefailuredomains.NewPatch(),

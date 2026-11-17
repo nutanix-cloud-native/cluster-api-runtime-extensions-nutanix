@@ -217,34 +217,29 @@ func TestBeforeClusterCreateFirstPassCreatesAndRetries(t *testing.T) {
 
 // Once the provider has allocated an address the hook records it where
 // kube-vip, the CNI and the CCM read it from, and lets creation proceed.
-func TestBeforeClusterCreateRecordsTheReservedAddress(t *testing.T) {
+// The hook does NOT write the address back into the Cluster: NKP owns the CAPI
+// Cluster topology through its NKPCluster resource and its webhook rejects the
+// patch. The hook's contract is narrower - do not report success until an
+// address exists - and the endpoint mutations read it from the IPAddress.
+func TestBeforeClusterCreateSucceedsOnceReservedAndLeavesTheClusterAlone(t *testing.T) {
 	t.Parallel()
 
 	cluster := testCluster(t, "", &carenv1.ControlPlaneIPReservation{Subnet: "subnet-uuid"})
 	objects := append([]ctrlclient.Object{cluster}, allocatedClaim("10.0.0.42")...)
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(objects...).Build()
 
-	handler := New(c)
+	before := configuredHost(t, c)
 
-	// The pass that writes the variable retries, because this reconcile already
-	// read the cluster without it.
-	first := &runtimehooksv1.BeforeClusterCreateResponse{}
-	handler.BeforeClusterCreate(context.Background(),
-		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, first)
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, first.Status)
-	assert.Equal(t, int32(retryAfterSeconds), first.RetryAfterSeconds)
-	assert.Equal(t, "10.0.0.42", configuredHost(t, c))
+	resp := &runtimehooksv1.BeforeClusterCreateResponse{}
+	New(c).BeforeClusterCreate(context.Background(),
+		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, resp)
 
-	// The next pass finds it recorded and lets creation proceed.
-	second := &runtimehooksv1.BeforeClusterCreateResponse{}
-	handler.BeforeClusterCreate(context.Background(),
-		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, second)
-	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, second.Status, second.Message)
-	assert.Equal(t, "10.0.0.42", configuredHost(t, c))
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status, resp.Message)
+	assert.Equal(t, before, configuredHost(t, c),
+		"patching the Cluster topology is forbidden on NKP and must not be attempted")
+	assert.Empty(t, configuredHost(t, c), "the variable still carries no host")
 }
 
-// Reaching Success takes several passes, so the hook has to be idempotent: a
-// second pass must not reserve or record a second address.
 func TestBeforeClusterCreateIsIdempotent(t *testing.T) {
 	t.Parallel()
 
@@ -257,44 +252,37 @@ func TestBeforeClusterCreateIsIdempotent(t *testing.T) {
 		resp := &runtimehooksv1.BeforeClusterCreateResponse{}
 		handler.BeforeClusterCreate(context.Background(),
 			&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, resp)
-		if pass == 0 {
-			// The first pass records the address and asks to be called again.
-			require.Equal(t, runtimehooksv1.ResponseStatusFailure, resp.Status, resp.Message)
-			continue
-		}
 		require.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status, "pass %d: %s", pass, resp.Message)
 	}
-
-	assert.Equal(t, "10.0.0.42", configuredHost(t, c))
 
 	claims := &ipamv1.IPAddressClaimList{}
 	require.NoError(t, c.List(context.Background(), claims))
 	assert.Len(t, claims.Items, 1, "a second claim would reserve a second address")
+
+	pools := &unstructured.UnstructuredList{}
+	pools.SetGroupVersionKind(nutanixIPPoolGVK)
+	require.NoError(t, c.List(context.Background(), pools))
+	assert.Len(t, pools.Items, 1, "a second pool would be a second reservation source")
 }
 
-// The external endpoint shape: host is an FQDN or floating address the operator
-// chose, which kube-vip cannot raise. The reserved address has to become the
-// virtual IP, or kube-vip would be templated with the FQDN and the control
-// plane would never come up.
-func TestBeforeClusterCreateRecordsAVirtualIPBehindAnExternalEndpoint(t *testing.T) {
+// The external endpoint shape - host is an FQDN the operator chose - is handled
+// when the endpoint is resolved for the generated templates, not here. This
+// asserts only that the hook still clears creation and leaves the Cluster
+// untouched; see pkg/handlers/ipamendpoint for the host/virtual-IP precedence.
+func TestBeforeClusterCreateBehindAnExternalEndpointLeavesTheClusterAlone(t *testing.T) {
 	t.Parallel()
 
 	cluster := testCluster(t, "api.example.com", &carenv1.ControlPlaneIPReservation{Subnet: "subnet-uuid"})
 	objects := append([]ctrlclient.Object{cluster}, allocatedClaim("10.0.0.42")...)
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(objects...).Build()
 
-	handler := New(c)
-	first := &runtimehooksv1.BeforeClusterCreateResponse{}
-	handler.BeforeClusterCreate(context.Background(),
-		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, first)
-	assert.Equal(t, runtimehooksv1.ResponseStatusFailure, first.Status, "the write pass must retry")
+	resp := &runtimehooksv1.BeforeClusterCreateResponse{}
+	New(c).BeforeClusterCreate(context.Background(),
+		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, resp)
 
-	second := &runtimehooksv1.BeforeClusterCreateResponse{}
-	handler.BeforeClusterCreate(context.Background(),
-		&runtimehooksv1.BeforeClusterCreateRequest{Cluster: *cluster}, second)
-	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, second.Status, second.Message)
-	assert.Equal(t, "api.example.com", configuredHost(t, c), "the operator's endpoint was overwritten")
-	assert.Equal(t, "10.0.0.42", configuredVirtualIP(t, c))
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.Status, resp.Message)
+	assert.Equal(t, "api.example.com", configuredHost(t, c), "the operator's endpoint must survive")
+	assert.Empty(t, configuredVirtualIP(t, c), "the hook must not write the virtual IP either")
 }
 
 // An address the operator already chose for both fields is left entirely alone.

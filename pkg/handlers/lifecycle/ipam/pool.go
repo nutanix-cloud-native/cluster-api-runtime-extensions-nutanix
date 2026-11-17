@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/ipamendpoint"
 )
 
 // NutanixIPPool is the pool kind the Nutanix IPAM provider reconciles. It is
@@ -28,7 +29,7 @@ var nutanixIPPoolGVK = schema.GroupVersionKind{
 // objects carry an owner reference to the Cluster, so deleting the cluster
 // garbage-collects them and the provider then releases the address.
 func poolName(clusterName string) string {
-	return clusterName + "-control-plane-endpoint"
+	return ipamendpoint.ClaimName(clusterName)
 }
 
 // newNutanixIPPool builds the pool for a cluster's API server address from the

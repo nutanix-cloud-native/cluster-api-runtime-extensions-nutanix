@@ -65,10 +65,10 @@ rules:
       - cluster.x-k8s.io
     resources:
       - clusters
+      - machines
     verbs:
       - get
       - list
-      - patch
       - watch
   - apiGroups:
       - cluster.x-k8s.io
@@ -85,14 +85,6 @@ rules:
       - list
       - patch
       - update
-      - watch
-  - apiGroups:
-      - cluster.x-k8s.io
-    resources:
-      - machines
-    verbs:
-      - get
-      - list
       - watch
   - apiGroups:
       - controlplane.cluster.x-k8s.io
