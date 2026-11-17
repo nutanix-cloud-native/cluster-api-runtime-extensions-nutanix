@@ -63,10 +63,6 @@ func (a *ipamProviderValidator) validate(
 	if !cluster.Spec.Topology.IsDefined() {
 		return admission.Allowed("")
 	}
-	if utils.GetProvider(cluster) == "nutanix" {
-		return admission.Allowed("")
-	}
-
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return admission.Denied(
@@ -75,7 +71,7 @@ func (a *ipamProviderValidator) validate(
 		)
 	}
 
-	if msg := unsupportedReservationOnProvider(utils.GetProvider(cluster), clusterConfig); msg != "" {
+	if msg := unsupportedReservationOnProvider(clusterProvider(cluster, clusterConfig), clusterConfig); msg != "" {
 		return admission.Denied(msg)
 	}
 	return admission.Allowed("")
@@ -91,7 +87,12 @@ func unsupportedReservationOnProvider(
 	provider string,
 	clusterConfig *variables.ClusterConfigSpec,
 ) string {
-	if provider == "nutanix" || clusterConfig == nil {
+	// Only refuse when the cluster is positively known to be something other
+	// than Nutanix. An unrecognised provider is left alone deliberately: this
+	// runs on create, and refusing what it cannot classify would block valid
+	// clusters, which is worse than missing a misconfiguration that the
+	// reservation itself will then fail on.
+	if provider == providerNutanix || provider == "" || clusterConfig == nil {
 		return ""
 	}
 
@@ -127,4 +128,34 @@ func unsupportedReservationOnProvider(
 	}
 
 	return ""
+}
+
+const providerNutanix = "nutanix"
+
+// clusterProvider names the infrastructure a cluster runs on, or an empty
+// string when that cannot be told yet.
+//
+// The provider label is the obvious source but it is applied after admission,
+// so on a newly created cluster it is not there yet - which is exactly when
+// this check runs, and reading only the label refused a valid Nutanix cluster
+// for being provider "". The cluster config carries a section per provider and
+// is present from the start, so it is the reliable signal here and the label is
+// only a fallback for a cluster whose config names no provider at all.
+func clusterProvider(
+	cluster *clusterv1.Cluster,
+	clusterConfig *variables.ClusterConfigSpec,
+) string {
+	if clusterConfig != nil {
+		switch {
+		case clusterConfig.Nutanix != nil:
+			return providerNutanix
+		case clusterConfig.AWS != nil:
+			return "aws"
+		case clusterConfig.EKS != nil:
+			return "eks"
+		case clusterConfig.Docker != nil:
+			return "docker"
+		}
+	}
+	return utils.GetProvider(cluster)
 }
