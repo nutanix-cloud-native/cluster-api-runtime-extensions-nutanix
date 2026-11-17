@@ -53,14 +53,19 @@ type ReservedIP struct {
 	ClientContext string
 }
 
-// clusterReservationPrefix is the prefix every address reserved for cluster
-// carries, matching the grammar the CCM and the IPAM provider both write:
+// clusterReservationPrefix is the prefix the CCM writes on every address it
+// reserves for cluster:
 //
 //	nkp:<b64u(clusterUID)>:<b64u(serviceUID)>  a LoadBalancer Service address
-//	nkp:<b64u(clusterUID)>:cp                  the API server VIP
 //
 // Prism caps the context at 64 characters, which is why each UUID is packed
 // into 22 characters rather than written out.
+//
+// The API server VIP does NOT carry this prefix. It is reserved by the Nutanix
+// IPAM provider, which writes the IPAddressClaim's UID verbatim as the context
+// (internal/controllers/ipaddressclaim.go) and exposes no field on
+// NutanixIPPool to override it. The VIP is therefore swept by exact context
+// match on those UIDs, which the caller reads while the claims still exist.
 func clusterReservationPrefix(clusterUID string) string {
 	return "nkp:" + encodeUID(clusterUID) + ":"
 }
@@ -94,11 +99,14 @@ func encodeUID(uid string) string {
 // releases everything under one context, is the operation that fits.
 //
 // It is idempotent: a second run finds nothing and succeeds.
+// claimContexts are reservation contexts the IPAM provider wrote for this
+// cluster, collected by the caller before the claims are garbage-collected.
 func releaseClusterReservations(
 	ctx context.Context,
 	releaser reservationReleaser,
 	cluster *clusterv1.Cluster,
 	subnet, prismElementCluster string,
+	claimContexts []string,
 	log logr.Logger,
 ) error {
 	clusterUID := string(cluster.GetUID())
@@ -133,7 +141,7 @@ func releaseClusterReservations(
 			ErrFailedToReleaseReservations, subnetExtID, err)
 	}
 
-	stale := reservationContextsForCluster(reserved, clusterUID)
+	stale := reservationContextsForCluster(reserved, clusterUID, claimContexts)
 	if len(stale) == 0 {
 		return nil
 	}
@@ -162,11 +170,23 @@ func releaseClusterReservations(
 // order. A reservation made by anything other than NKP, or by another cluster,
 // is never returned: the subnet is shared with VMs and may be shared with other
 // clusters.
-func reservationContextsForCluster(reserved []ReservedIP, clusterUID string) []string {
+//
+// exact holds contexts that belong to the cluster but cannot be recognised from
+// their text, which is the IPAM provider's case: it writes the IPAddressClaim
+// UID. Only contexts the caller has already tied to this cluster may be passed,
+// because a bare UID carries nothing to verify against.
+func reservationContextsForCluster(reserved []ReservedIP, clusterUID string, exact []string) []string {
 	prefix := clusterReservationPrefix(clusterUID)
+	want := make(map[string]struct{}, len(exact))
+	for _, e := range exact {
+		if e != "" {
+			want[e] = struct{}{}
+		}
+	}
 	matched := make([]string, 0, len(reserved))
 	for _, r := range reserved {
-		if !strings.HasPrefix(r.ClientContext, prefix) {
+		_, named := want[r.ClientContext]
+		if !named && !strings.HasPrefix(r.ClientContext, prefix) {
 			continue
 		}
 		matched = append(matched, r.ClientContext)
