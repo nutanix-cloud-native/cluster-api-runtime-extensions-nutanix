@@ -157,6 +157,27 @@ func (h *ControlPlaneEndpointIPAM) BeforeClusterCreate(
 // It is not a failure; the hook is asked again.
 var errReservationPending = errors.New("waiting for the API server address to be reserved")
 
+// pendingOnClaim reports the wait and says where the reason lives.
+//
+// The hook retries until an address appears, so a reservation that can never
+// succeed - an exhausted subnet pool answers kAddressPoolExhausted - looks
+// identical to one that is merely slow. The IPAM provider does not currently
+// record a condition when a reservation fails, so the cause is only in its
+// logs; naming the claim at least points there, and any condition it does set
+// is surfaced rather than swallowed.
+func pendingOnClaim(claim *ipamv1.IPAddressClaim) error {
+	key := ctrlclient.ObjectKeyFromObject(claim)
+	for _, c := range claim.Status.Conditions {
+		if c.Status != metav1.ConditionTrue && c.Message != "" {
+			return fmt.Errorf("%w: IPAddressClaim %s: %s: %s",
+				errReservationPending, key, c.Reason, c.Message)
+		}
+	}
+	return fmt.Errorf("%w: IPAddressClaim %s has no address yet; "+
+		"if this persists, check the IPAM provider logs for the subnet pool state",
+		errReservationPending, key)
+}
+
 // reservationSource returns the reservation request and the Prism Central it
 // should use, or nil when this cluster does not reserve its API server address.
 func reservationSource(clusterConfig *apivariables.ClusterConfigSpec) (
@@ -195,7 +216,7 @@ func (h *ControlPlaneEndpointIPAM) reserve(
 	}
 
 	if claim.Status.AddressRef.Name == "" {
-		return "", errReservationPending
+		return "", pendingOnClaim(claim)
 	}
 
 	address := &ipamv1.IPAddress{}
