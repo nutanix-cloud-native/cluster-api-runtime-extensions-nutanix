@@ -496,3 +496,44 @@ func TestBeforeClusterCreateFailsFastWithoutTheIPAMProvider(t *testing.T) {
 	assert.Contains(t, resp.Message, "Nutanix IPAM provider is not installed")
 	assert.Empty(t, configuredHost(t, c))
 }
+
+func TestPendingOnClaim(t *testing.T) {
+	t.Parallel()
+
+	claim := func(conds ...metav1.Condition) *ipamv1.IPAddressClaim {
+		return &ipamv1.IPAddressClaim{
+			ObjectMeta: metav1.ObjectMeta{Name: "wl-control-plane-endpoint", Namespace: "default"},
+			Status:     ipamv1.IPAddressClaimStatus{Conditions: conds},
+		}
+	}
+
+	t.Run("still pending without a condition, and says where to look", func(t *testing.T) {
+		t.Parallel()
+		err := pendingOnClaim(claim())
+		require.ErrorIs(t, err, errReservationPending)
+		assert.Contains(t, err.Error(), "default/wl-control-plane-endpoint")
+		assert.Contains(t, err.Error(), "IPAM provider logs")
+	})
+
+	t.Run("a failing condition is surfaced instead of swallowed", func(t *testing.T) {
+		t.Parallel()
+		err := pendingOnClaim(claim(metav1.Condition{
+			Type:    "Ready",
+			Status:  metav1.ConditionFalse,
+			Reason:  "ReservationFailed",
+			Message: "kAddressPoolExhausted: Could not get free IP address",
+		}))
+		require.ErrorIs(t, err, errReservationPending)
+		assert.Contains(t, err.Error(), "ReservationFailed")
+		assert.Contains(t, err.Error(), "kAddressPoolExhausted")
+	})
+
+	t.Run("a satisfied condition is not mistaken for a failure", func(t *testing.T) {
+		t.Parallel()
+		err := pendingOnClaim(claim(metav1.Condition{
+			Type: "Ready", Status: metav1.ConditionTrue, Reason: "Allocated", Message: "done",
+		}))
+		require.ErrorIs(t, err, errReservationPending)
+		assert.NotContains(t, err.Error(), "done")
+	})
+}
