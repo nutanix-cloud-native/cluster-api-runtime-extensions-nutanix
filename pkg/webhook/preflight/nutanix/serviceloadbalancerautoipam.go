@@ -15,26 +15,37 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"k8s.io/utils/ptr"
 
-	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
 )
 
 // autoIPAMField is the topology path operators see in a failure message.
 const autoIPAMField = `$.spec.topology.variables[?@.name=="clusterConfig"].value.addons.serviceLoadBalancer.configuration.autoIPAM` //nolint:lll // The field path is long.
 
+// ipReservationField is the topology path for the API server address.
+const ipReservationField = `$.spec.topology.variables[?@.name=="clusterConfig"].value.nutanix.controlPlaneEndpoint.virtualIP.configuration.ipReservation` //nolint:lll // The field path is long.
+
 // reservedIPsProbeLimit keeps the probe to one row. It is a permission and
 // capability probe, not a listing.
 const reservedIPsProbeLimit = 1
 
 type serviceLoadBalancerAutoIPAMCheck struct {
-	autoIPAM *carenv1.ServiceLoadBalancerAutoIPAM
+	// subnet is the subnet addresses are reserved from, by name or extID.
+	subnet string
 	// prismElementCluster resolves the subnet when it is given by name.
 	prismElementCluster string
-	nclient             client
+	// name distinguishes this check in the preflight report.
+	name string
+	// field is the topology path an operator edits to fix a failure.
+	field string
+	// purpose names what the addresses are for, and component names what
+	// reserves them, so one message can serve either caller.
+	purpose   string
+	component string
+	nclient   client
 }
 
 func (c *serviceLoadBalancerAutoIPAMCheck) Name() string {
-	return "NutanixServiceLoadBalancerAutoIPAM"
+	return c.name
 }
 
 // Run proves that the CCM will be able to reserve a Service address on the
@@ -56,28 +67,31 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Name() string {
 func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.CheckResult {
 	result := preflight.CheckResult{Allowed: true}
 
-	if c.autoIPAM.Subnet == "" {
+	if c.subnet == "" {
 		result.Allowed = false
 		result.Causes = append(result.Causes, preflight.Cause{
-			Message: "Service LoadBalancer automatic IP address management requires a subnet. Review the Cluster.", //nolint:lll // Message is long.
-			Field:   autoIPAMField + ".subnet",
+			Message: fmt.Sprintf(
+				"Automatic IP address management for the %s requires a subnet. Review the Cluster.",
+				c.purpose,
+			),
+			Field: c.field + ".subnet",
 		})
 		return result
 	}
 
 	// A name has to be resolved before anything can be asked about the subnet.
 	// A UUID is used as given: the listing below reports it if it does not exist.
-	subnetExtID := c.autoIPAM.Subnet
+	subnetExtID := c.subnet
 	if _, err := uuid.Parse(subnetExtID); err != nil {
-		resolved, resolveErr := c.resolveSubnetByName(ctx, c.autoIPAM.Subnet)
+		resolved, resolveErr := c.resolveSubnetByName(ctx, c.subnet)
 		if resolveErr != nil {
 			result.Allowed = false
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Failed to find the Service LoadBalancer subnet %q: %s. Review the Cluster.",
-					c.autoIPAM.Subnet, resolveErr,
+					"Failed to find the %s subnet %q: %s. Review the Cluster.",
+					c.purpose, c.subnet, resolveErr,
 				),
-				Field: autoIPAMField + ".subnet",
+				Field: c.field + ".subnet",
 			})
 			return result
 		}
@@ -90,39 +104,41 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 		case isUnmanagedSubnetError(err):
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"Subnet %q is not IP address managed, so the Nutanix CCM cannot reserve addresses from it. Use an IPAM-managed subnet, or configure static addressRanges instead. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet,
+					"Subnet %q is not IP address managed, so the %s cannot reserve addresses from it. Use an IPAM-managed subnet, or configure a static address instead. (%s)", //nolint:lll // Message is long.
+					c.subnet,
+					c.component,
 					err,
 				),
-				Field: autoIPAMField + ".subnet",
+				Field: c.field + ".subnet",
 			})
 		case isSubnetNotFoundError(err):
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Subnet %q does not exist on this Prism Central, or these credentials cannot see it. Review the Cluster. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet,
+					c.subnet,
 					err,
 				),
-				Field: autoIPAMField + ".subnet",
+				Field: c.field + ".subnet",
 			})
 		case isPermissionError(err):
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
-					"The Prism Central credentials are not permitted to read IP reservations on subnet %q, so the Nutanix CCM cannot reserve addresses from it. Grant the role the IP reservation privileges on this subnet. (%s)", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet,
+					"The Prism Central credentials are not permitted to read IP reservations on subnet %q, so the %s cannot reserve addresses from it. Grant the role the IP reservation privileges on this subnet. (%s)", //nolint:lll // Message is long.
+					c.subnet,
+					c.component,
 					err,
 				),
-				Field: autoIPAMField + ".subnet",
+				Field: c.field + ".subnet",
 			})
 		default:
 			result.InternalError = true
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Failed to read IP reservations on subnet %q: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
-					c.autoIPAM.Subnet,
+					c.subnet,
 					err,
 				),
-				Field: autoIPAMField + ".subnet",
+				Field: c.field + ".subnet",
 			})
 		}
 		return result
@@ -321,31 +337,54 @@ func isPermissionError(err error) bool {
 		strings.Contains(message, "401")
 }
 
-// newServiceLoadBalancerAutoIPAMChecks returns the automatic-addressing checks
-// for the cluster. A cluster with static address ranges, or no Service
-// LoadBalancer at all, gets none.
+// newServiceLoadBalancerAutoIPAMChecks returns a check for every subnet this
+// cluster reserves addresses from.
+//
+// Both are checked for the same reason and with the same probe: reserving from
+// a subnet that is unmanaged, absent or unreadable can never work, and without
+// this the cluster is created and then waits. For the Service LoadBalancer
+// every Service hangs in Pending; for the API server address the cluster never
+// gets an endpoint at all, and the only clue is a line in the IPAM provider's
+// log saying the subnet has no IP prefix.
 func newServiceLoadBalancerAutoIPAMChecks(cd *checkDependencies) []preflight.Check {
 	if cd.nutanixClusterConfigSpec == nil || cd.nclient == nil {
 		return nil
 	}
-	addons := cd.nutanixClusterConfigSpec.Addons
-	if addons == nil || addons.ServiceLoadBalancer == nil ||
-		addons.ServiceLoadBalancer.Configuration == nil ||
-		addons.ServiceLoadBalancer.Configuration.AutoIPAM == nil {
-		return nil
-	}
 
-	autoIPAM := addons.ServiceLoadBalancer.Configuration.AutoIPAM
-	prismElementCluster := ""
-	if autoIPAM.Cluster != nil {
-		prismElementCluster = *autoIPAM.Cluster
-	}
+	var checks []preflight.Check
 
-	return []preflight.Check{
-		&serviceLoadBalancerAutoIPAMCheck{
-			autoIPAM:            autoIPAM,
-			prismElementCluster: prismElementCluster,
+	if addons := cd.nutanixClusterConfigSpec.Addons; addons != nil &&
+		addons.ServiceLoadBalancer != nil &&
+		addons.ServiceLoadBalancer.Configuration != nil &&
+		addons.ServiceLoadBalancer.Configuration.AutoIPAM != nil {
+		autoIPAM := addons.ServiceLoadBalancer.Configuration.AutoIPAM
+		checks = append(checks, &serviceLoadBalancerAutoIPAMCheck{
+			name:                "NutanixServiceLoadBalancerAutoIPAM",
+			subnet:              autoIPAM.Subnet,
+			prismElementCluster: ptr.Deref(autoIPAM.Cluster, ""),
+			field:               autoIPAMField,
+			purpose:             "Service LoadBalancer",
+			component:           "Nutanix CCM",
 			nclient:             cd.nclient,
-		},
+		})
 	}
+
+	if nutanix := cd.nutanixClusterConfigSpec.Nutanix; nutanix != nil {
+		if vip := nutanix.ControlPlaneEndpoint.VirtualIPSpec; vip != nil &&
+			vip.Configuration != nil &&
+			vip.Configuration.IPReservation != nil {
+			reservation := vip.Configuration.IPReservation
+			checks = append(checks, &serviceLoadBalancerAutoIPAMCheck{
+				name:                "NutanixControlPlaneEndpointIPReservation",
+				subnet:              reservation.Subnet,
+				prismElementCluster: ptr.Deref(reservation.Cluster, ""),
+				field:               ipReservationField,
+				purpose:             "API server address",
+				component:           "Nutanix IPAM provider",
+				nclient:             cd.nclient,
+			})
+		}
+	}
+
+	return checks
 }
