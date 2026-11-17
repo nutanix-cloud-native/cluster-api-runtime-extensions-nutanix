@@ -19,6 +19,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	remotefake "sigs.k8s.io/cluster-api/controllers/remote/fake"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,9 @@ import (
 const (
 	clusterAUID = "0f1b17bc-289f-4cc2-b558-6eef10065e57"
 	clusterBUID = "7c2d1e40-5f3a-4b21-9d8e-11aa22bb33cc"
+	// claimUID is what the Nutanix IPAM provider writes as the reservation
+	// context for an IPAddressClaim: the claim's UID, with no NKP prefix.
+	claimUID = "b4e9a1c7-2d58-4e6f-8a03-5c71de92f4b8"
 )
 
 // fakeReleaser records what the sweep asked Prism Central to do.
@@ -85,6 +89,7 @@ func TestReservationContextsForCluster(t *testing.T) {
 	tests := []struct {
 		name     string
 		reserved []ReservedIP
+		exact    []string
 		expect   []string
 	}{
 		{
@@ -101,13 +106,35 @@ func TestReservationContextsForCluster(t *testing.T) {
 			expect: []string{ctxA("svcA"), ctxA("svcB")},
 		},
 		{
-			// The API server VIP shares the cluster prefix, so one sweep covers
-			// both halves of automatic addressing.
-			name: "the control-plane VIP is included",
+			// The API server VIP does NOT share the cluster prefix: the Nutanix
+			// IPAM provider reserves it with the IPAddressClaim's UID verbatim.
+			// Unless the caller names that UID, the prefix sweep cannot see it,
+			// and must not guess - a bare UID could belong to anyone.
+			name: "a claim UID is left alone when the caller does not name it",
 			reserved: []ReservedIP{
-				{Address: "10.0.0.1", ClientContext: clusterReservationPrefix(clusterAUID) + "cp"},
+				{Address: "10.0.0.1", ClientContext: claimUID},
 			},
-			expect: []string{clusterReservationPrefix(clusterAUID) + "cp"},
+			expect: []string{},
+		},
+		{
+			name: "a claim UID the caller names is released",
+			reserved: []ReservedIP{
+				{Address: "10.0.0.1", ClientContext: claimUID},
+				{Address: "10.0.0.2", ClientContext: ctxA("svcA")},
+			},
+			exact:  []string{claimUID},
+			expect: []string{claimUID, ctxA("svcA")},
+		},
+		{
+			// A claim that no longer exists contributes nothing, so an empty or
+			// absent UID must not widen the sweep.
+			name: "an empty named context matches nothing",
+			reserved: []ReservedIP{
+				{Address: "10.0.0.1", ClientContext: ""},
+				{Address: "10.0.0.2", ClientContext: "unrelated"},
+			},
+			exact:  []string{""},
+			expect: []string{},
 		},
 		{
 			name: "another cluster is never touched",
@@ -143,7 +170,7 @@ func TestReservationContextsForCluster(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, tt.expect, reservationContextsForCluster(tt.reserved, clusterAUID))
+			assert.Equal(t, tt.expect, reservationContextsForCluster(tt.reserved, clusterAUID, tt.exact))
 		})
 	}
 }
@@ -163,7 +190,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 			},
 		}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "vlan170", "pe-1", logr.Discard())
+			testClusterWithUID(clusterAUID), "vlan170", "pe-1", nil, logr.Discard())
 		require.NoError(t, err)
 		assert.Equal(t,
 			[]string{clusterReservationPrefix(clusterAUID) + "cp", ctxA("svcA")},
@@ -175,7 +202,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 		t.Parallel()
 		releaser := &fakeReleaser{subnetExtID: "subnet-uuid"}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "subnet-uuid", "", logr.Discard())
+			testClusterWithUID(clusterAUID), "subnet-uuid", "", nil, logr.Discard())
 		require.NoError(t, err)
 		assert.Empty(t, releaser.unreserveCalled)
 	})
@@ -188,10 +215,10 @@ func TestReleaseClusterReservations(t *testing.T) {
 		}
 		cluster := testClusterWithUID(clusterAUID)
 		require.NoError(t, releaseClusterReservations(context.Background(), releaser,
-			cluster, "subnet-uuid", "", logr.Discard()))
+			cluster, "subnet-uuid", "", nil, logr.Discard()))
 		releaser.reserved = nil
 		require.NoError(t, releaseClusterReservations(context.Background(), releaser,
-			cluster, "subnet-uuid", "", logr.Discard()))
+			cluster, "subnet-uuid", "", nil, logr.Discard()))
 		assert.Equal(t, []string{ctxA("svcA")}, releaser.unreserveCalled)
 	})
 
@@ -206,7 +233,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 			unreserveErr: map[string]error{ctxA("svcA"): errors.New("prism unavailable")},
 		}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "subnet-uuid", "", logr.Discard())
+			testClusterWithUID(clusterAUID), "subnet-uuid", "", nil, logr.Discard())
 		require.ErrorIs(t, err, ErrFailedToReleaseReservations)
 		assert.Contains(t, err.Error(), ctxA("svcA"))
 		assert.NotContains(t, err.Error(), ctxA("svcB"))
@@ -221,7 +248,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 			reserved:    []ReservedIP{{Address: "10.0.0.1", ClientContext: ctxA("svcA")}},
 		}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(""), "subnet-uuid", "", logr.Discard())
+			testClusterWithUID(""), "subnet-uuid", "", nil, logr.Discard())
 		require.ErrorIs(t, err, ErrFailedToReleaseReservations)
 		assert.Empty(t, releaser.unreserveCalled)
 		assert.Empty(t, releaser.resolveCalls)
@@ -231,7 +258,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 		t.Parallel()
 		releaser := &fakeReleaser{resolveErr: errors.New(`no subnet named "vlan170"`)}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "vlan170", "", logr.Discard())
+			testClusterWithUID(clusterAUID), "vlan170", "", nil, logr.Discard())
 		require.ErrorIs(t, err, ErrFailedToReleaseReservations)
 		assert.Empty(t, releaser.unreserveCalled)
 	})
@@ -240,7 +267,7 @@ func TestReleaseClusterReservations(t *testing.T) {
 		t.Parallel()
 		releaser := &fakeReleaser{subnetExtID: "subnet-uuid", reservedErr: errors.New("prism unavailable")}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "subnet-uuid", "", logr.Discard())
+			testClusterWithUID(clusterAUID), "subnet-uuid", "", nil, logr.Discard())
 		require.ErrorIs(t, err, ErrFailedToReleaseReservations)
 		assert.Empty(t, releaser.unreserveCalled)
 	})
@@ -487,7 +514,7 @@ func TestReleaseClusterReservationsTolerantOfAMissingSubnet(t *testing.T) {
 			resolveErr: fmt.Errorf("%w: no subnet named %q", errNothingToRelease, "vlan170"),
 		}
 		require.NoError(t, releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "vlan170", "", logr.Discard()))
+			testClusterWithUID(clusterAUID), "vlan170", "", nil, logr.Discard()))
 		assert.Empty(t, releaser.unreserveCalled)
 	})
 
@@ -499,7 +526,7 @@ func TestReleaseClusterReservationsTolerantOfAMissingSubnet(t *testing.T) {
 				"Cannot fetch reserved IP addresses for unmanaged subnets"),
 		}
 		require.NoError(t, releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "subnet-uuid", "", logr.Discard()))
+			testClusterWithUID(clusterAUID), "subnet-uuid", "", nil, logr.Discard()))
 		assert.Empty(t, releaser.unreserveCalled)
 	})
 
@@ -509,7 +536,7 @@ func TestReleaseClusterReservationsTolerantOfAMissingSubnet(t *testing.T) {
 			resolveErr: errors.New(`subnet name "shared" matches 2 subnets`),
 		}
 		err := releaseClusterReservations(context.Background(), releaser,
-			testClusterWithUID(clusterAUID), "shared", "", logr.Discard())
+			testClusterWithUID(clusterAUID), "shared", "", nil, logr.Discard())
 		require.ErrorIs(t, err, ErrFailedToReleaseReservations)
 	})
 }
@@ -608,4 +635,73 @@ func TestUnreachableSweepSkipsStaticClusters(t *testing.T) {
 	require.NoError(t, handler.sweepReservations(
 		context.Background(), testClusterWithUID(clusterAUID), logr.Discard()))
 	assert.False(t, called, "a cluster with no autoIPAM contacted Prism Central")
+}
+
+func TestControlPlaneClaimContexts(t *testing.T) {
+	t.Parallel()
+
+	newHandler := func(objs ...ctrlclient.Object) *ServiceLoadBalancerGC {
+		scheme := runtime.NewScheme()
+		utilruntime.Must(corev1.AddToScheme(scheme))
+		utilruntime.Must(clusterv1.AddToScheme(scheme))
+		utilruntime.Must(ipamv1.AddToScheme(scheme))
+		return &ServiceLoadBalancerGC{
+			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build(),
+		}
+	}
+	claim := func(name, uid, clusterName string) *ipamv1.IPAddressClaim {
+		return &ipamv1.IPAddressClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: "default",
+				UID:       types.UID(uid),
+				Labels:    map[string]string{clusterv1.ClusterNameLabel: clusterName},
+			},
+		}
+	}
+	cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+
+	t.Run("returns the UID of this cluster's claim", func(t *testing.T) {
+		t.Parallel()
+		h := newHandler(claim(cluster.Name+"-control-plane-endpoint", claimUID, cluster.Name))
+		assert.Equal(t, []string{claimUID},
+			h.controlPlaneClaimContexts(context.Background(), cluster, logr.Discard()))
+	})
+
+	t.Run("ignores claims belonging to another cluster", func(t *testing.T) {
+		t.Parallel()
+		h := newHandler(claim("other-control-plane-endpoint", claimUID, "other-cluster"))
+		assert.Empty(t, h.controlPlaneClaimContexts(context.Background(), cluster, logr.Discard()))
+	})
+
+	t.Run("no claim is not an error", func(t *testing.T) {
+		t.Parallel()
+		h := newHandler()
+		assert.Empty(t, h.controlPlaneClaimContexts(context.Background(), cluster, logr.Discard()))
+	})
+
+	// The regression this guards: the VIP reservation carries a bare claim UID,
+	// so without collecting it the prefix sweep walks straight past the address
+	// and the cluster's API server IP is leaked on Prism Central.
+	t.Run("the VIP is released only because its claim UID was collected", func(t *testing.T) {
+		t.Parallel()
+		reserved := []ReservedIP{
+			{Address: "10.0.0.1", ClientContext: ctxA("svcA")},
+			{Address: "10.0.0.9", ClientContext: claimUID},
+		}
+
+		withoutClaim := &fakeReleaser{subnetExtID: "subnet-uuid", reserved: reserved}
+		require.NoError(t, releaseClusterReservations(context.Background(), withoutClaim,
+			cluster, "subnet-uuid", "", nil, logr.Discard()))
+		assert.Equal(t, []string{ctxA("svcA")}, withoutClaim.unreserveCalled,
+			"the VIP must be invisible to a prefix-only sweep")
+
+		withClaim := &fakeReleaser{subnetExtID: "subnet-uuid", reserved: reserved}
+		h := newHandler(claim(cluster.Name+"-control-plane-endpoint", claimUID, cluster.Name))
+		require.NoError(t, releaseClusterReservations(context.Background(), withClaim,
+			cluster, "subnet-uuid", "",
+			h.controlPlaneClaimContexts(context.Background(), cluster, logr.Discard()),
+			logr.Discard()))
+		assert.Equal(t, []string{claimUID, ctxA("svcA")}, withClaim.unreserveCalled)
+	})
 }

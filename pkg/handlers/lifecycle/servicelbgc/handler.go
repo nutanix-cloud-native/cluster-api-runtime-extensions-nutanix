@@ -11,6 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -202,13 +203,47 @@ func (s *ServiceLoadBalancerGC) releaseReservations(
 		return
 	}
 
-	if err := releaseClusterReservations(ctx, releaser, cluster, subnet, prismElementCluster, log); err != nil {
+	claims := s.controlPlaneClaimContexts(ctx, cluster, log)
+	if err := releaseClusterReservations(
+		ctx, releaser, cluster, subnet, prismElementCluster, claims, log,
+	); err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		resp.SetRetryAfterSeconds(5)
 		return
 	}
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+// controlPlaneClaimContexts returns the reservation contexts the Nutanix IPAM
+// provider wrote for this cluster's address claims, which is each claim's own
+// UID. They have to be read here, while the claims still exist: once the
+// Cluster is gone they are garbage-collected with it, and a bare UID left on
+// Prism Central cannot be attributed to any cluster afterwards.
+//
+// Failure is logged and not returned. The provider releases these addresses
+// itself when the claim is deleted, so this is the safety net for the case
+// where it cannot: it must never block deletion.
+func (s *ServiceLoadBalancerGC) controlPlaneClaimContexts(
+	ctx context.Context,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) []string {
+	claims := &ipamv1.IPAddressClaimList{}
+	if err := s.client.List(ctx, claims,
+		ctrlclient.InNamespace(cluster.Namespace),
+		ctrlclient.MatchingLabels{clusterv1.ClusterNameLabel: cluster.Name},
+	); err != nil {
+		log.Error(err, "Could not list IPAddressClaims; the API server address may be left reserved")
+		return nil
+	}
+	contexts := make([]string, 0, len(claims.Items))
+	for i := range claims.Items {
+		if uid := string(claims.Items[i].GetUID()); uid != "" {
+			contexts = append(contexts, uid)
+		}
+	}
+	return contexts
 }
 
 // sweepReservations releases the cluster's reservations without touching the
@@ -229,7 +264,10 @@ func (s *ServiceLoadBalancerGC) sweepReservations(
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrFailedToReleaseReservations, err)
 	}
-	return releaseClusterReservations(ctx, releaser, cluster, subnet, prismElementCluster, log)
+	return releaseClusterReservations(
+		ctx, releaser, cluster, subnet, prismElementCluster,
+		s.controlPlaneClaimContexts(ctx, cluster, log), log,
+	)
 }
 
 // autoIPAMReservationSource returns the subnet the cluster reserves Service
