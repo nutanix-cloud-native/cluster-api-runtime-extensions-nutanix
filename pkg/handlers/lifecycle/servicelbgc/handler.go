@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -176,14 +178,14 @@ func (s *ServiceLoadBalancerGC) releaseReservations(
 	resp *runtimehooksv1.BeforeClusterDeleteResponse,
 	log logr.Logger,
 ) {
-	subnet, prismElementCluster, endpoint, err := autoIPAMReservationSource(cluster)
+	subnets, endpoint, err := autoIPAMReservationSubnets(cluster)
 	if err != nil {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
 	}
-	if subnet == "" {
-		// Static address ranges: nothing was ever reserved on Prism Central.
+	if len(subnets) == 0 {
+		// Static addresses throughout: nothing was ever reserved on Prism Central.
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	}
@@ -204,11 +206,19 @@ func (s *ServiceLoadBalancerGC) releaseReservations(
 	}
 
 	claims := s.controlPlaneClaimContexts(ctx, cluster, log)
-	if err := releaseClusterReservations(
-		ctx, releaser, cluster, subnet, prismElementCluster, claims, log,
-	); err != nil {
+	// Keep going after a failure so one unreachable subnet does not hide a
+	// leak on another, and report every subnet that is still holding.
+	var failures []string
+	for _, src := range subnets {
+		if err := releaseClusterReservations(
+			ctx, releaser, cluster, src.Subnet, src.PrismElementCluster, claims, log,
+		); err != nil {
+			failures = append(failures, err.Error())
+		}
+	}
+	if len(failures) > 0 {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(err.Error())
+		resp.SetMessage(strings.Join(failures, "; "))
 		resp.SetRetryAfterSeconds(5)
 		return
 	}
@@ -253,8 +263,8 @@ func (s *ServiceLoadBalancerGC) sweepReservations(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
-	subnet, prismElementCluster, endpoint, err := autoIPAMReservationSource(cluster)
-	if err != nil || subnet == "" {
+	subnets, endpoint, err := autoIPAMReservationSubnets(cluster)
+	if err != nil || len(subnets) == 0 {
 		return err
 	}
 	if s.releaserGetter == nil {
@@ -264,36 +274,76 @@ func (s *ServiceLoadBalancerGC) sweepReservations(
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrFailedToReleaseReservations, err)
 	}
-	return releaseClusterReservations(
-		ctx, releaser, cluster, subnet, prismElementCluster,
-		s.controlPlaneClaimContexts(ctx, cluster, log), log,
-	)
+	claims := s.controlPlaneClaimContexts(ctx, cluster, log)
+	var errs []error
+	for _, src := range subnets {
+		if relErr := releaseClusterReservations(
+			ctx, releaser, cluster, src.Subnet, src.PrismElementCluster, claims, log,
+		); relErr != nil {
+			errs = append(errs, relErr)
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // autoIPAMReservationSource returns the subnet the cluster reserves Service
 // addresses from, the Prism Element cluster that resolves it by name, and the
 // Prism Central to talk to. An empty subnet means the cluster does not reserve
 // addresses at all.
-func autoIPAMReservationSource(cluster *clusterv1.Cluster) (
-	subnet string,
-	prismElementCluster string,
+func autoIPAMReservationSubnets(cluster *clusterv1.Cluster) (
+	subnets []reservationSubnet,
 	endpoint *carenv1.NutanixPrismCentralEndpointSpec,
 	err error,
 ) {
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
-		return "", "", nil, fmt.Errorf("%w: read cluster config: %w", ErrFailedToReleaseReservations, err)
+		return nil, nil, fmt.Errorf("%w: read cluster config: %w", ErrFailedToReleaseReservations, err)
 	}
-	if clusterConfig == nil || clusterConfig.Nutanix == nil || clusterConfig.Addons == nil {
-		return "", "", nil, nil
+	if clusterConfig == nil || clusterConfig.Nutanix == nil {
+		return nil, nil, nil
 	}
-	slb := clusterConfig.Addons.ServiceLoadBalancer
-	if slb == nil || slb.Configuration == nil || slb.Configuration.AutoIPAM == nil {
-		return "", "", nil, nil
+
+	add := func(subnet string, peCluster *string) {
+		if subnet == "" {
+			return
+		}
+		next := reservationSubnet{Subnet: subnet}
+		if peCluster != nil {
+			next.PrismElementCluster = *peCluster
+		}
+		if slices.Contains(subnets, next) {
+			return
+		}
+		subnets = append(subnets, next)
 	}
-	autoIPAM := slb.Configuration.AutoIPAM
-	if autoIPAM.Cluster != nil {
-		prismElementCluster = *autoIPAM.Cluster
+
+	// Service LoadBalancer addresses, reserved by the CCM.
+	if addons := clusterConfig.Addons; addons != nil {
+		if slb := addons.ServiceLoadBalancer; slb != nil && slb.Configuration != nil {
+			if autoIPAM := slb.Configuration.AutoIPAM; autoIPAM != nil {
+				add(autoIPAM.Subnet, autoIPAM.Cluster)
+			}
+		}
 	}
-	return autoIPAM.Subnet, prismElementCluster, &clusterConfig.Nutanix.PrismCentralEndpoint, nil
+
+	// The API server address, reserved by the IPAM provider. A cluster may use
+	// this alone, and it may name a different subnet than the Service one, so
+	// it cannot be folded into the case above.
+	if vip := clusterConfig.Nutanix.ControlPlaneEndpoint.VirtualIPSpec; vip != nil && vip.Configuration != nil {
+		if res := vip.Configuration.IPReservation; res != nil {
+			add(res.Subnet, res.Cluster)
+		}
+	}
+
+	if len(subnets) == 0 {
+		return nil, nil, nil
+	}
+	return subnets, &clusterConfig.Nutanix.PrismCentralEndpoint, nil
+}
+
+// reservationSubnet is one subnet a cluster reserves addresses on, with the
+// Prism Element cluster that resolves it when it is named rather than a UUID.
+type reservationSubnet struct {
+	Subnet              string
+	PrismElementCluster string
 }
