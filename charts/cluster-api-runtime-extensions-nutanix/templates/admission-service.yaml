@@ -6,7 +6,7 @@ kind: Service
 metadata:
   annotations:
     {{- with .Values.service.annotations }}
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   labels:
     {{- include "chart.labels" . | nindent 4 }}

@@ -8,5 +8,5 @@ metadata:
   name: '{{ (index .Values.hooks.csi "local-path").helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/csi/local-path/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/csi/local-path/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}

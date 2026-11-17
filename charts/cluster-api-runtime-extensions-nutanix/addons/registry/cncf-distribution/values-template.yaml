@@ -31,7 +31,7 @@ tolerations:
     effect: "NoSchedule"
 
 podLabels:
-  cncf-distribution-registry: "true" # ensure the labels match with pod AntiAffinity.
+  cncf-distribution-registry: "true"  # ensure the labels match with pod AntiAffinity.
 
 affinity:
   nodeAffinity:

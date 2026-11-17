@@ -32,6 +32,12 @@ repos:
     language: system
     files: "^charts/"
     pass_filenames: false
+  - id: lint-chart
+    name: lint-chart
+    entry: make lint-chart
+    language: system
+    files: "^charts/"
+    pass_filenames: false
   - id: hugo-mod-tidy
     name: hugo-mod-tidy
     entry: bash -c "cd docs && hugo mod tidy"

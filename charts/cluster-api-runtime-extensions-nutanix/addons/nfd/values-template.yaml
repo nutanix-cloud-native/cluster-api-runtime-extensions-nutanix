@@ -18,7 +18,7 @@ master:
                 operator: In
                 values: [""]
 
-worker: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
+worker:  ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
   config:
     sources:
       pci:

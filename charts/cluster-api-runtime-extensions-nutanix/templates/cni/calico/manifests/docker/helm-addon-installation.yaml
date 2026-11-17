@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.DockerCluster.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/calico/docker/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/calico/docker/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}

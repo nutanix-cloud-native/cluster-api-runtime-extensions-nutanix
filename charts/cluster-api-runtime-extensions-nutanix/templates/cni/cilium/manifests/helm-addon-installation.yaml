@@ -8,7 +8,7 @@ metadata:
   name: '{{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/cilium/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/cilium/values-template.yaml" | include "chart.indentValuesTemplate" }}
   preflight-values.yaml: |-
-    {{- .Files.Get "addons/cni/cilium/preflight-values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/cilium/preflight-values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}

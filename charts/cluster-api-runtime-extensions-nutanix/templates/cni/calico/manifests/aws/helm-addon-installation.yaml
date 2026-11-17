@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.cni.calico.helmAddonStrategy.defaultValueTemplatesConfigMaps.AWSCluster.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/cni/calico/aws/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/cni/calico/aws/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}

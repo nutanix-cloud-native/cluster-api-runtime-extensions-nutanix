@@ -8,5 +8,5 @@ metadata:
   name: '{{ .Values.hooks.konnectorAgent.helmAddonStrategy.defaultValueTemplateConfigMap.name }}'
 data:
   values.yaml: |-
-    {{- .Files.Get "addons/konnector-agent/values-template.yaml" | nindent 4 }}
+    {{- .Files.Get "addons/konnector-agent/values-template.yaml" | include "chart.indentValuesTemplate" }}
 {{- end -}}
