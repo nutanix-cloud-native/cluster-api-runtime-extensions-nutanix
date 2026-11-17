@@ -322,39 +322,37 @@ func autoIPAMCluster(t *testing.T, uid, subnet string, peCluster *string) *clust
 	return cluster
 }
 
-func TestAutoIPAMReservationSource(t *testing.T) {
+func TestAutoIPAMReservationSubnets(t *testing.T) {
 	t.Parallel()
 
-	t.Run("automatic mode reports the subnet and endpoint", func(t *testing.T) {
+	t.Run("the Service subnet is reported with the endpoint", func(t *testing.T) {
 		t.Parallel()
-		subnet, peCluster, endpoint, err := autoIPAMReservationSource(
+		subnets, endpoint, err := autoIPAMReservationSubnets(
 			autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1")))
 		require.NoError(t, err)
-		assert.Equal(t, "vlan170", subnet)
-		assert.Equal(t, "pe-1", peCluster)
+		assert.Equal(t, []reservationSubnet{{Subnet: "vlan170", PrismElementCluster: "pe-1"}}, subnets)
 		require.NotNil(t, endpoint)
 		assert.Equal(t, "creds", endpoint.Credentials.SecretRef.Name)
 	})
 
 	t.Run("a subnet UUID needs no Prism Element cluster", func(t *testing.T) {
 		t.Parallel()
-		subnet, peCluster, _, err := autoIPAMReservationSource(
+		subnets, _, err := autoIPAMReservationSubnets(
 			autoIPAMCluster(t, clusterAUID, "subnet-uuid", nil))
 		require.NoError(t, err)
-		assert.Equal(t, "subnet-uuid", subnet)
-		assert.Empty(t, peCluster)
+		assert.Equal(t, []reservationSubnet{{Subnet: "subnet-uuid"}}, subnets)
 	})
 
 	t.Run("a cluster with no topology variables reserves nothing", func(t *testing.T) {
 		t.Parallel()
-		subnet, _, _, err := autoIPAMReservationSource(testClusterWithUID(clusterAUID))
+		subnets, _, err := autoIPAMReservationSubnets(testClusterWithUID(clusterAUID))
 		require.NoError(t, err)
-		assert.Empty(t, subnet)
+		assert.Empty(t, subnets)
 	})
 
 	t.Run("static address ranges reserve nothing", func(t *testing.T) {
 		t.Parallel()
-		spec := &apivariables.ClusterConfigSpec{
+		cluster := clusterWithConfig(t, &apivariables.ClusterConfigSpec{
 			Addons: &apivariables.Addons{
 				GenericAddons: carenv1.GenericAddons{
 					ServiceLoadBalancer: &carenv1.ServiceLoadBalancer{
@@ -366,16 +364,89 @@ func TestAutoIPAMReservationSource(t *testing.T) {
 				},
 			},
 			Nutanix: &carenv1.NutanixSpec{},
-		}
-		variable, err := apivariables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, spec)
+		})
+		subnets, _, err := autoIPAMReservationSubnets(cluster)
 		require.NoError(t, err)
-		cluster := testClusterWithUID(clusterAUID)
-		cluster.Spec.Topology = clusterv1.Topology{Variables: []clusterv1.ClusterVariable{*variable}}
-
-		subnet, _, _, err := autoIPAMReservationSource(cluster)
-		require.NoError(t, err)
-		assert.Empty(t, subnet)
+		assert.Empty(t, subnets)
 	})
+
+	// The regression: a cluster that reserves only its API server address has
+	// an address to release, but the sweep used to key solely off the Service
+	// LoadBalancer subnet and so never ran for it.
+	t.Run("a cluster that only reserves its API server address is still swept", func(t *testing.T) {
+		t.Parallel()
+		cluster := clusterWithConfig(t, &apivariables.ClusterConfigSpec{
+			Nutanix: &carenv1.NutanixSpec{
+				PrismCentralEndpoint: carenv1.NutanixPrismCentralEndpointSpec{
+					URL: "https://pc.example.com:9440",
+					Credentials: carenv1.NutanixPrismCentralEndpointCredentials{
+						SecretRef: carenv1.LocalObjectReference{Name: "creds"},
+					},
+				},
+				ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+					Port: 6443,
+					VirtualIPSpec: &carenv1.ControlPlaneVirtualIPSpec{
+						Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
+							IPReservation: &carenv1.ControlPlaneIPReservation{
+								Subnet: "vlan999", Cluster: ptr.To("pe-9"),
+							},
+						},
+					},
+				},
+			},
+		})
+		subnets, endpoint, err := autoIPAMReservationSubnets(cluster)
+		require.NoError(t, err)
+		assert.Equal(t, []reservationSubnet{{Subnet: "vlan999", PrismElementCluster: "pe-9"}}, subnets)
+		require.NotNil(t, endpoint)
+	})
+
+	t.Run("both sources on different subnets are both swept", func(t *testing.T) {
+		t.Parallel()
+		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+		spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
+		require.NoError(t, err)
+		spec.Nutanix.ControlPlaneEndpoint.VirtualIPSpec = &carenv1.ControlPlaneVirtualIPSpec{
+			Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
+				IPReservation: &carenv1.ControlPlaneIPReservation{Subnet: "vlan999"},
+			},
+		}
+		cluster = clusterWithConfig(t, spec)
+		subnets, _, err := autoIPAMReservationSubnets(cluster)
+		require.NoError(t, err)
+		assert.Equal(t, []reservationSubnet{
+			{Subnet: "vlan170", PrismElementCluster: "pe-1"},
+			{Subnet: "vlan999"},
+		}, subnets)
+	})
+
+	t.Run("one subnet used by both sources is swept once", func(t *testing.T) {
+		t.Parallel()
+		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+		spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
+		require.NoError(t, err)
+		spec.Nutanix.ControlPlaneEndpoint.VirtualIPSpec = &carenv1.ControlPlaneVirtualIPSpec{
+			Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
+				IPReservation: &carenv1.ControlPlaneIPReservation{
+					Subnet: "vlan170", Cluster: ptr.To("pe-1"),
+				},
+			},
+		}
+		cluster = clusterWithConfig(t, spec)
+		subnets, _, err := autoIPAMReservationSubnets(cluster)
+		require.NoError(t, err)
+		assert.Len(t, subnets, 1, "the same subnet must not be swept twice")
+	})
+}
+
+// clusterWithConfig builds a Cluster carrying spec as its clusterConfig variable.
+func clusterWithConfig(t *testing.T, spec *apivariables.ClusterConfigSpec) *clusterv1.Cluster {
+	t.Helper()
+	variable, err := apivariables.MarshalToClusterVariable(carenv1.ClusterConfigVariableName, spec)
+	require.NoError(t, err)
+	cluster := testClusterWithUID(clusterAUID)
+	cluster.Spec.Topology = clusterv1.Topology{Variables: []clusterv1.ClusterVariable{*variable}}
+	return cluster
 }
 
 // An opt-out must stop the Prism Central sweep too: it is the only signal an
