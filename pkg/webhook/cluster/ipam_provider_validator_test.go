@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
@@ -143,4 +144,37 @@ func TestUnsupportedReservationOnProvider(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The regression this guards, found by creating a real cluster: the provider
+// label is applied after admission, so on create it is absent. Classifying from
+// the label alone made a valid Nutanix cluster look like provider "" and the
+// create was refused outright.
+func TestClusterProviderIsKnownBeforeTheLabelExists(t *testing.T) {
+	t.Parallel()
+
+	unlabelled := &clusterv1.Cluster{} // exactly what admission sees on create
+
+	nutanix := ipReservationConfig()
+	assert.Equal(t, "nutanix", clusterProvider(unlabelled, nutanix),
+		"a nutanix section identifies the provider with no label present")
+	assert.Empty(t, unsupportedReservationOnProvider(clusterProvider(unlabelled, nutanix), nutanix),
+		"a valid Nutanix cluster must not be refused for lacking a label it cannot have yet")
+
+	aws := autoIPAMConfig()
+	aws.AWS = &carenv1.AWSSpec{}
+	assert.Equal(t, "aws", clusterProvider(unlabelled, aws))
+	assert.NotEmpty(t, unsupportedReservationOnProvider(clusterProvider(unlabelled, aws), aws),
+		"an AWS cluster is still caught at create time")
+}
+
+// A cluster whose provider cannot be told must be left alone rather than
+// refused: blocking a valid cluster is worse than missing a misconfiguration
+// that the reservation itself then fails on.
+func TestUnclassifiableProviderIsAllowed(t *testing.T) {
+	t.Parallel()
+
+	cfg := autoIPAMConfig() // autoIPAM set, but no provider section at all
+	assert.Empty(t, clusterProvider(&clusterv1.Cluster{}, cfg))
+	assert.Empty(t, unsupportedReservationOnProvider("", cfg))
 }
