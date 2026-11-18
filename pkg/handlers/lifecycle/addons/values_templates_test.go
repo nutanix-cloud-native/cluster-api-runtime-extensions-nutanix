@@ -447,7 +447,7 @@ func addonTemplateTestCases() map[string][]templateTestCase {
 			{
 				name: "default",
 				data: map[string]any{
-					"CusterName":                                  "test-cluster",
+					"ClusterName":                                 "test-cluster",
 					"KubernetesVersion":                           "v1.35.0",
 					"SourceRegistryAddress":                       "10.96.0.10:5000",
 					"DestinationRegistryAnyPodName":               "cncf-distribution-registry-0",
