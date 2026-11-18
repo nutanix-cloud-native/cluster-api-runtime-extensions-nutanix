@@ -4,7 +4,6 @@
 package nutanix
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,18 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
-	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/ipamendpoint"
 )
 
 const (
@@ -218,33 +211,6 @@ var valuesTemplateFile = func() string {
 	)
 }()
 
-// ccmValues renders the CCM values the way the handler does. The client is read
-// only to resolve a reserved API server address, so an empty one is enough
-// unless the test stores an IPAddress.
-func ccmValues(
-	t *testing.T,
-	c ctrlclient.Client,
-	clusterConfig *apivariables.ClusterConfigSpec,
-	cluster *clusterv1.Cluster,
-	valuesTemplate string,
-) (string, error) {
-	t.Helper()
-	var slb *v1alpha1.ServiceLoadBalancer
-	if clusterConfig.Addons != nil {
-		slb = clusterConfig.Addons.ServiceLoadBalancer
-	}
-	return templateValuesFunc(context.Background(), c, clusterConfig.Nutanix, slb)(
-		cluster, valuesTemplate,
-	)
-}
-
-func ccmClient(t *testing.T, objs ...ctrlclient.Object) ctrlclient.Client {
-	t.Helper()
-	scheme := runtime.NewScheme()
-	utilruntime.Must(ipamv1.AddToScheme(scheme))
-	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
-}
-
 func Test_templateValues(t *testing.T) {
 	t.Parallel()
 
@@ -393,9 +359,10 @@ func Test_templateValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			out, err := ccmValues(
-				t, ccmClient(t), tt.clusterConfig, testCluster(), tt.in,
-			)
+			out, err := templateValuesFunc(
+				tt.clusterConfig.Nutanix,
+				tt.clusterConfig.Addons.ServiceLoadBalancer,
+			)(testCluster(), tt.in)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, out)
 		})
@@ -428,8 +395,8 @@ func Test_templateValuesReservedControlPlaneEndpoint(t *testing.T) {
 	cluster := testCluster()
 	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{Host: reserved, Port: 6443}
 
-	values, err := ccmValues(
-		t, ccmClient(t), clusterConfig, cluster, readCCMValuesTemplateFromProjectHelmChart(t),
+	values, err := templateValuesFunc(clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer)(
+		cluster, readCCMValuesTemplateFromProjectHelmChart(t),
 	)
 	require.NoError(t, err)
 
@@ -449,64 +416,11 @@ func Test_templateValuesNoControlPlaneEndpointFails(t *testing.T) {
 	clusterConfig := autoIPAMClusterConfig(nil)
 	clusterConfig.Nutanix.ControlPlaneEndpoint = v1alpha1.ControlPlaneEndpointSpec{Port: 6443}
 
-	clusterConfig.Addons.ServiceLoadBalancer = nil
-	_, err := ccmValues(
-		t, ccmClient(t), clusterConfig, testCluster(), readCCMValuesTemplateFromProjectHelmChart(t),
+	_, err := templateValuesFunc(clusterConfig.Nutanix, nil)(
+		testCluster(), readCCMValuesTemplateFromProjectHelmChart(t),
 	)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no control plane endpoint host")
-}
-
-// With --control-plane-external-endpoint the host is the external address, so
-// the reserved address is only ever the kube-vip virtual IP. It must still
-// reach ignoredNodeIPs, or the CCM publishes the virtual IP as a node address -
-// which is the whole reason that list exists.
-func Test_templateValuesExternalEndpointStillIgnoresTheReservedVIP(t *testing.T) {
-	t.Parallel()
-
-	const (
-		external = "api.example.com"
-		reserved = "10.0.0.9"
-	)
-
-	clusterConfig := autoIPAMClusterConfig(nil)
-	clusterConfig.Addons.ServiceLoadBalancer = nil
-	clusterConfig.Nutanix.ControlPlaneEndpoint = v1alpha1.ControlPlaneEndpointSpec{
-		Host: external,
-		Port: 6443,
-		VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
-			Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
-				IPReservation: &v1alpha1.ControlPlaneIPReservation{Subnet: "subnet"},
-			},
-		},
-	}
-
-	cluster := testCluster()
-	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{Host: external, Port: 6443}
-
-	address := &ipamv1.IPAddress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ipamendpoint.ClaimName(cluster.Name),
-			Namespace: cluster.Namespace,
-		},
-		Spec: ipamv1.IPAddressSpec{Address: reserved},
-	}
-
-	values, err := ccmValues(
-		t, ccmClient(t, address), clusterConfig, cluster,
-		readCCMValuesTemplateFromProjectHelmChart(t),
-	)
-	require.NoError(t, err)
-
-	assert.Contains(t, values, fmt.Sprintf("value: %q", external),
-		"the API server is still reached on the external endpoint")
-	assert.Contains(t, values, reserved,
-		"the reserved virtual IP must be ignored as a node address")
-
-	// The cluster config must not have been mutated: other handlers read it.
-	assert.Empty(t,
-		clusterConfig.Nutanix.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
-		"resolving must not write back into the cluster config")
 }
 
 // readCCMValuesTemplateFromProjectHelmChart reads the requested Helm values file from the Helm chart in the project.
