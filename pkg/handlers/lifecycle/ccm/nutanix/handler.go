@@ -20,7 +20,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/ipamendpoint"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
@@ -135,7 +134,7 @@ func (p *provider) Apply(
 		p.client,
 		helmChart,
 	).WithValueTemplater(
-		templateValuesFunc(ctx, p.client, clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer),
+		templateValuesFunc(clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer),
 	)
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
@@ -180,30 +179,9 @@ func clusterUID(cluster *clusterv1.Cluster) string {
 // otherwise fall back to, and the CCM then crash-loops with the nodes still
 // carrying the uninitialized taint.
 func controlPlaneEndpoint(
-	ctx context.Context,
-	c ctrlclient.Client,
 	cluster *clusterv1.Cluster,
 	spec v1alpha1.ControlPlaneEndpointSpec,
 ) (v1alpha1.ControlPlaneEndpointSpec, error) {
-	// VirtualIPSpec is a pointer into the cluster config, which other handlers
-	// read in this same request, so resolve into a copy.
-	if spec.VirtualIPSpec != nil {
-		spec.VirtualIPSpec = spec.VirtualIPSpec.DeepCopy()
-	}
-
-	if cluster != nil {
-		// The reserved address is the kube-vip virtual IP. With
-		// --control-plane-external-endpoint the host is the external address
-		// instead, so this is the only way to learn the internal one - and
-		// ignoredNodeIPs needs it, or the CCM publishes the virtual IP as a
-		// node address.
-		if _, err := ipamendpoint.Resolve(
-			ctx, c, ctrlclient.ObjectKeyFromObject(cluster), &spec,
-		); err != nil {
-			return spec, fmt.Errorf("resolve the reserved API server address: %w", err)
-		}
-	}
-
 	if spec.Host == "" && cluster != nil {
 		spec.Host = cluster.Spec.ControlPlaneEndpoint.Host
 	}
@@ -221,8 +199,6 @@ func controlPlaneEndpoint(
 }
 
 func templateValuesFunc(
-	ctx context.Context,
-	c ctrlclient.Client,
 	nutanixConfig *v1alpha1.NutanixSpec,
 	serviceLoadBalancer *v1alpha1.ServiceLoadBalancer,
 ) func(*clusterv1.Cluster, string) (string, error) {
@@ -268,7 +244,7 @@ func templateValuesFunc(
 			return "", err
 		}
 
-		endpoint, err := controlPlaneEndpoint(ctx, c, cluster, nutanixConfig.ControlPlaneEndpoint)
+		endpoint, err := controlPlaneEndpoint(cluster, nutanixConfig.ControlPlaneEndpoint)
 		if err != nil {
 			return "", err
 		}
