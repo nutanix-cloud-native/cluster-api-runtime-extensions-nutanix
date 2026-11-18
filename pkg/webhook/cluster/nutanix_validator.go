@@ -18,7 +18,6 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/helpers"
 )
 
@@ -58,10 +57,6 @@ func (a *nutanixValidator) validate(
 		return admission.Allowed("")
 	}
 
-	if utils.GetProvider(cluster) != "nutanix" {
-		return admission.Allowed("")
-	}
-
 	clusterConfig, err := variables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 	if err != nil {
 		return admission.Denied(
@@ -69,6 +64,11 @@ func (a *nutanixValidator) validate(
 				v1alpha1.ClusterConfigVariableName,
 				err).Error(),
 		)
+	}
+
+	if clusterConfig == nil || clusterConfig.Nutanix == nil {
+		// Not need to further validate
+		return admission.Allowed("")
 	}
 
 	if clusterConfig.Nutanix != nil {
