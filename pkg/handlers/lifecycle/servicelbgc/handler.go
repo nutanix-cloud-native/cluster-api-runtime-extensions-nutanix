@@ -25,6 +25,10 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 )
 
+// retryAfterSeconds is how long CAPI waits before calling the hook again. The
+// sweep talks to Prism Central, so its failures are usually transient.
+const retryAfterSeconds = 5
+
 type ServiceLoadBalancerGC struct {
 	client              ctrlclient.Client
 	clusterClientGetter remote.ClusterClientGetter
@@ -84,7 +88,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 		log.Error(err, "Failed to get cluster with status for Service LB GC decision, will retry")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("failed to get cluster with status: %v", err))
-		resp.SetRetryAfterSeconds(5)
+		resp.SetRetryAfterSeconds(retryAfterSeconds)
 		return
 	}
 
@@ -155,7 +159,7 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 		// exists to prevent. Retry and sweep once they are gone.
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
-		resp.SetRetryAfterSeconds(5)
+		resp.SetRetryAfterSeconds(retryAfterSeconds)
 		return
 	case err != nil:
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
@@ -201,7 +205,7 @@ func (s *ServiceLoadBalancerGC) releaseReservations(
 		log.Error(err, "Failed to build a Prism Central client for the reservation sweep")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(fmt.Sprintf("%v: %v", ErrFailedToReleaseReservations, err))
-		resp.SetRetryAfterSeconds(5)
+		resp.SetRetryAfterSeconds(retryAfterSeconds)
 		return
 	}
 
@@ -219,7 +223,7 @@ func (s *ServiceLoadBalancerGC) releaseReservations(
 	if len(failures) > 0 {
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(strings.Join(failures, "; "))
-		resp.SetRetryAfterSeconds(5)
+		resp.SetRetryAfterSeconds(retryAfterSeconds)
 		return
 	}
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
@@ -286,10 +290,10 @@ func (s *ServiceLoadBalancerGC) sweepReservations(
 	return errors.Join(errs...)
 }
 
-// autoIPAMReservationSource returns the subnet the cluster reserves Service
-// addresses from, the Prism Element cluster that resolves it by name, and the
-// Prism Central to talk to. An empty subnet means the cluster does not reserve
-// addresses at all.
+// autoIPAMReservationSubnets returns every subnet the cluster reserves from -
+// the Service load balancer subnet and the API server endpoint's - each with
+// the Prism Element cluster that resolves it by name, plus the Prism Central to
+// talk to. No subnets means the cluster reserves nothing.
 func autoIPAMReservationSubnets(cluster *clusterv1.Cluster) (
 	subnets []reservationSubnet,
 	endpoint *carenv1.NutanixPrismCentralEndpointSpec,
