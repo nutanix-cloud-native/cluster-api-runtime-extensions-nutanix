@@ -369,6 +369,60 @@ func Test_templateValues(t *testing.T) {
 	}
 }
 
+// A cluster whose API server address is reserved from a subnet carries no host
+// in its cluster config - the reserved address is resolved into the generated
+// templates, never persisted - so the CCM must take the endpoint from the
+// Cluster. Rendering an empty host instead sets KUBERNETES_SERVICE_HOST="",
+// which stops the CCM falling back to the in-cluster config: it crash-loops,
+// the nodes keep the uninitialized taint and nothing else can be scheduled.
+func Test_templateValuesReservedControlPlaneEndpoint(t *testing.T) {
+	t.Parallel()
+
+	const reserved = "10.0.0.9"
+
+	clusterConfig := autoIPAMClusterConfig(
+		serviceLoadBalancerAutoIPAM("subnet", nil),
+	)
+	clusterConfig.Nutanix.ControlPlaneEndpoint = v1alpha1.ControlPlaneEndpointSpec{
+		Port: 6443,
+		VirtualIPSpec: &v1alpha1.ControlPlaneVirtualIPSpec{
+			Configuration: &v1alpha1.ControlPlaneVirtualIPConfiguration{
+				IPReservation: &v1alpha1.ControlPlaneIPReservation{Subnet: "subnet"},
+			},
+		},
+	}
+
+	cluster := testCluster()
+	cluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{Host: reserved, Port: 6443}
+
+	values, err := templateValuesFunc(clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer)(
+		cluster, readCCMValuesTemplateFromProjectHelmChart(t),
+	)
+	require.NoError(t, err)
+
+	assert.Contains(t, values, fmt.Sprintf("value: %q", reserved),
+		"KUBERNETES_SERVICE_HOST must carry the reserved address")
+	assert.NotContains(t, values, `value: ""`,
+		"an empty env value defeats the CCM's in-cluster config fallback")
+	assert.Contains(t, values, fmt.Sprintf("ignoredNodeIPs: [ %q ]", reserved),
+		"the reserved API server address must not be published as a node address")
+}
+
+// Without a host anywhere the handler must fail rather than install a CCM that
+// cannot reach the API server: the addon then retries and says why.
+func Test_templateValuesNoControlPlaneEndpointFails(t *testing.T) {
+	t.Parallel()
+
+	clusterConfig := autoIPAMClusterConfig(nil)
+	clusterConfig.Nutanix.ControlPlaneEndpoint = v1alpha1.ControlPlaneEndpointSpec{Port: 6443}
+
+	_, err := templateValuesFunc(clusterConfig.Nutanix, nil)(
+		testCluster(), readCCMValuesTemplateFromProjectHelmChart(t),
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no control plane endpoint host")
+}
+
 // readCCMValuesTemplateFromProjectHelmChart reads the requested Helm values file from the Helm chart in the project.
 // This is important to do this way to ensure that the hard-to-read double templating works as expected.
 func readCCMValuesTemplateFromProjectHelmChart(t *testing.T) string {

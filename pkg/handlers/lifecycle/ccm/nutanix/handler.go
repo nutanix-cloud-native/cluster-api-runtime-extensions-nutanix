@@ -168,6 +168,36 @@ func clusterUID(cluster *clusterv1.Cluster) string {
 	return string(cluster.GetUID())
 }
 
+// controlPlaneEndpoint is the endpoint the CCM is configured with. The cluster
+// config carries no host while the address is reserved from an IPAM pool - the
+// reserved address is resolved into the generated templates, never persisted -
+// so it is taken from the Cluster, which CAPI has populated by the time any
+// addon is installed.
+//
+// An empty host must not reach the values template: it renders
+// KUBERNETES_SERVICE_HOST="", which defeats the in-cluster config the CCM would
+// otherwise fall back to, and the CCM then crash-loops with the nodes still
+// carrying the uninitialized taint.
+func controlPlaneEndpoint(
+	cluster *clusterv1.Cluster,
+	spec v1alpha1.ControlPlaneEndpointSpec,
+) (v1alpha1.ControlPlaneEndpointSpec, error) {
+	if spec.Host == "" && cluster != nil {
+		spec.Host = cluster.Spec.ControlPlaneEndpoint.Host
+	}
+	if spec.Port == 0 && cluster != nil {
+		spec.Port = cluster.Spec.ControlPlaneEndpoint.Port
+	}
+	if spec.Host == "" {
+		return spec, fmt.Errorf(
+			"no control plane endpoint host for cluster %s; "+
+				"if the address is reserved from a subnet, the reservation has not completed yet",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		)
+	}
+	return spec, nil
+}
+
 func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
 	serviceLoadBalancer *v1alpha1.ServiceLoadBalancer,
@@ -214,13 +244,18 @@ func templateValuesFunc(
 			return "", err
 		}
 
+		endpoint, err := controlPlaneEndpoint(cluster, nutanixConfig.ControlPlaneEndpoint)
+		if err != nil {
+			return "", err
+		}
+
 		templateInput := input{
 			PrismCentralHost:                  address,
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
-			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
-			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
+			IPsToIgnore:                       ipsToIgnore(endpoint),
+			ControlPlaneEndpoint:              endpoint,
 			ServiceLoadBalancerAutoIPAM:       autoIPAMConfig(serviceLoadBalancer),
 			MetalLBNamespace:                  metallb.DefaultHelmReleaseNamespace,
 			ClusterUID:                        clusterUID(cluster),
@@ -236,22 +271,20 @@ func templateValuesFunc(
 	}
 }
 
-func ipsToIgnore(nutanixConfig *v1alpha1.NutanixSpec) []string {
-	// An empty host means the API server address is still being reserved. An
-	// empty string in this list would be rendered into the CCM's ignoredNodeIPs
-	// and compared against every node address.
+func ipsToIgnore(endpoint v1alpha1.ControlPlaneEndpointSpec) []string {
+	// An empty string in this list would be rendered into the CCM's
+	// ignoredNodeIPs and compared against every node address.
 	toIgnore := []string{}
-	if host := nutanixConfig.ControlPlaneEndpoint.Host; host != "" {
+	if host := endpoint.Host; host != "" {
 		toIgnore = append(toIgnore, host)
 	}
-	// Also ignore the virtual IP if it is set.
-	if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
-		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil &&
-		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address != "" {
-		toIgnore = append(
-			toIgnore,
-			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
-		)
+	// Also ignore the virtual IP if it is set and differs from the host, which
+	// it does not when both come from the same reservation.
+	if endpoint.VirtualIPSpec != nil &&
+		endpoint.VirtualIPSpec.Configuration != nil &&
+		endpoint.VirtualIPSpec.Configuration.Address != "" &&
+		endpoint.VirtualIPSpec.Configuration.Address != endpoint.Host {
+		toIgnore = append(toIgnore, endpoint.VirtualIPSpec.Configuration.Address)
 	}
 	return toIgnore
 }
