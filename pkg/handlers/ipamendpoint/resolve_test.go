@@ -84,6 +84,9 @@ func TestResolve(t *testing.T) {
 		assert.NotEmpty(t, spec.Host)
 	})
 
+	// The cluster webhook refuses a host alongside a reservation, so this is
+	// defence in depth rather than a supported shape: whatever a cluster was
+	// admitted with, resolving must not replace an address someone named.
 	t.Run("a host the operator chose is never overwritten", func(t *testing.T) {
 		t.Parallel()
 		spec := reservingSpec()
@@ -91,7 +94,7 @@ func TestResolve(t *testing.T) {
 		ok, err := Resolve(context.Background(), clientWithAddress(reserved), clusterKey(), spec)
 		require.NoError(t, err)
 		assert.True(t, ok)
-		assert.Equal(t, "api.example.com", spec.Host, "an external endpoint must survive")
+		assert.Equal(t, "api.example.com", spec.Host, "a named host must survive")
 		assert.Equal(t, reserved, spec.VirtualIPSpec.Configuration.Address,
 			"the reserved address becomes the virtual IP instead")
 	})

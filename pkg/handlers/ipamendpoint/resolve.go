@@ -38,12 +38,17 @@ func ClaimName(clusterName string) string {
 }
 
 // Resolve fills in the API server address on spec from the reserved address
-// when the cluster reserves one and no host was given.
+// when the cluster reserves one.
 //
-// An explicitly configured host always wins: an operator who named a host is
-// pointing at something that already exists, and the reservation is then only
-// the virtual IP. Returns false when there is nothing to resolve, so callers
-// can tell "not reserved" from "reserved but not allocated yet".
+// A host and a reservation are mutually exclusive - the cluster webhook refuses
+// a cluster that sets both - so in practice the host is always empty here. The
+// guards below are defence in depth: whatever a cluster was admitted with, an
+// address an operator named is never silently replaced.
+//
+// Reports whether an address was injected. It is false both when the cluster
+// does not reserve and when the reservation has not been allocated yet; the
+// caller does not need to tell those apart, because BeforeClusterCreate is what
+// holds creation until an address exists.
 func Resolve(
 	ctx context.Context,
 	c ctrlclient.Client,

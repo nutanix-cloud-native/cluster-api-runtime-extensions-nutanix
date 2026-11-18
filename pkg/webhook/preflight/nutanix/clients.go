@@ -541,6 +541,11 @@ func (c *clientWrapper) ListReservedIpsBySubnetId(
 	subnetExtID string,
 	limit_ *int,
 ) error {
+	// callWithContext runs the call in a goroutine, so a nil func would panic
+	// there and take the webhook process with it rather than failing the check.
+	if c.ListReservedIpsBySubnetIdFunc == nil {
+		return fmt.Errorf("no reserved IP listing is wired on this Prism Central client")
+	}
 	_, err := callWithContext(ctx, func() (struct{}, error) {
 		return struct{}{}, c.ListReservedIpsBySubnetIdFunc(ctx, subnetExtID, limit_)
 	})

@@ -6,7 +6,9 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -89,7 +91,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 			result.Causes = append(result.Causes, preflight.Cause{
 				Message: fmt.Sprintf(
 					"Failed to find the %s subnet %q: %s. Review the Cluster.",
-					c.purpose, c.subnet, resolveErr,
+					c.purpose, c.subnet, prismErrorSummary(resolveErr),
 				),
 				Field: c.field + ".subnet",
 			})
@@ -107,7 +109,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 					"Subnet %q is not IP address managed, so the %s cannot reserve addresses from it. Use an IPAM-managed subnet, or configure a static address instead. (%s)", //nolint:lll // Message is long.
 					c.subnet,
 					c.component,
-					err,
+					prismErrorSummary(err),
 				),
 				Field: c.field + ".subnet",
 			})
@@ -116,7 +118,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 				Message: fmt.Sprintf(
 					"Subnet %q does not exist on this Prism Central, or these credentials cannot see it. Review the Cluster. (%s)", //nolint:lll // Message is long.
 					c.subnet,
-					err,
+					prismErrorSummary(err),
 				),
 				Field: c.field + ".subnet",
 			})
@@ -126,7 +128,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 					"The Prism Central credentials are not permitted to read IP reservations on subnet %q, so the %s cannot reserve addresses from it. Grant the role the IP reservation privileges on this subnet. (%s)", //nolint:lll // Message is long.
 					c.subnet,
 					c.component,
-					err,
+					prismErrorSummary(err),
 				),
 				Field: c.field + ".subnet",
 			})
@@ -136,7 +138,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 				Message: fmt.Sprintf(
 					"Failed to read IP reservations on subnet %q: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
 					c.subnet,
-					err,
+					prismErrorSummary(err),
 				),
 				Field: c.field + ".subnet",
 			})
@@ -297,6 +299,33 @@ func subnetMatchesCluster(subnet *netv4.Subnet, clusterExtID string) bool {
 
 // isUnmanagedSubnetError reports whether Prism refused because the subnet has
 // no IP address pool. Measured on PC 7.6 GA.
+// prismErrorSummaryMax keeps a summarised Prism error to one readable line.
+const prismErrorSummaryMax = 200
+
+// prismCodeLine matches the one sentence a Prism v4 error leads with, e.g.
+// "NETWORKING-10056: Application error ... unmanaged subnets."
+var prismCodeLine = regexp.MustCompile(`[A-Z]+-[0-9]+:[^\n\r"]{0,` + strconv.Itoa(prismErrorSummaryMax) + `}`)
+
+// prismErrorSummary is the part of a Prism error worth putting in front of an
+// operator. The v4 SDK renders a failed response as its whole JSON payload, so
+// embedding it verbatim buries the cause in several lines of noise.
+func prismErrorSummary(err error) string {
+	if err == nil {
+		return ""
+	}
+	text := strings.TrimSpace(err.Error())
+	if code := prismCodeLine.FindString(text); code != "" {
+		return strings.TrimSpace(code)
+	}
+	if i := strings.IndexAny(text, "\n\r"); i >= 0 {
+		text = strings.TrimSpace(text[:i])
+	}
+	if len(text) > prismErrorSummaryMax {
+		return text[:prismErrorSummaryMax] + "..."
+	}
+	return text
+}
+
 func isUnmanagedSubnetError(err error) bool {
 	if err == nil {
 		return false

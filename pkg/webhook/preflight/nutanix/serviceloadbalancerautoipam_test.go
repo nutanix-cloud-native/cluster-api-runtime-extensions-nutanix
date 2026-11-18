@@ -526,3 +526,49 @@ func TestReservationChecksCoverBothSubnets(t *testing.T) {
 		assert.Contains(t, result.Causes[0].Field, "ipReservation")
 	})
 }
+
+// The Prism v4 SDK renders a failed response as its whole JSON payload. Putting
+// that in a preflight cause buries the one sentence that matters, so a message
+// an operator reads must carry the summary and not the payload.
+func TestPrismErrorSummaryKeepsMessagesReadable(t *testing.T) {
+	t.Parallel()
+
+	payload := `{
+  "data": {
+    "error": [
+      {
+        "message": "NETWORKING-10056: Application error kInvalidArgument raised: Cannot fetch reserved IP addresses for unmanaged subnets.",
+        "severity": "ERROR",
+        "code": "NETWORKING-10056",
+        "locale": "en_US",
+        "errorGroup": "INVALID_ARGUMENT"
+      }
+    ],
+    "$objectType": "networking.v4.error.ErrorResponse"
+  }
+}`
+
+	check := &serviceLoadBalancerAutoIPAMCheck{
+		subnet:    autoIPAMSubnetUUID,
+		name:      "NutanixServiceLoadBalancerAutoIPAM",
+		field:     autoIPAMField,
+		purpose:   "Service load balancer",
+		component: "Nutanix cloud controller manager",
+		nclient: &clientWrapper{
+			ListReservedIpsBySubnetIdFunc: func(context.Context, string, *int) error {
+				return errors.New(payload)
+			},
+		},
+	}
+
+	result := check.Run(context.Background())
+	require.False(t, result.Allowed)
+	require.Len(t, result.Causes, 1)
+	msg := result.Causes[0].Message
+
+	assert.Contains(t, msg, "is not IP address managed", "the cause must still be named")
+	assert.Contains(t, msg, "NETWORKING-10056", "the Prism code is the useful part")
+	assert.NotContains(t, msg, "$objectType", "the raw payload must not be pasted in")
+	assert.NotContains(t, msg, "\n", "a cause has to stay one line")
+	assert.Less(t, len(msg), 400, "got a %d character message: %s", len(msg), msg)
+}
