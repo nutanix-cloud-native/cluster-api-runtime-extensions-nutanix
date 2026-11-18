@@ -178,3 +178,80 @@ func TestUnclassifiableProviderIsAllowed(t *testing.T) {
 	assert.Empty(t, clusterProvider(&clusterv1.Cluster{}, cfg))
 	assert.Empty(t, unsupportedReservationOnProvider("", cfg))
 }
+
+// Naming the API server address and reserving one are alternatives. kube-vip
+// binds the virtual IP configuration's address and falls back to the endpoint
+// host, so accepting both would silently ignore the reservation and hand
+// kube-vip a host it may not be able to bind at all.
+func TestConflictingEndpointSources(t *testing.T) {
+	t.Parallel()
+
+	externalWithReservation := func() *variables.ClusterConfigSpec {
+		cfg := ipReservationConfig()
+		cfg.Nutanix.ControlPlaneEndpoint.Host = "api.example.com"
+		return cfg
+	}
+	namedAddressOnly := func() *variables.ClusterConfigSpec {
+		return &variables.ClusterConfigSpec{
+			Nutanix: &carenv1.NutanixSpec{
+				ControlPlaneEndpoint: carenv1.ControlPlaneEndpointSpec{
+					Host: "10.0.0.5",
+					Port: 6443,
+					VirtualIPSpec: &carenv1.ControlPlaneVirtualIPSpec{
+						Provider: carenv1.VirtualIPProviderKubeVIP,
+						Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
+							Address: "10.0.0.5",
+						},
+					},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name     string
+		config   *variables.ClusterConfigSpec
+		refused  bool
+		contains string
+	}{
+		{
+			name:     "an external endpoint with a reservation is refused",
+			config:   externalWithReservation(),
+			refused:  true,
+			contains: "api.example.com",
+		},
+		{
+			name:    "a reservation on its own is allowed",
+			config:  ipReservationConfig(),
+			refused: false,
+		},
+		{
+			name:    "an external endpoint fronting a named address is allowed",
+			config:  namedAddressOnly(),
+			refused: false,
+		},
+		{
+			name:    "a cluster with no nutanix section is allowed",
+			config:  autoIPAMConfig(),
+			refused: false,
+		},
+		{
+			name:    "a nil config is allowed",
+			config:  nil,
+			refused: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			msg := conflictingEndpointSources(tt.config)
+			if !tt.refused {
+				assert.Empty(t, msg)
+				return
+			}
+			assert.NotEmpty(t, msg)
+			assert.Contains(t, msg, tt.contains)
+			assert.Contains(t, msg, "not both")
+		})
+	}
+}

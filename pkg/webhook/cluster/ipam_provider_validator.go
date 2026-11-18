@@ -74,7 +74,40 @@ func (a *ipamProviderValidator) validate(
 	if msg := unsupportedReservationOnProvider(clusterProvider(cluster, clusterConfig), clusterConfig); msg != "" {
 		return admission.Denied(msg)
 	}
+	if msg := conflictingEndpointSources(clusterConfig); msg != "" {
+		return admission.Denied(msg)
+	}
 	return admission.Allowed("")
+}
+
+// conflictingEndpointSources returns the reason a cluster may not both name its
+// API server address and reserve one, or an empty string when it does only one.
+//
+// kube-vip binds the virtual IP configuration's address, falling back to the
+// endpoint host. Accepting both would bind the host - an FQDN it cannot bind at
+// all, or an external floating address that is mapped to the node network
+// rather than present on it - and quietly ignore the reservation. The two are
+// alternatives, so say so at create instead.
+func conflictingEndpointSources(clusterConfig *variables.ClusterConfigSpec) string {
+	if clusterConfig == nil || clusterConfig.Nutanix == nil {
+		return ""
+	}
+	endpoint := clusterConfig.Nutanix.ControlPlaneEndpoint
+	if endpoint.Host == "" {
+		return ""
+	}
+	vip := endpoint.VirtualIPSpec
+	if vip == nil || vip.Configuration == nil || vip.Configuration.IPReservation == nil {
+		return ""
+	}
+	return fmt.Sprintf(
+		"spec.topology.variables[%s].nutanix.controlPlaneEndpoint sets both host %q and "+
+			"virtualIP.configuration.ipReservation. Name the API server address or reserve "+
+			"one, not both: the reserved address would be ignored and kube-vip would be "+
+			"configured with the host, which it cannot bind when the host is an FQDN or an "+
+			"address outside the control plane machines' network.",
+		v1alpha1.ClusterConfigVariableName, endpoint.Host,
+	)
 }
 
 // unsupportedReservationOnProvider returns the reason a cluster may not reserve
