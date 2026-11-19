@@ -164,43 +164,39 @@ commit message that lands on `main`.
 
 ## Spec-Driven Development
 
-You are an expert, disciplined software engineer. You strictly adhere to the
-principles of Spec-Driven Development (SDD) using the GitHub Spec-Kit workflow,
-combined with the "Superpowers" agentic skill framework.
+This project prefers Spec-Driven Development (SDD) via the GitHub Spec-Kit
+workflow for larger features. This is guidance for contributors who use it,
+not a requirement for every change.
 
-### Core Mandate (The "No Vibe-Coding" Rule)
+### When to Use SDD
 
-- NEVER write application code without first verifying that a feature
-  specification and plan exist and are up-to-date.
-- If the user asks for a new feature or code change and no feature spec exists,
-  you must halt and initiate the Spec-Kit workflow.
+- For new features or non-trivial changes, consider creating a feature spec
+  and plan before writing application code.
+- For small fixes, chores, or refactors, a spec is usually unnecessary —
+  see Fast Track below.
 
-### The Spec-Kit and Superpowers Integrated Loop
+### Spec-Kit Loop (When Applicable)
 
 #### Phase A: Discovery and Specification
 
 - **Action:** Help the user define the "What."
-- **Prerequisite:** Obtain a Jira ticket ID (e.g., `NCN-1234`) before writing
-  anything. If the user does not have one, offer to create a ticket in the
-  **NCN** project using the `jira_create_issue` MCP tool (project_key: `NCN`).
-  Confirm with the user before creating.
-- **Output:** Write the spec to `.specify/features/<JIRA-ID>/spec.md`.
-- **Superpower Applied (Brainstorming):** Do not just accept the user's initial
-  prompt. Ask clarifying questions, identify edge cases, and propose
+- **If tracking in Jira:** Use the ticket ID (e.g., `NCN-1234`) as the
+  directory name; otherwise any short ID is fine.
+- **Output:** Write the spec to `.specify/features/<ID>/spec.md` using the
+  spec template.
+- **Tip:** Ask clarifying questions, identify edge cases, and propose
   architectural considerations before finalizing the spec.
 
 #### Phase B: Planning
 
 - **Action:** Translate the spec into the "How."
-- **Output:** Write the plan to `.specify/features/<JIRA-ID>/plan.md`.
-- **Superpower Applied (Tasking):** Break the implementation down into strictly
-  atomic, 5-minute tasks. Each task must have clear, verifiable completion
-  criteria.
+- **Output:** Write the plan to `.specify/features/<ID>/plan.md`.
+- **Tip:** Break work into small tasks with clear completion criteria.
 
 #### Phase C: Implementation
 
 - **Action:** Execute the plan one step at a time.
-- **Superpower Applied (TDD):** You must use Test-Driven Development.
+- **Tip:** Test-driven development works well here:
   1. Write the failing test first.
   2. Prove it fails.
   3. Write the minimum code required to make it pass.
@@ -208,55 +204,51 @@ combined with the "Superpowers" agentic skill framework.
 
 ### Continuous Auditing
 
-- After completing a task from the plan, use the **Audit Skill** to verify your
-  work against the feature's spec at `.specify/features/<JIRA-ID>/spec.md`.
-- If you detect scope creep, stop and ask the user if the spec needs to be
-  updated.
+- If a spec exists, periodically check work against
+  `.specify/features/<ID>/spec.md` and ask the user if the spec needs
+  updating when scope changes.
 
 ## Feature Specification Rules
 
+This section only applies when you are using the spec workflow.
+
 ### One Spec Per Feature
 
-Every feature MUST have its own isolated spec directory:
+When using specs, prefer one isolated directory per feature:
 
 ```text
-.specify/features/<JIRA-ID>/
+.specify/features/<ID>/
   spec.md    # What to build
   plan.md    # How to build it
 ```
 
-Example: `.specify/features/CAREN-1234/spec.md`
+Example: `.specify/features/NCN-1234/spec.md` (team convention is to use a
+Jira ID when available).
 
-### Jira Ticket Required
+### Jira Ticket
 
-- Before writing any spec, ask the user for the Jira ticket ID if not already
-  provided.
-- If the user does not have a Jira ticket, offer to create one in the **NCN**
-  project using the `jira_create_issue` MCP tool (project_key: `NCN`). Derive
-  the summary and description from the user's feature request. Ask the user to
-  confirm before creating.
-- The ticket ID becomes the directory name under `.specify/features/`.
-- The spec MUST include the Jira ticket reference in its header.
+- If the user provides a Jira ticket (e.g., `NCN-1234`), use it as the
+  directory name and include the reference in the spec header.
+- If they do not have one, there is no need to create one — proceed with the
+  spec using a local ID, or follow the team's existing tracking process.
 
-### Forbidden Paths
+### Paths to Avoid
 
-NEVER write to these files — they must not exist in the repo:
+Prefer `.specify/features/<ID>/spec.md` over root-level files:
 
 - `.specify/spec.md`
 - `.specify/plan.md`
 
-If you find yourself about to write to either path, STOP and use
-`.specify/features/<JIRA-ID>/` instead.
+These root files are ignored by design.
 
 ### Workflow
 
+When using the spec workflow:
+
 1. User requests a feature.
-2. Ask for Jira ticket ID (e.g., `NCN-1234`).
-3. If no ticket exists, offer to create one in the **NCN** project via the
-   `jira_create_issue` MCP tool. Confirm with the user before creating.
-4. Create `.specify/features/<JIRA-ID>/spec.md` using the spec template.
-5. Create `.specify/features/<JIRA-ID>/plan.md` after spec is approved.
-6. Implement against that feature's spec and plan.
+2. Create `.specify/features/<ID>/spec.md` using the spec template.
+3. Create `.specify/features/<ID>/plan.md` after spec is approved.
+4. Implement against that feature's spec and plan.
 
 ## Fast Track Protocol (Chores and Minor Refactors)
 
@@ -264,13 +256,11 @@ If you find yourself about to write to either path, STOP and use
   user-facing behavior, business logic, or external APIs, and can be completed
   quickly (e.g., extracting components, renaming variables, cleaning up tech
   debt).
-- **The Escape Hatch:** If the user explicitly declares a task as a "Refactor"
-  or "Chore", you MAY bypass the requirement to create a
+- **Option:** For chores or minor refactors, it is fine to skip creating a
   `.specify/features/` folder, `spec.md`, and `plan.md`.
-- **Mandatory Safety Measure:** Even on the Fast Track, you MUST still read the
-  `constitution.md` to ensure architectural compliance, and you MUST use the
-  **TDD Skill** to ensure existing tests pass or new unit tests are written
-  before modifying the code.
+- **Tip:** Even on the Fast Track, consider reading `constitution.md` for
+  architectural context and ensuring existing tests pass or new unit tests
+  cover the change.
 
 ## Copyright Header
 
@@ -280,61 +270,65 @@ existing files or from the template itself.
 
 ## Git Conventions
 
+This project uses Conventional Commits. The following conventions are preferred
+for contributions.
+
 ### Conventional Commits
 
-All commits MUST follow the
+Commits should follow the
 [Conventional Commits](https://www.conventionalcommits.org/) specification.
-Allowed types: `fix`, `feat`, `docs`, `style`, `refactor`, `perf`, `test`,
+Common types: `fix`, `feat`, `docs`, `style`, `refactor`, `perf`, `test`,
 `revert`, `ci`, `build`, `release`.
 
 ### Branch Naming
 
-- Feature branches: `<JIRA-ID>-short-description`
-  (e.g., `CAREN-1234-add-vpc-support`)
+- Feature branches: `<ID>-short-description`
+  (e.g., `NCN-1234-add-vpc-support` when using a Jira ID)
 - Non-feature branches: use a short descriptive prefix
   (e.g., `fix/typo-in-readme`, `build/update-deps`)
 
 ### Commit and PR Titles
 
-Format: `<type>: [<JIRA-ID>] Title`
+Preferred format: `<type>: [<ID>] Title` when a tracking ID is available.
 
 Examples:
 
-- `feat: [CAREN-1234] Add VPC configuration support`
+- `feat: [NCN-1234] Add VPC configuration support`
 - `fix: [CAREN-5678] Resolve nil pointer in handler`
-- `build: Update Go dependencies` (no Jira ID needed for non-feature work)
+- `build: Update Go dependencies` (no ID needed for non-feature work)
 
-Constraints:
+Constraints from CI:
 
-- Title MUST be <= 72 characters total.
-- Do NOT end the title with a period.
+- Title should be <= 72 characters total.
+- Do not end the title with a period.
 
 ### Commit Body
 
-- Wrap lines at 120 characters.
+- Wrap lines at 120 characters where practical.
 - Explain *why* the change was made, not *what* changed (the diff shows that).
 - Separate title from body with a blank line.
 
 ## Handler Documentation
 
-All handlers, both mutation and lifecycle, MUST be documented in `docs/content`
-for publication to the project website. See the constitution (Principle VIII).
+All handlers, both mutation and lifecycle, should be documented in
+`docs/content` for publication to the project website. See the constitution
+(Principle VIII) for context.
 
-### When Documentation Is Required
+### When Documentation Is Helpful
 
 Before creating or modifying any handler under `pkg/handlers/*/mutation/` or
-`pkg/handlers/*/lifecycle/`:
+`pkg/handlers/*/lifecycle/`, consider:
 
 1. Does this introduce a new handler?
 2. Does this change handler behavior, configuration, or user-facing output?
 
-If the answer to EITHER question is **yes**, you MUST:
+If the answer to either question is **yes**, please:
 
 1. Add or update documentation in `docs/content/` under the appropriate section
    (e.g. `customization/`, `addons/`, `lifecycle/`).
 2. Include what the handler does, how to configure it, and example YAML.
-3. Ensure the documentation PR is included in the same change as the handler
-   code.
+3. Include the documentation in the same change as the handler code when
+   practical.
 
 ### Documentation Structure
 
@@ -348,13 +342,16 @@ Follow the structure of existing docs
 
 ## Handler Version Safety
 
-Upgrading CAREN MUST be a no-op for existing Clusters. Any change that alters
-the patch output of a registered topology mutation handler will cause Machine
-rollouts across all managed clusters. This MUST be prevented.
+Upgrading CAREN should be a no-op for existing Clusters. Any change that alters
+the patch output of a registered topology mutation handler can cause Machine
+rollouts across all managed clusters.
 
-### When You MUST Create a New Handler Version
+This is an important project invariant — see `.specify/memory/constitution.md`
+Principle VII. Contributors should be aware of it when changing handlers.
 
-Before modifying any file under `pkg/handlers/*/mutation/`, ask yourself:
+### When to Consider a New Handler Version
+
+Before modifying any file under `pkg/handlers/*/mutation/`, consider:
 
 1. Does this change alter the patches returned by `GeneratePatches` for any
    existing input? (Including adding new patches, removing patches, or changing
@@ -362,7 +359,7 @@ Before modifying any file under `pkg/handlers/*/mutation/`, ask yourself:
 2. Does this introduce a new handler that is enabled by default and produces
    patches?
 
-If the answer to EITHER question is **yes**, you MUST:
+If the answer to either question is **yes**, the usual approach is:
 
 1. Copy the current handler implementation to `pkg/handlers/v{current}/`
    (e.g. `v5/`).
@@ -376,7 +373,7 @@ If the answer to EITHER question is **yes**, you MUST:
    reference the new version.
 5. Update `hack/examples/overlays/clusterclasses/` kustomization templates.
 
-### When a Version Bump Is NOT Required
+### When a Version Bump Is Not Needed
 
 - Changes that do not alter patch output (e.g. refactoring internals, improving
   logging, fixing a bug that doesn't change the generated patches).
@@ -387,28 +384,28 @@ If the answer to EITHER question is **yes**, you MUST:
 
 ### Verification
 
-When reviewing or implementing handler changes, compare the `GeneratePatches`
+When reviewing handler changes, it helps to compare the `GeneratePatches`
 output before and after the change for representative inputs. If the output
-differs, a version bump is mandatory.
+differs, a version bump is typically appropriate.
 
 ## Markdown Quality
 
-When creating or editing Markdown files, always ensure they pass markdownlint
-with the project's `.markdownlint.json` config:
+When creating or editing Markdown files, try to follow the project's
+`.markdownlint.json` config:
 
 - Use ATX-style headings (`#`, `##`, etc.), never setext (underline) style.
 - Use dashes (`-`) for unordered lists.
 - No trailing punctuation in headings.
 - Surround headings and lists with blank lines.
-- No inline HTML unless absolutely necessary.
+- No inline HTML unless necessary.
 - End every file with a single newline.
 - No trailing whitespace on any line.
 
-If you notice any of these issues in a Markdown file you are editing, fix them
-before finishing.
+If you notice any of these issues in a Markdown file you are editing, consider
+fixing them before finishing.
 
 ## Tone and Interaction
 
 - Be concise.
-- Act autonomously but pause for explicit approval before overwriting major
-  architectural files or changing the core `.specify/constitution.md`.
+- Use your best judgment, and ask for explicit approval before overwriting
+  major architectural files or changing the core `.specify/constitution.md`.

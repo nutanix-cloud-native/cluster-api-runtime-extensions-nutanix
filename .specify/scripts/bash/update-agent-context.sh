@@ -37,8 +37,7 @@
 # Usage: ./update-agent-context.sh [agent_type]
 # Agent types: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|q|agy|bob|qodercli|generic
 # Leave empty to update all existing agent files
-# Note: canonical harness-agnostic config is AGENTS.md (with CLAUDE.md and
-# .github/agents/copilot-instructions.md kept in sync). Cursor-specific
+# Note: canonical harness-agnostic config is AGENTS.md. Cursor-specific
 # .cursor/rules/ has been removed; cursor-agent is kept as an alias to generic.
 
 set -e
@@ -617,21 +616,15 @@ update_specific_agent() {
   cursor-agent)
     log_info "cursor-agent is deprecated; using generic (AGENTS.md) instead"
     update_agent_file "$AGENTS_FILE" "AGENTS.md (via cursor-agent alias)"
-    update_agent_file "$CLAUDE_FILE" "CLAUDE.md (via cursor-agent alias)"
-    update_agent_file "$COPILOT_FILE" "copilot-instructions.md (via cursor-agent alias)"
     ;;
   qwen)
     update_agent_file "$QWEN_FILE" "Qwen Code"
     ;;
   opencode)
     update_agent_file "$AGENTS_FILE" "opencode"
-    update_agent_file "$CLAUDE_FILE" "Claude Code (via opencode sync)"
-    update_agent_file "$COPILOT_FILE" "GitHub Copilot (via opencode sync)"
     ;;
   codex)
     update_agent_file "$AGENTS_FILE" "Codex CLI"
-    update_agent_file "$CLAUDE_FILE" "Claude Code (via codex sync)"
-    update_agent_file "$COPILOT_FILE" "GitHub Copilot (via codex sync)"
     ;;
   windsurf)
     update_agent_file "$WINDSURF_FILE" "Windsurf"
@@ -668,8 +661,6 @@ update_specific_agent() {
     ;;
   generic)
     update_agent_file "$AGENTS_FILE" "AGENTS.md (generic)"
-    update_agent_file "$CLAUDE_FILE" "Claude Code (via generic sync)"
-    update_agent_file "$COPILOT_FILE" "GitHub Copilot (via generic sync)"
     ;;
   *)
     log_error "Unknown agent type '$agent_type'"
