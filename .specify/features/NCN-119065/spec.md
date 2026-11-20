@@ -40,7 +40,7 @@ An operator wants pods to obtain ServiceAccount tokens whose `iss` is an externa
 **Acceptance Scenarios**:
 
 1. **Given** a Cluster with `clusterConfig.serviceAccountIssuer.issuer: https://oidc.example.com`, **When** the topology mutation handler runs, **Then** it adds `apiServer.extraArgs` entry `service-account-issuer=https://oidc.example.com` to the `KubeadmControlPlaneTemplate`.
-2. **Given** a Cluster with `issuer: https://oidc.example.com` and `audiences: ["sts.amazonaws.com", "k8s.example.com"]`, **When** handled, **Then** it adds both `service-account-issuer=https://oidc.example.com` and `api-audiences=sts.amazonaws.com,k8s.example.com`.
+2. **Given** a Cluster with `issuer: https://oidc.example.com` and `audiences: ["sts.amazonaws.com", "k8s.example.com"]` (any order), **When** handled, **Then** it adds both `service-account-issuer=https://oidc.example.com` and `api-audiences=k8s.example.com,sts.amazonaws.com` (sorted).
 3. **Given** a Cluster with `issuer: https://oidc.example.com` and `jwksURI: https://oidc.example.com/.well-known/jwks.json`, **When** handled, **Then** it adds `service-account-jwks-uri` with that value in addition to the issuer.
 
 ---
@@ -87,8 +87,9 @@ An operator needs tokens to be valid for multiple audiences (e.g., Kubernetes AP
 **Acceptance Scenarios**:
 
 1. **Given** an issuer with `audiences: ["k8s.example.com"]`, **When** rendered, **Then** `api-audiences` equals that single value.
-2. **Given** an issuer with `audiences: ["a", "b", "c"]`, **When** rendered, **Then** `api-audiences` equals `a,b,c` in declared order (preserved).
-3. **Given** an issuer without `audiences`, **When** rendered, **Then** no `api-audiences` flag is set (API server defaults to issuer URL).
+2. **Given** an issuer with `audiences: ["a", "b", "c"]`, **When** rendered, **Then** `api-audiences` equals `a,b,c` (already sorted; any permutation sorts to same).
+3. **Given** an issuer with `audiences: ["sts.amazonaws.com", "k8s.example.com"]`, **When** rendered, **Then** `api-audiences` equals `k8s.example.com,sts.amazonaws.com` (alphabetically sorted regardless of input order).
+4. **Given** an issuer without `audiences`, **When** rendered, **Then** no `api-audiences` flag is set (API server defaults to issuer URL).
 
 ### User Story 5 - Operator configures maximum token lifetime (Priority: P2)
 
@@ -137,7 +138,7 @@ An operator/CI wants confidence that ServiceAccount issuer configuration works o
 
 - **FR-001**: The system MUST add an **opt-in** field `serviceAccountIssuer` to `KubeadmClusterConfigSpec` in `api/v1alpha1/` (alongside `podSecurityAdmission`, `encryptionAtRest`, `etcd`, `dns`, `authentication`). When the field is unset/nil the feature is a no-op; `GeneratePatches` output for such inputs MUST be byte-identical to pre-change output.
 - **FR-002**: The `serviceAccountIssuer` type MUST expose `issuer` (required, non-empty, must be an `https://` URL compliant with RFC 3986, max length 2048, matching OpenID Discovery issuer requirements). It MUST carry kubebuilder validation (`Required`, `Format=uri`, `Pattern=^https://`).
-- **FR-003**: The type MAY expose `audiences` (optional, list of non-empty strings, each 1-253 chars, max 50 entries, unique items). When set, the handler MUST set `--api-audiences` to the comma-joined list in declared order. When absent/empty, the handler MUST NOT set `--api-audiences` (API server defaults to issuer).
+- **FR-003**: The type MAY expose `audiences` (optional, list of non-empty strings, each 1-253 chars, max 50 entries, unique items). When set, the handler MUST set `--api-audiences` to the comma-joined list **sorted alphabetically** (to avoid rollouts on reorder). When absent/empty, the handler MUST NOT set `--api-audiences` (API server defaults to issuer).
 - **FR-004**: The type MAY expose `jwksURI` (optional, when set must be an `https://` URL, max length 2048). When set, the handler MUST set `--service-account-jwks-uri` to that value. This is useful when discovery doc and JWKS are served from a different external URL.
 - **FR-004b**: The type MAY expose `maxTokenExpiration` (optional, Go duration string, e.g. `1h`, `24h`, max length 32, must match duration pattern). When set, the handler MUST set `--service-account-max-token-expiration` to that value. When absent, the flag MUST NOT be set (API server uses default, currently 24h in kubeadm).
 - **FR-005**: A **new provider-agnostic topology mutation handler** under `pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer/` (or equivalent) MUST, when the variable is present and non-nil, add/update `KubeadmControlPlaneTemplate.spec.template.spec.kubeadmConfigSpec.clusterConfiguration.apiServer.extraArgs` entries for `service-account-issuer` (always) and optionally `api-audiences`, `service-account-jwks-uri`, and `service-account-max-token-expiration`. It MUST be idempotent and MUST NOT add any other flags.
@@ -160,7 +161,7 @@ An operator/CI wants confidence that ServiceAccount issuer configuration works o
 ### Measurable Outcomes
 
 - **SC-001**: An operator can add `clusterConfig.serviceAccountIssuer.issuer: https://oidc.example.com` and the resulting `KubeadmControlPlaneTemplate` contains `extraArgs` with `service-account-issuer=https://oidc.example.com` and no other new flags; the patch is applied on next reconciliation and the API server serves discovery at that issuer.
-- **SC-002**: With `audiences: ["sts.amazonaws.com", "k8s.example.com"]` the resulting `api-audiences` equals `sts.amazonaws.com,k8s.example.com` (order preserved).
+- **SC-002**: With `audiences: ["sts.amazonaws.com", "k8s.example.com"]` (any order) the resulting `api-audiences` equals `k8s.example.com,sts.amazonaws.com` (sorted, stable).
 - **SC-003**: 100% of inputs that did **not** set `serviceAccountIssuer` produce byte-identical `GeneratePatches` output to pre-change behavior (no rollout on upgrade).
 - **SC-004**: Any Cluster YAML that sets `serviceAccountIssuer` but omits or mis-formats `issuer` (empty, non-https, too long) is rejected at admission with a message naming the offending field.
 - **SC-005**: Documentation page is published at `docs/content/customization/kubeadm/service-account-issuer.md` and linked from the customization index, with a working example that can be copied directly.

@@ -102,14 +102,14 @@ var _ = Describe("Generate ServiceAccount issuer patches", func() {
 			},
 		},
 		{
-			Name:        "issuer with multiple audiences preserves order",
+			Name:        "issuer with multiple audiences sorted",
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					v1alpha1.ServiceAccountIssuer{
 						Issuer:    "https://oidc.example.com",
-						Audiences: []string{"a", "b", "c"},
+						Audiences: []string{"c", "a", "b"},
 					},
 					VariableName,
 				),
@@ -134,7 +134,7 @@ var _ = Describe("Generate ServiceAccount issuer patches", func() {
 			},
 		},
 		{
-			Name:        "issuer with audiences sts and k8s",
+			Name:        "issuer with audiences sts and k8s sorted",
 			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
@@ -161,7 +161,7 @@ var _ = Describe("Generate ServiceAccount issuer patches", func() {
 								),
 								gomega.SatisfyAll(
 									gomega.HaveKeyWithValue("name", APIAudiencesArg),
-									gomega.HaveKeyWithValue("value", "sts.amazonaws.com,k8s.example.com"),
+									gomega.HaveKeyWithValue("value", "k8s.example.com,sts.amazonaws.com"),
 								),
 							),
 						),

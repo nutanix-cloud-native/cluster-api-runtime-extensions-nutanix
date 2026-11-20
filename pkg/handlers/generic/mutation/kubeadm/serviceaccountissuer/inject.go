@@ -6,6 +6,7 @@ package serviceaccountissuer
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -120,7 +121,9 @@ func (h *serviceAccountIssuerPatchHandler) Mutate(
 			})
 
 			if len(sai.Audiences) > 0 {
-				audiencesVal := strings.Join(sai.Audiences, ",")
+				sorted := slices.Clone(sai.Audiences)
+				slices.Sort(sorted)
+				audiencesVal := strings.Join(sorted, ",")
 				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
 					Name:  APIAudiencesArg,
 					Value: &audiencesVal,
