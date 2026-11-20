@@ -153,7 +153,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
-							Image: "nginx:1.27-alpine",
+							Image: "nginxinc/nginx-unprivileged:1.27-alpine",
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8443,
