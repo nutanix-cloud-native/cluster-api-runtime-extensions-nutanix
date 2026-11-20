@@ -5,9 +5,11 @@ package serviceaccountissuer
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
@@ -289,6 +291,106 @@ var _ = Describe("Generate ServiceAccount issuer patches", func() {
 					),
 				},
 			},
+		},
+		{
+			Name:        "issuer with maxTokenExpiration sets service-account-max-token-expiration",
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.ServiceAccountIssuer{
+						Issuer:             "https://oidc.example.com",
+						MaxTokenExpiration: &metav1.Duration{Duration: time.Hour},
+					},
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"apiServer",
+						gomega.HaveKeyWithValue(
+							"extraArgs",
+							gomega.ContainElements(
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", ServiceAccountIssuerArg),
+									gomega.HaveKeyWithValue("value", "https://oidc.example.com"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", ServiceAccountMaxTokenExpArg),
+									gomega.HaveKeyWithValue("value", "1h0m0s"),
+								),
+							),
+						),
+					),
+				},
+			},
+		},
+		{
+			Name:        "issuer with all flags sets all four",
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.ServiceAccountIssuer{
+						Issuer:             "https://oidc.example.com",
+						Audiences:          []string{"a"},
+						JWKSURI:            "https://oidc.example.com/jwks",
+						MaxTokenExpiration: &metav1.Duration{Duration: 24 * time.Hour},
+					},
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration",
+					ValueMatcher: gomega.HaveKeyWithValue(
+						"apiServer",
+						gomega.HaveKeyWithValue(
+							"extraArgs",
+							gomega.ContainElements(
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", ServiceAccountIssuerArg),
+									gomega.HaveKeyWithValue("value", "https://oidc.example.com"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", APIAudiencesArg),
+									gomega.HaveKeyWithValue("value", "a"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", ServiceAccountJWKSURIArg),
+									gomega.HaveKeyWithValue("value", "https://oidc.example.com/jwks"),
+								),
+								gomega.SatisfyAll(
+									gomega.HaveKeyWithValue("name", ServiceAccountMaxTokenExpArg),
+									gomega.HaveKeyWithValue("value", "24h0m0s"),
+								),
+							),
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "conflict with existing service-account-max-token-expiration extraArg errors",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{
+					{Name: ServiceAccountMaxTokenExpArg, Value: new("1h")},
+				}).
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.ServiceAccountIssuer{
+						Issuer: "https://oidc.example.com",
+					},
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
 		},
 		{
 			Name: "conflict with existing service-account-issuer extraArg errors",

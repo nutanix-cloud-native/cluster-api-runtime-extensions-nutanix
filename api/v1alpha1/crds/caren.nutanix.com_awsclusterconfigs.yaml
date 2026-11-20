@@ -1444,6 +1444,11 @@ spec:
                       minLength: 1
                       pattern: ^https://
                       type: string
+                    maxTokenExpiration:
+                      description: |-
+                        MaxTokenExpiration is the maximum lifetime for ServiceAccount tokens.
+                        When set, triggers --service-account-max-token-expiration.
+                      type: string
                   required:
                     - issuer
                   type: object

@@ -28,9 +28,10 @@ const (
 	VariableName = "serviceAccountIssuer"
 
 	// ExtraArgs names for API server.
-	ServiceAccountIssuerArg  = "service-account-issuer"
-	APIAudiencesArg          = "api-audiences"
-	ServiceAccountJWKSURIArg = "service-account-jwks-uri"
+	ServiceAccountIssuerArg      = "service-account-issuer"
+	APIAudiencesArg              = "api-audiences"
+	ServiceAccountJWKSURIArg     = "service-account-jwks-uri"
+	ServiceAccountMaxTokenExpArg = "service-account-max-token-expiration"
 )
 
 type serviceAccountIssuerPatchHandler struct {
@@ -102,7 +103,8 @@ func (h *serviceAccountIssuerPatchHandler) Mutate(
 			for _, arg := range apiServer.ExtraArgs {
 				if arg.Name == ServiceAccountIssuerArg ||
 					arg.Name == APIAudiencesArg ||
-					arg.Name == ServiceAccountJWKSURIArg {
+					arg.Name == ServiceAccountJWKSURIArg ||
+					arg.Name == ServiceAccountMaxTokenExpArg {
 					return fmt.Errorf(
 						"found existing extraArgs %q which conflicts with serviceAccountIssuer; "+
 							"remove the direct extraArgs and use clusterConfig.serviceAccountIssuer instead",
@@ -130,6 +132,14 @@ func (h *serviceAccountIssuerPatchHandler) Mutate(
 				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
 					Name:  ServiceAccountJWKSURIArg,
 					Value: &jwksVal,
+				})
+			}
+
+			if sai.MaxTokenExpiration != nil {
+				expVal := sai.MaxTokenExpiration.Duration.String()
+				apiServer.ExtraArgs = append(apiServer.ExtraArgs, bootstrapv1.Arg{
+					Name:  ServiceAccountMaxTokenExpArg,
+					Value: &expVal,
 				})
 			}
 

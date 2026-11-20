@@ -6,16 +6,19 @@ package v1alpha1
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestServiceAccountIssuer_JSONRoundTrip(t *testing.T) {
 	original := ServiceAccountIssuer{
-		Issuer:    "https://oidc.example.com/id/ABC123",
-		Audiences: []string{"sts.amazonaws.com", "k8s.example.com"},
-		JWKSURI:   "https://oidc.example.com/.well-known/jwks.json",
+		Issuer:             "https://oidc.example.com/id/ABC123",
+		Audiences:          []string{"sts.amazonaws.com", "k8s.example.com"},
+		JWKSURI:            "https://oidc.example.com/.well-known/jwks.json",
+		MaxTokenExpiration: &metav1.Duration{Duration: 24 * time.Hour},
 	}
 	data, err := json.Marshal(original)
 	require.NoError(t, err)
@@ -38,6 +41,7 @@ func TestServiceAccountIssuer_OmittedFields(t *testing.T) {
 	assert.Contains(t, raw, "issuer")
 	assert.NotContains(t, raw, "audiences")
 	assert.NotContains(t, raw, "jwksURI")
+	assert.NotContains(t, raw, "maxTokenExpiration")
 }
 
 func TestKubeadmClusterConfigSpec_ServiceAccountIssuer_NilByDefault(t *testing.T) {

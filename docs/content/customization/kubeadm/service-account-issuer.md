@@ -4,8 +4,9 @@ title = "Service Account Issuer"
 
 This customization allows configuration of the Kubernetes API server's ServiceAccount
 token issuer for workload identity. When specified, CAREN configures the API server
-with `--service-account-issuer`, and optionally `--api-audiences` and
-`--service-account-jwks-uri`, via `KubeadmControlPlaneTemplate`.
+with `--service-account-issuer`, and optionally `--api-audiences`,
+`--service-account-jwks-uri`, and `--service-account-max-token-expiration`, via
+`KubeadmControlPlaneTemplate`.
 
 This is an opt-in feature. When `serviceAccountIssuer` is not specified in the cluster
 configuration, no ServiceAccount issuer configuration is applied and existing clusters are
@@ -25,6 +26,7 @@ The API server serves OIDC discovery at `/.well-known/openid-configuration` and 
 | `issuer` | `string` | - | Required. Identifier asserted in ServiceAccount JWT `iss` claims. Must be an `https://` URL, max 2048 characters. Triggers `--service-account-issuer`. |
 | `audiences` | `[]string` | `[]` | Optional. List of audiences tokens are bound to, max 50 entries, each 1-253 characters, unique. When set, rendered as comma-joined `--api-audiences` in declared order. When absent, the API server defaults to the issuer URL. |
 | `jwksURI` | `string` | `""` | Optional. Override for the JWKS URI advertised in the discovery document, max 2048 characters. Must be an `https://` URL when set. Triggers `--service-account-jwks-uri`. |
+| `maxTokenExpiration` | `duration` | `""` | Optional. Maximum lifetime for ServiceAccount tokens as Go duration (e.g. `1h`, `24h`). When set, triggers `--service-account-max-token-expiration`. When absent, API server default applies. |
 
 ## Examples
 
@@ -96,13 +98,31 @@ spec:
             jwksURI: https://oidc.example.com/.well-known/jwks.json
 ```
 
+### Issuer with maximum token expiration
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          serviceAccountIssuer:
+            issuer: https://oidc.example.com
+            maxTokenExpiration: 1h
+```
+
 ## Notes
 
 - **Rollout:** Changing the issuer triggers a control-plane rollout because the API server flags
   change. Tokens issued before the change remain valid until expiry.
-- **Conflict:** If `service-account-issuer`, `api-audiences`, or `service-account-jwks-uri` are
-  already set directly via `apiServer.extraArgs`, the handler returns an error directing you to
-  remove the direct `extraArgs` and use `clusterConfig.serviceAccountIssuer` instead.
+- **Conflict:** If `service-account-issuer`, `api-audiences`, `service-account-jwks-uri`, or
+  `service-account-max-token-expiration` are already set directly via `apiServer.extraArgs`, the
+  handler returns an error directing you to remove the direct `extraArgs` and use
+  `clusterConfig.serviceAccountIssuer` instead.
 - **Composition:** This feature composes additively with `podSecurityAdmission`,
   `encryptionAtRest`, and `authentication` (`AuthenticationConfiguration`). They use different
   flags/files and do not conflict.
