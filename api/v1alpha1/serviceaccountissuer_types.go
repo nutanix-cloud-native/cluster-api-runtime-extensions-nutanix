@@ -44,6 +44,5 @@ type ServiceAccountIssuer struct {
 	// When set, triggers --service-account-max-token-expiration.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:XValidation:rule="duration(self) > duration('0s')",message="must be greater than 0s"
-	// +kubebuilder:validation:XValidation:rule="duration(self) <= duration('8760h')",message="must be less than or equal to 8760h (1 year)"
 	MaxTokenExpiration *metav1.Duration `json:"maxTokenExpiration,omitempty"`
 }
