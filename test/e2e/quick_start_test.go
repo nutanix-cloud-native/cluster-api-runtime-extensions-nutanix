@@ -381,9 +381,14 @@ var _ = Describe("Quick start", func() {
 															clusterName,
 														)
 														workloadClient := workloadProxy.GetClient()
+														issuerHost := "mock-oidc.oidc-mock.svc.cluster.local"
+														if lowercaseProvider == "docker" {
+															issuerHost = "host.docker.internal:8443"
+														}
 														mock, err := oidc.SetupMockOIDC(ctx, oidc.SetupInput{
 															WorkloadClient: workloadClient,
 															Namespace:      "oidc-mock",
+															IssuerHost:     issuerHost,
 														})
 														Expect(err).ToNot(HaveOccurred(), "setting up mock OIDC")
 														By(fmt.Sprintf("Mock OIDC issuer: %s", mock.IssuerURL))
