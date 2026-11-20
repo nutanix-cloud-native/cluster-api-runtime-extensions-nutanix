@@ -401,14 +401,9 @@ var _ = Describe("Quick start", func() {
 															clusterName,
 														)
 														workloadClient := workloadProxy.GetClient()
-														issuerHost := "mock-oidc.oidc-mock.svc.cluster.local"
-														if lowercaseProvider == "docker" {
-															issuerHost = "host.docker.internal:8443"
-														}
 														mock, err := oidc.SetupMockOIDC(ctx, oidc.SetupInput{
 															WorkloadClient: workloadClient,
 															Namespace:      "oidc-mock",
-															IssuerHost:     issuerHost,
 														})
 														Expect(err).ToNot(HaveOccurred(), "setting up mock OIDC")
 														By(fmt.Sprintf("Mock OIDC issuer: %s", mock.IssuerURL))
@@ -499,7 +494,10 @@ var _ = Describe("Quick start", func() {
 															return false
 														}, 5*time.Minute, 5*time.Second).Should(BeTrue(), "mock OIDC deployment not available")
 
-														By("Patching Cluster with authentication configuration")
+														// Ensure single control-plane replica to avoid etcd quorum loss during KCP rollout (2 replicas need 2 healthy).
+														By(
+															"Ensuring single control-plane replica for safe auth rollout",
+														)
 														bootstrapClient := proxy.GetClient()
 														cluster := &clusterv1beta2.Cluster{}
 														Expect(
@@ -513,6 +511,69 @@ var _ = Describe("Quick start", func() {
 															),
 														).To(Succeed())
 														Expect(cluster.Spec.Topology).ToNot(BeNil())
+														if cluster.Spec.Topology.ControlPlane.Replicas == nil ||
+															*cluster.Spec.Topology.ControlPlane.Replicas != 1 {
+															cluster.Spec.Topology.ControlPlane.Replicas = ptr.To[int32](
+																1,
+															)
+															Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
+															Eventually(func() bool {
+																c := &clusterv1beta2.Cluster{}
+																if err := bootstrapClient.Get(
+																	ctx,
+																	client.ObjectKey{
+																		Namespace: namespace,
+																		Name:      clusterName,
+																	},
+																	c,
+																); err != nil {
+																	return false
+																}
+																for _, cond := range c.Status.Conditions {
+																	if cond.Type == clusterv1beta2.ReadyCondition &&
+																		cond.Status == metav1.ConditionTrue {
+																		// Also check KCP replicas ==1
+																		kcpList := &unstructured.UnstructuredList{}
+																		kcpList.SetGroupVersionKind(
+																			schema.GroupVersionKind{
+																				Group:   "controlplane.cluster.x-k8s.io",
+																				Version: "v1beta2",
+																				Kind:    "KubeadmControlPlane",
+																			},
+																		)
+																		if err := bootstrapClient.List(
+																			ctx,
+																			kcpList,
+																			client.InNamespace(namespace),
+																		); err == nil {
+																			for _, item := range kcpList.Items {
+																				if replicas, ok := item.Object["status"]; ok {
+																					if statusMap, ok := replicas.(map[string]interface{}); ok {
+																						if r, ok := statusMap["replicas"]; ok &&
+																							r == int64(1) {
+																							return true
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+																return false
+															}, 5*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster not Ready with 1 CP replica")
+														}
+
+														By("Patching Cluster with authentication configuration")
+														Expect(
+															bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																cluster,
+															),
+														).To(Succeed())
 														auth := v1alpha1.Authentication{
 															JWT: []v1alpha1.JWTAuthenticator{
 																{
