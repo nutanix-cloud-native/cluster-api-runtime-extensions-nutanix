@@ -406,11 +406,69 @@ var _ = Describe("Quick start", func() {
 																}
 															}
 															Logf(
-																"mock-oidc deployment not yet available: generation %d observed %d conditions %v",
+																"mock-oidc deployment not yet available: generation %d observed %d replicas %d/%d/%d conditions %v",
 																dep.Generation,
 																dep.Status.ObservedGeneration,
+																dep.Status.Replicas,
+																dep.Status.ReadyReplicas,
+																dep.Status.AvailableReplicas,
 																dep.Status.Conditions,
 															)
+															// Diagnostics: list pods and events on failure path (logged every poll)
+															podList := &corev1.PodList{}
+															if err := workloadClient.List(
+																ctx,
+																podList,
+																client.InNamespace("oidc-mock"),
+															); err == nil {
+																for _, pod := range podList.Items {
+																	Logf(
+																		"mock-oidc pod %s phase %s conditions %v containerStatuses %v initStatuses %v",
+																		pod.Name,
+																		pod.Status.Phase,
+																		pod.Status.Conditions,
+																		pod.Status.ContainerStatuses,
+																		pod.Status.InitContainerStatuses,
+																	)
+																	for _, cs := range pod.Status.ContainerStatuses {
+																		if cs.State.Waiting != nil {
+																			Logf(
+																				"pod %s container %s waiting: %s %s",
+																				pod.Name,
+																				cs.Name,
+																				cs.State.Waiting.Reason,
+																				cs.State.Waiting.Message,
+																			)
+																		}
+																		if cs.State.Terminated != nil {
+																			Logf(
+																				"pod %s container %s terminated: %s %s exit %d",
+																				pod.Name,
+																				cs.Name,
+																				cs.State.Terminated.Reason,
+																				cs.State.Terminated.Message,
+																				cs.State.Terminated.ExitCode,
+																			)
+																		}
+																	}
+																}
+															}
+															eventList := &corev1.EventList{}
+															if err := workloadClient.List(
+																ctx,
+																eventList,
+																client.InNamespace("oidc-mock"),
+															); err == nil {
+																for _, ev := range eventList.Items {
+																	Logf(
+																		"event %s %s %s: %s",
+																		ev.InvolvedObject.Kind,
+																		ev.InvolvedObject.Name,
+																		ev.Reason,
+																		ev.Message,
+																	)
+																}
+															}
 															return false
 														}, 5*time.Minute, 5*time.Second).Should(BeTrue(), "mock OIDC deployment not available")
 
