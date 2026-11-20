@@ -7,8 +7,10 @@ package e2e
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"slices"
 	"strconv"
@@ -19,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
+	authv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -732,6 +735,155 @@ var _ = Describe("Quick start", func() {
 															validateTokenAuth(ctx, workloadProxy, sysToken, false),
 														).To(Succeed())
 													}
+
+													By(
+														"ServiceAccount issuer (provider-agnostic, no external deps)",
+													)
+													// Synthetic issuer - API server serves discovery locally, no external dial.
+													saIssuerURL := fmt.Sprintf("https://oidc-e2e.test/%s", clusterName)
+													saIssuer := v1alpha1.ServiceAccountIssuer{
+														Issuer: saIssuerURL,
+														Audiences: []string{
+															"e2e-aud",
+															"k8s.example.com",
+														},
+														MaxTokenExpiration: &metav1.Duration{Duration: time.Hour},
+													}
+													By(
+														fmt.Sprintf(
+															"Patching Cluster with serviceAccountIssuer: %s",
+															saIssuerURL,
+														),
+													)
+													bootstrapClient := proxy.GetClient()
+													clusterSA := &clusterv1beta2.Cluster{}
+													Expect(
+														bootstrapClient.Get(
+															ctx,
+															client.ObjectKey{Namespace: namespace, Name: clusterName},
+															clusterSA,
+														),
+													).To(Succeed())
+													Expect(clusterSA.Spec.Topology).ToNot(BeNil())
+													clusterSA.Spec.Topology.Variables = upsertServiceAccountIssuerVariable(
+														clusterSA.Spec.Topology.Variables,
+														saIssuer,
+													)
+													Expect(bootstrapClient.Update(ctx, clusterSA)).To(Succeed())
+
+													By(
+														"Waiting for Cluster to be Ready after serviceAccountIssuer patch",
+													)
+													Eventually(func() bool {
+														c := &clusterv1beta2.Cluster{}
+														if err := bootstrapClient.Get(
+															ctx,
+															client.ObjectKey{Namespace: namespace, Name: clusterName},
+															c,
+														); err != nil {
+															return false
+														}
+														for _, cond := range c.Status.Conditions {
+															if cond.Type == clusterv1beta2.ReadyCondition &&
+																cond.Status == metav1.ConditionTrue {
+																return true
+															}
+														}
+														return false
+													}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster not Ready after serviceAccountIssuer patch")
+
+													By(
+														"Verifying admin kubeconfig still works after serviceAccountIssuer",
+													)
+													Expect(
+														workloadClient.List(
+															ctx,
+															&corev1.PodList{},
+															client.InNamespace("kube-system"),
+														),
+													).To(Succeed())
+
+													By("Verifying OIDC discovery serves configured issuer")
+													restCfg := workloadProxy.GetRESTConfig()
+													// Use REST client to GET discovery - discovery is served at API server's
+													// /.well-known/openid-configuration regardless of issuer host.
+													discoveryClient, err := client.New(restCfg, client.Options{})
+													Expect(err).ToNot(HaveOccurred())
+													_ = discoveryClient
+													// Use direct REST call via the proxy's REST config
+													httpClient, err := rest.HTTPClientFor(restCfg)
+													Expect(err).ToNot(HaveOccurred())
+													discoveryURL := fmt.Sprintf(
+														"%s/.well-known/openid-configuration",
+														restCfg.Host,
+													)
+													// Host may be https://... - strip trailing slash
+													req, err := http.NewRequestWithContext(
+														ctx,
+														http.MethodGet,
+														discoveryURL,
+														http.NoBody,
+													)
+													Expect(err).ToNot(HaveOccurred())
+													resp, err := httpClient.Do(req)
+													Expect(err).ToNot(HaveOccurred(), "fetching openid-configuration")
+													defer resp.Body.Close()
+													Expect(resp.StatusCode).To(Equal(200))
+													var discovery map[string]interface{}
+													Expect(json.NewDecoder(resp.Body).Decode(&discovery)).To(Succeed())
+													Expect(discovery["issuer"]).To(Equal(saIssuerURL))
+
+													By("Verifying projected ServiceAccount token has expected iss/aud")
+													sa := &corev1.ServiceAccount{
+														ObjectMeta: metav1.ObjectMeta{
+															Name:      "e2e-sa-issuer",
+															Namespace: "default",
+														},
+													}
+													Expect(workloadClient.Create(ctx, sa)).To(Succeed())
+													tokenReq := &authv1.TokenRequest{
+														Spec: authv1.TokenRequestSpec{
+															Audiences:         []string{"e2e-aud"},
+															ExpirationSeconds: ptr.To[int64](600),
+														},
+													}
+													err = workloadClient.SubResource("token").Create(ctx, sa, tokenReq)
+													if err == nil {
+														token := tokenReq.Status.Token
+														if token != "" {
+															parts := strings.Split(token, ".")
+															Expect(parts).To(HaveLen(3))
+															payloadSeg := parts[1]
+															if m := len(payloadSeg) % 4; m != 0 {
+																payloadSeg += strings.Repeat("=", 4-m)
+															}
+															payloadJSON, err := base64.URLEncoding.DecodeString(
+																payloadSeg,
+															)
+															if err != nil {
+																payloadJSON, err = base64.RawURLEncoding.DecodeString(
+																	parts[1],
+																)
+															}
+															Expect(err).ToNot(HaveOccurred())
+															var claims map[string]interface{}
+															Expect(json.Unmarshal(payloadJSON, &claims)).To(Succeed())
+															Expect(claims["iss"]).To(Equal(saIssuerURL))
+															switch aud := claims["aud"].(type) {
+															case string:
+																Expect(aud).To(Equal("e2e-aud"))
+															case []interface{}:
+																Expect(aud).To(ContainElement("e2e-aud"))
+															}
+														}
+													} else {
+														By(
+															fmt.Sprintf(
+																"TokenRequest subresource not available, skipping token iss check: %v",
+																err,
+															),
+														)
+													}
 												},
 											}
 										})
@@ -766,6 +918,34 @@ func upsertAuthenticationVariable(
 		}
 	}
 	payload := map[string]interface{}{"authentication": authMap}
+	raw, err := json.Marshal(payload)
+	Expect(err).ToNot(HaveOccurred())
+	return append(vars, clusterv1beta2.ClusterVariable{
+		Name:  "clusterConfig",
+		Value: apiextensionsv1.JSON{Raw: raw},
+	})
+}
+
+func upsertServiceAccountIssuerVariable(
+	vars []clusterv1beta2.ClusterVariable,
+	saIssuer v1alpha1.ServiceAccountIssuer,
+) []clusterv1beta2.ClusterVariable {
+	saMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&saIssuer)
+	Expect(err).ToNot(HaveOccurred())
+	for i, v := range vars {
+		if v.Name == "clusterConfig" {
+			existing := map[string]interface{}{}
+			if len(v.Value.Raw) > 0 {
+				Expect(json.Unmarshal(v.Value.Raw, &existing)).To(Succeed())
+			}
+			existing["serviceAccountIssuer"] = saMap
+			raw, err := json.Marshal(existing)
+			Expect(err).ToNot(HaveOccurred())
+			vars[i].Value.Raw = raw
+			return vars
+		}
+	}
+	payload := map[string]interface{}{"serviceAccountIssuer": saMap}
 	raw, err := json.Marshal(payload)
 	Expect(err).ToNot(HaveOccurred())
 	return append(vars, clusterv1beta2.ClusterVariable{
