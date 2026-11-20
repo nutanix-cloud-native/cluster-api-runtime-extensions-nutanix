@@ -20,14 +20,22 @@ import (
 	"net"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
-	"github.com/golang-jwt/jwt/v5"
+const (
+	mockOIDCAppLabel       = "mock-oidc"
+	mockOIDCConfigVolume   = "config"
+	mockOIDCCertVolume     = "certs"
+	mockOIDCConfigMapName  = "mock-oidc-config"
+	mockOIDCCertSecretName = "mock-oidc-certs" //nolint:gosec // test helper constant
+	jwksKey                = "keys"
 )
 
 // MockOIDC holds the mock OIDC server state.
@@ -94,7 +102,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	// Create Secret with TLS cert.
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mock-oidc-certs",
+			Name:      mockOIDCCertSecretName,
 			Namespace: input.Namespace,
 		},
 		Type: corev1.SecretTypeTLS,
@@ -111,13 +119,13 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	nginxConf := buildNginxConf()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mock-oidc-config",
+			Name:      mockOIDCConfigMapName,
 			Namespace: input.Namespace,
 		},
 		Data: map[string]string{
 			"nginx.conf":           nginxConf,
 			"openid-configuration": discoveryJSON,
-			"keys":                 jwksJSON,
+			jwksKey:                jwksJSON,
 		},
 	}
 	if err := createOrUpdate(ctx, input.WorkloadClient, cm); err != nil {
@@ -125,7 +133,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	}
 
 	// Create Deployment.
-	labels := map[string]string{"app": "mock-oidc"}
+	labels := map[string]string{"app": mockOIDCAppLabel}
 	replicas := int32(1)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -154,22 +162,22 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "config",
+									Name:      mockOIDCConfigVolume,
 									MountPath: "/etc/nginx/nginx.conf",
 									SubPath:   "nginx.conf",
 								},
 								{
-									Name:      "config",
+									Name:      mockOIDCConfigVolume,
 									MountPath: "/usr/share/nginx/html/openid-configuration",
 									SubPath:   "openid-configuration",
 								},
 								{
-									Name:      "config",
+									Name:      mockOIDCConfigVolume,
 									MountPath: "/usr/share/nginx/html/keys",
-									SubPath:   "keys",
+									SubPath:   jwksKey,
 								},
 								{
-									Name:      "certs",
+									Name:      mockOIDCCertVolume,
 									MountPath: "/etc/nginx/certs",
 								},
 							},
@@ -186,20 +194,20 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "config",
+							Name: mockOIDCConfigVolume,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "mock-oidc-config",
+										Name: mockOIDCConfigMapName,
 									},
 								},
 							},
 						},
 						{
-							Name: "certs",
+							Name: mockOIDCCertVolume,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "mock-oidc-certs",
+									SecretName: mockOIDCCertSecretName,
 								},
 							},
 						},
@@ -215,7 +223,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	// Create Service.
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mock-oidc",
+			Name:      mockOIDCAppLabel,
 			Namespace: input.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -270,7 +278,7 @@ func (m *MockOIDC) VerifyTLS() error {
 }
 
 func buildJWKS(privateKey *rsa.PrivateKey) (string, error) {
-	n := base64.RawURLEncoding.EncodeToString(privateKey.PublicKey.N.Bytes())
+	n := base64.RawURLEncoding.EncodeToString(privateKey.N.Bytes())
 	e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(privateKey.PublicKey.E)).Bytes())
 	jwks := map[string]interface{}{
 		"keys": []map[string]string{
@@ -298,7 +306,17 @@ func buildDiscoveryJSON(issuerURL string) (string, error) {
 		"response_types_supported":              []string{"id_token"},
 		"subject_types_supported":               []string{"public"},
 		"id_token_signing_alg_values_supported": []string{"RS256"},
-		"claims_supported":                      []string{"sub", "email", "groups", "aud", "iss", "exp", "iat", "hd", "foo"},
+		"claims_supported": []string{
+			"sub",
+			"email",
+			"groups",
+			"aud",
+			"iss",
+			"exp",
+			"iat",
+			"hd",
+			"foo",
+		},
 	}
 	b, err := json.Marshal(discovery)
 	if err != nil {
@@ -356,7 +374,11 @@ func generateCA() (*x509.Certificate, []byte, *rsa.PrivateKey, error) {
 	return cert, caPEM, caKey, nil
 }
 
-func generateServerCert(caCert *x509.Certificate, caKey *rsa.PrivateKey, host string) ([]byte, []byte, error) {
+func generateServerCert(
+	caCert *x509.Certificate,
+	caKey *rsa.PrivateKey,
+	host string,
+) (certPEM, keyPEM []byte, err error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
@@ -369,15 +391,21 @@ func generateServerCert(caCert *x509.Certificate, caKey *rsa.PrivateKey, host st
 		NotAfter:     time.Now().Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:     []string{host, "mock-oidc", "mock-oidc.oidc-mock", "mock-oidc.oidc-mock.svc", "mock-oidc.oidc-mock.svc.cluster.local"},
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
+		DNSNames: []string{
+			host,
+			"mock-oidc",
+			"mock-oidc.oidc-mock",
+			"mock-oidc.oidc-mock.svc",
+			"mock-oidc.oidc-mock.svc.cluster.local",
+		},
+		IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, caCert, &key.PublicKey, caKey)
 	if err != nil {
 		return nil, nil, err
 	}
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	// Verify cert.
 	if _, err := tls.X509KeyPair(certPEM, keyPEM); err != nil {
 		return nil, nil, err
