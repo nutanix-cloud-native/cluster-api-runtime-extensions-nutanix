@@ -24,7 +24,7 @@ The API server serves OIDC discovery at `/.well-known/openid-configuration` and 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `issuer` | `string` | - | Required. Identifier asserted in ServiceAccount JWT `iss` claims. Must be an `https://` URL, max 2048 characters. Triggers `--service-account-issuer`. |
-| `audiences` | `[]string` | `[]` | Optional. List of audiences tokens are bound to, max 50 entries, each 1-253 characters, unique. When set, rendered as comma-joined `--api-audiences` in declared order. When absent, the API server defaults to the issuer URL. |
+| `audiences` | `[]string` | `[]` | Optional. List of audiences tokens are bound to, max 50 entries, each 1-253 characters, unique. When set, rendered as comma-joined `--api-audiences` sorted alphabetically. When absent, the API server defaults to the issuer URL. |
 | `jwksURI` | `string` | `""` | Optional. Override for the JWKS URI advertised in the discovery document, max 2048 characters. Must be an `https://` URL when set. Triggers `--service-account-jwks-uri`. |
 | `maxTokenExpiration` | `duration` | `""` | Optional. Maximum lifetime for ServiceAccount tokens as Go duration (e.g. `1h`, `24h`). When set, triggers `--service-account-max-token-expiration`. When absent, API server default applies. |
 
@@ -79,7 +79,7 @@ spec:
               - k8s.example.com
 ```
 
-This renders `api-audiences` as `sts.amazonaws.com,k8s.example.com` in declared order.
+This renders `api-audiences` as `k8s.example.com,sts.amazonaws.com` (sorted alphabetically regardless of input order).
 
 ### Issuer with custom JWKS URI
 
