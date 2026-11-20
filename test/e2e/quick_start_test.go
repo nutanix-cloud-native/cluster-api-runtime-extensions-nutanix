@@ -22,7 +22,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -539,12 +541,39 @@ var _ = Describe("Quick start", func() {
 																},
 																c,
 															); err != nil {
+																Logf("failed to get Cluster: %v", err)
 																return false
 															}
 															for _, cond := range c.Status.Conditions {
 																if cond.Type == clusterv1beta2.ReadyCondition &&
 																	cond.Status == metav1.ConditionTrue {
 																	return true
+																}
+															}
+															// Diagnostic: log Cluster conditions and KCP status on each poll
+															Logf(
+																"Cluster not Ready, conditions: %v",
+																c.Status.Conditions,
+															)
+															kcpList := &unstructured.UnstructuredList{}
+															kcpList.SetGroupVersionKind(
+																schema.GroupVersionKind{
+																	Group:   "controlplane.cluster.x-k8s.io",
+																	Version: "v1beta2",
+																	Kind:    "KubeadmControlPlane",
+																},
+															)
+															if err := bootstrapClient.List(
+																ctx,
+																kcpList,
+																client.InNamespace(namespace),
+															); err == nil {
+																for _, item := range kcpList.Items {
+																	Logf(
+																		"KCP %s status: %v",
+																		item.GetName(),
+																		item.Object["status"],
+																	)
 																}
 															}
 															return false
