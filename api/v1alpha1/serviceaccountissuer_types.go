@@ -3,9 +3,14 @@
 
 package v1alpha1
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
 // When nil on KubeadmClusterConfigSpec, no issuer flags are set (no-op).
-// Maps to --service-account-issuer, --api-audiences, --service-account-jwks-uri.
+// Maps to --service-account-issuer, --api-audiences, --service-account-jwks-uri,
+// --service-account-max-token-expiration.
 type ServiceAccountIssuer struct {
 	// Issuer is the identifier asserted in ServiceAccount JWT iss claims.
 	// Must be an https:// URL. Triggers --service-account-issuer.
@@ -34,4 +39,9 @@ type ServiceAccountIssuer struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=2048
 	JWKSURI string `json:"jwksURI,omitempty"`
+
+	// MaxTokenExpiration is the maximum lifetime for ServiceAccount tokens.
+	// When set, triggers --service-account-max-token-expiration.
+	// +kubebuilder:validation:Optional
+	MaxTokenExpiration *metav1.Duration `json:"maxTokenExpiration,omitempty"`
 }
