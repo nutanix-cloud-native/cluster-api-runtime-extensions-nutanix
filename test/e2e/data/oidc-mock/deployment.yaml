@@ -1,0 +1,105 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Reference manifest for mock OIDC. The e2e helper generates this programmatically;
+# this file is kept for documentation and `kubectl apply -f` debugging.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oidc-mock
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mock-oidc-certs
+  namespace: oidc-mock
+type: kubernetes.io/tls
+data:
+  tls.crt: PLACEHOLDER
+  tls.key: PLACEHOLDER
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mock-oidc-config
+  namespace: oidc-mock
+data:
+  nginx.conf: |
+    events {}
+    http {
+      server {
+        listen 8443 ssl;
+        ssl_certificate /etc/nginx/certs/tls.crt;
+        ssl_certificate_key /etc/nginx/certs/tls.key;
+        location /.well-known/openid-configuration {
+          default_type application/json;
+          alias /usr/share/nginx/html/openid-configuration;
+        }
+        location /keys {
+          default_type application/json;
+          alias /usr/share/nginx/html/keys;
+        }
+        location /healthz { return 200 'ok'; }
+      }
+    }
+  openid-configuration: '{"issuer":"https://mock-oidc.oidc-mock.svc.cluster.local","jwks_uri":"https://mock-oidc.oidc-mock.svc.cluster.local/keys"}'
+  keys: '{"keys":[{"kty":"RSA","kid":"e2e","alg":"RS256","use":"sig","n":"...","e":"AQAB"}]}'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-oidc
+  namespace: oidc-mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-oidc
+  template:
+    metadata:
+      labels:
+        app: mock-oidc
+    spec:
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:1.27-alpine
+        ports:
+        - containerPort: 8443
+          name: https
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: config
+          mountPath: /usr/share/nginx/html/openid-configuration
+          subPath: openid-configuration
+        - name: config
+          mountPath: /usr/share/nginx/html/keys
+          subPath: keys
+        - name: certs
+          mountPath: /etc/nginx/certs
+        readinessProbe:
+          tcpSocket:
+            port: 8443
+          initialDelaySeconds: 2
+          periodSeconds: 2
+      volumes:
+      - name: config
+        configMap:
+          name: mock-oidc-config
+      - name: certs
+        secret:
+          secretName: mock-oidc-certs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-oidc
+  namespace: oidc-mock
+spec:
+  selector:
+    app: mock-oidc
+  ports:
+  - port: 443
+    targetPort: 8443
+    protocol: TCP
