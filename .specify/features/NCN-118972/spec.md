@@ -108,8 +108,8 @@ An operator configures `clusterConfig.authentication` to trust a mock OIDC issue
 
 **Why this priority**: Proves the full loop — CAREN renders the file, mounts it, sets `--authentication-config`, API server hot-reloads and validates JWTs — without depending on an external IdP. Extra e2e time is acceptable.
 
-**Independent Test** (Docker provider, runs as part of normal e2e, not skipped): `test/e2e/specs/authentication_token_test.go` labeled `provider:Docker,authentication`. Steps:
-1. Create Docker workload Cluster *without* auth → `Ready`; admin kubeconfig works.
+**Independent Test** (provider-agnostic, runs as part of normal e2e on any provider, not skipped): `test/e2e/specs/authentication_token_test.go` labeled `authentication`. Steps:
+1. Create workload Cluster *without* auth (any provider: Docker, Nutanix, AWS) → `Ready`; admin kubeconfig works.
 2. Deploy mock OIDC `Deployment/Service` (`mock-oidc.oidc-mock.svc.cluster.local:443`, `https`) into workload cluster with ephemeral RSA keypair and self-signed CA; CA PEM is fed to `clusterConfig.authentication.jwt[0].issuer.certificateAuthority`.
 3. Patch `Cluster.spec.topology.variables` to set `clusterConfig.authentication` (`issuer.url=https://mock-oidc.oidc-mock.svc.cluster.local`, `discoveryURL=https://mock-oidc.oidc-mock.svc.cluster.local/.well-known/openid-configuration`, `audiences:["e2e-aud"]`, `audienceMatchPolicy:MatchAny`, `claimMappings.username:{claim:email}`, `groups:{claim:groups}`, `extra:[{key:example.org/foo,valueExpression:claims.foo}]`, `claimValidationRules:[{claim:hd,requiredValue:example.com}]`, `userValidationRules:[{expression:!user.username.startsWith('system:')}]`). Wait for KCP rollout → `Cluster` re-Ready.
 4. Mint valid JWT locally with same private key (`iss` = issuer URL, `aud` = `e2e-aud`, `email` = `test@example.com`, `groups` = `["e2e-group"]`, `hd` = `example.com`, `foo` = `bar`) → `kubectl --token=<jwt> auth whoami` shows `test@example.com` / `e2e-group` / extra `example.org/foo=bar`; invalid JWTs (wrong `aud`, `hd`, expired, `system:` username) → `401`/`403`.
@@ -146,7 +146,7 @@ An operator configures `clusterConfig.authentication` to trust a mock OIDC issue
 - **FR-007**: API types MUST carry kubebuilder/CEL validation: `jwt` required non-empty when `authentication` is present; `issuer.url` required and `https://` URL pattern, unique within the list; `audiences` required non-empty, unique; at least one of `claim`/`expression` set where the upstream API says "either/or"; list size caps to bound input (align with `PodSecurityAdmission.MaxItems` precedent).
 - **FR-008**: The rendered file MUST be deterministic and stable (sorted only where order is semantically irrelevant; `jwt` order is preserved as the user's declared evaluation order; within a single authenticator, `audiences` order is preserved).
 - **FR-009**: The feature MUST be documented under `docs/content/customization/kubeadm/` (new page `authentication.md` plus a customization index/link update) with configuration tables, what it does, how to enable it, examples for single-issuer OIDC and multi-issuer, a mutual-exclusivity note vs `--oidc-*`, the minimum Kubernetes version, and example YAML.
-- **FR-010**: An **integration/e2e test** MUST exist that validates the full loop — CAREN renders/mounts the file and sets `--authentication-config`, workload Cluster reaches `Ready`, and a JWT minted by an **in-cluster mock OIDC** (no external service dependency) is accepted/rejected by the API server per the configured claim mappings/validation. The test runs under `provider:Docker` as part of normal e2e (no opt-in skip).
+- **FR-010**: An **integration/e2e test** MUST exist that validates the full loop — CAREN renders/mounts the file and sets `--authentication-config`, workload Cluster reaches `Ready`, and a JWT minted by an **in-cluster mock OIDC** (no external service dependency) is accepted/rejected by the API server per the configured claim mappings/validation. The test is provider-agnostic and runs as part of normal e2e on any provider (no `provider:` filter, no opt-in skip).
 
 ### Key Entities
 
@@ -164,7 +164,7 @@ An operator configures `clusterConfig.authentication` to trust a mock OIDC issue
 - **SC-003**: Any Cluster YAML that sets `authentication` but omits or mis-formats a required field (issuer URL, audiences, username mapping) is rejected at admission with a message naming the offending field.
 - **SC-004**: Documentation page is published at `docs/content/customization/kubeadm/authentication.md` and linked from the customization index, with a working single-issuer example that can be copied directly.
 - **SC-005**: A Cluster that sets legacy `--oidc-*` `ExtraArgs` and also sets `clusterConfig.authentication` receives a clear handler error rather than a broken API server rollout.
-- **SC-006**: A Docker workload Cluster configured with an in-cluster mock OIDC reaches `Ready`, and a valid JWT minted by that mock issuer is authenticated by the API server (username/groups/extra per `claimMappings`) while invalid JWTs are rejected — with no external service dependency, as part of normal `make e2e-test` (`provider:Docker`).
+- **SC-006**: A workload Cluster (any provider) configured with an in-cluster mock OIDC reaches `Ready`, and a valid JWT minted by that mock issuer is authenticated by the API server (username/groups/extra per `claimMappings`) while invalid JWTs are rejected — with no external service dependency, as part of normal `make e2e-test` (no `provider:` filter).
 
 ## Out of Scope
 
@@ -185,4 +185,4 @@ An operator configures `clusterConfig.authentication` to trust a mock OIDC issue
 | Handler | New `pkg/handlers/generic/mutation/kubeadm/authentication/` | Reuses the admission-configuration helper pattern (file + mount + flag) without cross-provider leakage. |
 | Username/groups mapping | `claim`+`prefix` vs `expression` per field | Mirrors upstream `PrefixedClaimOrExpression`/`ClaimOrExpression` so no semantic loss vs raw file. |
 | Validation | CRD CEL markers + OpenAPI schema | Immediate feedback; same technique as `kubelet_types.go` in this repo. |
-| E2E validation | In-cluster mock OIDC (`https` + CA via `issuer.certificateAuthority`) | Proves file+flag+hot-reload+JWT validation without external service; runs as part of normal `provider:Docker` e2e. |
+| E2E validation | In-cluster mock OIDC (`https` + CA via `issuer.certificateAuthority`) | Proves file+flag+hot-reload+JWT validation without external service; provider-agnostic, runs as part of normal e2e on any provider. |
