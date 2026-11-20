@@ -150,6 +150,8 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					HostNetwork: true,
+					DNSPolicy:   corev1.DNSClusterFirstWithHostNet,
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
@@ -376,6 +378,15 @@ func generateServerCert(
 	caKey *rsa.PrivateKey,
 	host string,
 ) (certPEM, keyPEM []byte, err error) {
+	// Ensure cert is valid for hostNetwork access via host.docker.internal and common aliases.
+	hosts := []string{
+		host,
+		"host.docker.internal",
+		"mock-oidc",
+		"mock-oidc.oidc-mock",
+		"mock-oidc.oidc-mock.svc",
+		"mock-oidc.oidc-mock.svc.cluster.local",
+	}
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
@@ -388,14 +399,8 @@ func generateServerCert(
 		NotAfter:     time.Now().Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames: []string{
-			host,
-			"mock-oidc",
-			"mock-oidc.oidc-mock",
-			"mock-oidc.oidc-mock.svc",
-			"mock-oidc.oidc-mock.svc.cluster.local",
-		},
-		IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
+		DNSNames:     hosts,
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, caCert, &key.PublicKey, caKey)
 	if err != nil {
