@@ -36,6 +36,7 @@ const (
 	mockOIDCConfigMapName  = "mock-oidc-config"
 	mockOIDCCertSecretName = "mock-oidc-certs" //nolint:gosec // test helper constant
 	jwksKey                = "keys"
+	mockOIDCFixedClusterIP = "10.96.0.200"
 )
 
 // MockOIDC holds the mock OIDC server state.
@@ -150,8 +151,6 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					HostNetwork: true,
-					DNSPolicy:   corev1.DNSClusterFirstWithHostNet,
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
@@ -222,14 +221,16 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 		return nil, err
 	}
 
-	// Create Service.
+	// Create Service with fixed ClusterIP to avoid CoreDNS dependency during kubeadm join.
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockOIDCAppLabel,
 			Namespace: input.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: labels,
+			ClusterIP:  mockOIDCFixedClusterIP,
+			ClusterIPs: []string{mockOIDCFixedClusterIP},
+			Selector:   labels,
 			Ports: []corev1.ServicePort{
 				{
 					Port:       443,
@@ -378,10 +379,8 @@ func generateServerCert(
 	caKey *rsa.PrivateKey,
 	host string,
 ) (certPEM, keyPEM []byte, err error) {
-	// Ensure cert is valid for hostNetwork access via host.docker.internal and common aliases.
 	hosts := []string{
 		host,
-		"host.docker.internal",
 		"mock-oidc",
 		"mock-oidc.oidc-mock",
 		"mock-oidc.oidc-mock.svc",
@@ -400,7 +399,7 @@ func generateServerCert(
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		DNSNames:     hosts,
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP(mockOIDCFixedClusterIP)},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, caCert, &key.PublicKey, caKey)
 	if err != nil {
