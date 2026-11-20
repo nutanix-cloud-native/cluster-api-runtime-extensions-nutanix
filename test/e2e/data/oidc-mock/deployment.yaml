@@ -24,23 +24,20 @@ metadata:
   name: mock-oidc-config
   namespace: oidc-mock
 data:
-  nginx.conf: |
-    events {}
-    http {
-      server {
-        listen 8443 ssl;
-        ssl_certificate /etc/nginx/certs/tls.crt;
-        ssl_certificate_key /etc/nginx/certs/tls.key;
-        location /.well-known/openid-configuration {
-          default_type application/json;
-          alias /usr/share/nginx/html/openid-configuration;
-        }
-        location /keys {
-          default_type application/json;
-          alias /usr/share/nginx/html/keys;
-        }
-        location /healthz { return 200 'ok'; }
+  default.conf: |
+    server {
+      listen 8443 ssl;
+      ssl_certificate /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      location /.well-known/openid-configuration {
+        default_type application/json;
+        alias /usr/share/nginx/html/openid-configuration;
       }
+      location /keys {
+        default_type application/json;
+        alias /usr/share/nginx/html/keys;
+      }
+      location /healthz { return 200 'ok'; }
     }
   openid-configuration: '{"issuer":"https://mock-oidc.oidc-mock.svc.cluster.local","jwks_uri":"https://mock-oidc.oidc-mock.svc.cluster.local/keys"}'
   keys: '{"keys":[{"kty":"RSA","kid":"e2e","alg":"RS256","use":"sig","n":"...","e":"AQAB"}]}'
@@ -68,8 +65,8 @@ spec:
           name: https
         volumeMounts:
         - name: config
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
         - name: config
           mountPath: /usr/share/nginx/html/openid-configuration
           subPath: openid-configuration

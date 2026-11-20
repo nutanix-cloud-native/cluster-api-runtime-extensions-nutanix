@@ -115,7 +115,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 		return nil, err
 	}
 
-	// Create ConfigMap with nginx.conf + discovery + jwks.
+	// Create ConfigMap with nginx server config + discovery + jwks.
 	nginxConf := buildNginxConf()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -123,7 +123,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			Namespace: input.Namespace,
 		},
 		Data: map[string]string{
-			"nginx.conf":           nginxConf,
+			"default.conf":         nginxConf,
 			"openid-configuration": discoveryJSON,
 			jwksKey:                jwksJSON,
 		},
@@ -163,8 +163,8 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      mockOIDCConfigVolume,
-									MountPath: "/etc/nginx/nginx.conf",
-									SubPath:   "nginx.conf",
+									MountPath: "/etc/nginx/conf.d/default.conf",
+									SubPath:   "default.conf",
 								},
 								{
 									Name:      mockOIDCConfigVolume,
@@ -326,23 +326,20 @@ func buildDiscoveryJSON(issuerURL string) (string, error) {
 }
 
 func buildNginxConf() string {
-	return `events {}
-http {
-  server {
-    listen 8443 ssl;
-    ssl_certificate /etc/nginx/certs/tls.crt;
-    ssl_certificate_key /etc/nginx/certs/tls.key;
-    location /.well-known/openid-configuration {
-      default_type application/json;
-      alias /usr/share/nginx/html/openid-configuration;
-    }
-    location /keys {
-      default_type application/json;
-      alias /usr/share/nginx/html/keys;
-    }
-    location /healthz {
-      return 200 'ok';
-    }
+	return `server {
+  listen 8443 ssl;
+  ssl_certificate /etc/nginx/certs/tls.crt;
+  ssl_certificate_key /etc/nginx/certs/tls.key;
+  location /.well-known/openid-configuration {
+    default_type application/json;
+    alias /usr/share/nginx/html/openid-configuration;
+  }
+  location /keys {
+    default_type application/json;
+    alias /usr/share/nginx/html/keys;
+  }
+  location /healthz {
+    return 200 'ok';
   }
 }
 `

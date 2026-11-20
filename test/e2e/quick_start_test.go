@@ -416,6 +416,7 @@ var _ = Describe("Quick start", func() {
 																},
 																dep,
 															); err != nil {
+																Logf("failed to get mock-oidc deployment: %v", err)
 																return false
 															}
 															for _, c := range dep.Status.Conditions {
@@ -424,8 +425,14 @@ var _ = Describe("Quick start", func() {
 																	return true
 																}
 															}
+															Logf(
+																"mock-oidc deployment not yet available: generation %d observed %d conditions %v",
+																dep.Generation,
+																dep.Status.ObservedGeneration,
+																dep.Status.Conditions,
+															)
 															return false
-														}, 2*time.Minute, 5*time.Second).Should(BeTrue(), "mock OIDC deployment not available")
+														}, 5*time.Minute, 5*time.Second).Should(BeTrue(), "mock OIDC deployment not available")
 
 														By("Patching Cluster with authentication configuration")
 														bootstrapClient := proxy.GetClient()
