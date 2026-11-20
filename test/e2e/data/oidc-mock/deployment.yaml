@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.27-alpine
+        image: nginxinc/nginx-unprivileged:1.27-alpine
         ports:
         - containerPort: 8443
           name: https
