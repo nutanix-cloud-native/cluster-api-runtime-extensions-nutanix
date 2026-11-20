@@ -1211,6 +1211,11 @@ spec:
                         MaxTokenExpiration is the maximum lifetime for ServiceAccount tokens.
                         When set, triggers --service-account-max-token-expiration.
                       type: string
+                      x-kubernetes-validations:
+                        - message: must be greater than 0s
+                          rule: duration(self) > duration('0s')
+                        - message: must be less than or equal to 8760h (1 year)
+                          rule: duration(self) <= duration('8760h')
                   required:
                     - issuer
                   type: object
