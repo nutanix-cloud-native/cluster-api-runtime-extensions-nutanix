@@ -138,6 +138,81 @@ type HelmChartFromConfigMap struct {
 	ChartName  string `yaml:"ChartName"`
 }
 
+type sanitizeImagesPostRenderer struct{}
+
+func (sanitizeImagesPostRenderer) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer, error) {
+	return bytes.NewBufferString(sanitizeManifestImageReferences(renderedManifests.String())), nil
+}
+
+func stripWrappingQuotes(s string) (string, bool) {
+	s = strings.TrimSpace(s)
+	if len(s) < 2 {
+		return s, false
+	}
+	if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
+		return s[1 : len(s)-1], true
+	}
+	return s, false
+}
+
+func sanitizeManifestImageReferences(in string) string {
+	var (
+		out                    strings.Builder
+		expectFoldedImageValue bool
+		foldedImageKeyIndent   int
+	)
+
+	scanner := bufio.NewScanner(strings.NewReader(in))
+	// Helm templates can be large; increase the buffer size to avoid token-too-long failures.
+	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+
+		if expectFoldedImageValue && trimmed != "" {
+			indent := len(line) - len(strings.TrimLeft(line, " "))
+			if indent > foldedImageKeyIndent {
+				unquoted, ok := stripWrappingQuotes(trimmed)
+				if ok {
+					line = strings.Repeat(" ", indent) + unquoted
+				}
+			}
+			expectFoldedImageValue = false
+		}
+
+		ltrim := strings.TrimLeft(line, " ")
+		indent := len(line) - len(ltrim)
+		if strings.HasPrefix(ltrim, "image:") {
+			rest := strings.TrimSpace(strings.TrimPrefix(ltrim, "image:"))
+			switch {
+			case strings.HasPrefix(rest, ">") || strings.HasPrefix(rest, "|"):
+				// Folded / literal scalar; the value is on subsequent indented line(s).
+				expectFoldedImageValue = true
+				foldedImageKeyIndent = indent
+			default:
+				unquoted, ok := stripWrappingQuotes(rest)
+				if ok {
+					line = strings.Repeat(" ", indent) + "image: " + unquoted
+				}
+				expectFoldedImageValue = false
+			}
+		} else if trimmed != "" {
+			// If we've progressed to a new non-empty line after the image key, stop expecting a folded value.
+			expectFoldedImageValue = false
+		}
+
+		out.WriteString(line)
+		out.WriteString("\n")
+	}
+
+	// Best-effort: if scanning fails, return the original manifest rather than failing the whole run.
+	if err := scanner.Err(); err != nil {
+		return in
+	}
+	return out.String()
+}
+
 func getImagesForAddons(helmChartConfigMap, carenChartDirectory string) ([]string, error) {
 	templatedConfigMap, err := getTemplatedHelmConfigMap(helmChartConfigMap)
 	if err != nil {
@@ -261,7 +336,22 @@ func getValuesFileForChartIfNeeded(chartName, carenChartDirectory string) (strin
 	switch chartName {
 	case "nutanix-csi-storage":
 		// The Helm template expects the Secrets to already exist.
-		sourceValuesFile := filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		// Render Go template conditionals (e.g. BareMetalMode) so helm-list-images
+		// receives valid YAML.
+		f := filepath.Join(carenChartDirectory, "addons", "csi", "nutanix", defaultHelmAddonFilename)
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		type input struct {
+			BareMetalMode bool
+		}
+		err = template.Must(template.New(defaultHelmAddonFilename).ParseFiles(f)).Execute(tempFile, &input{})
+		if err != nil {
+			return "", fmt.Errorf("failed to execute helm values template %w", err)
+		}
+
 		overrideValues := `
 createPrismCentralSecret: true
 pcUsername: admin
@@ -272,12 +362,11 @@ username: admin
 password: admin
 prismEndPoint: endpoint
 `
-		updatedValuesFile, err := getUpdatedValuesFile(sourceValuesFile, overrideValues)
-		if err != nil {
-			return "", fmt.Errorf("failed to modify values file: %w", err)
+		if _, err = tempFile.WriteString(overrideValues); err != nil {
+			return "", fmt.Errorf("failed to write override values: %w", err)
 		}
 
-		return updatedValuesFile.Name(), nil
+		return tempFile.Name(), nil
 	case "node-feature-discovery":
 		return filepath.Join(carenChartDirectory, "addons", "nfd", defaultHelmAddonFilename), nil
 	case "snapshot-controller":
@@ -396,6 +485,8 @@ prismEndPoint: endpoint
 			PrismCredentialsSecretName           string
 			EnableKubeconfigUpload               bool
 			ControlPlaneEndpoint                 string
+			ProjectID                            string
+			ProjectName                          string
 		}{
 			AgentName:                            "konnector-agent",
 			PrismCentralHost:                     "prism-central.example.com",
@@ -480,7 +571,7 @@ prismEndPoint: endpoint
 		}
 
 		return tempFile.Name(), nil
-	case "nutanix-cloud-provider":
+	case "nkp-cloud-provider-nutanix":
 		f := filepath.Join(carenChartDirectory, "addons", "ccm", "nutanix", defaultHelmAddonFilename)
 		tempFile, err := os.CreateTemp("", "")
 		if err != nil {
@@ -522,6 +613,7 @@ func getImagesForChart(info *ChartInfo) ([]string, error) {
 	images.SetChart(info.name)
 	images.ChartVersionConstraint = info.version
 	images.RepoURL = info.repo
+	images.PostRenderer = sanitizeImagesPostRenderer{}
 	if info.valuesFile != "" {
 		_ = images.ValueFiles.Set(info.valuesFile)
 	}
@@ -589,7 +681,11 @@ func getImagesFromYAMLFiles(files []string) ([]string, error) {
 				// Get everything after "image: "
 				image := strings.SplitAfterN(line, "image: ", 2)
 				if len(image) == 2 {
-					images = append(images, strings.TrimSpace(image[1]))
+					img := strings.TrimSpace(image[1])
+					if unquoted, ok := stripWrappingQuotes(img); ok {
+						img = unquoted
+					}
+					images = append(images, img)
 				}
 			}
 		}

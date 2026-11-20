@@ -52,7 +52,7 @@ func WaitForCCMToBeReadyInWorkloadCluster(
 			workloadClusterClient,
 			input,
 		)
-	case "nutanix":
+	case nutanixInfraProviderName:
 		WaitForNutanixCCMToBeReadyInWorkloadCluster(
 			ctx,
 			workloadClusterClient,

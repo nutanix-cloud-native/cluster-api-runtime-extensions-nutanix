@@ -6,6 +6,7 @@ package nutanix
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 
@@ -18,6 +19,8 @@ type imageCheck struct {
 	machineDetails *carenv1.NutanixMachineDetails
 	field          string
 	nclient        client
+	pcVersion      string
+	projectRef     *capxv1.NutanixResourceIdentifier
 }
 
 func (c *imageCheck) Name() string {
@@ -39,7 +42,22 @@ func (c *imageCheck) Run(ctx context.Context) preflight.CheckResult {
 	}
 
 	if c.machineDetails.Image != nil {
-		images, err := getVMImages(ctx, c.nclient, c.machineDetails.Image)
+		scopeCtx, err := resolveProjectScopeContext(ctx, c.nclient, c.pcVersion, c.projectRef)
+		if err != nil {
+			result.Allowed = false
+			result.InternalError = true
+			result.Causes = append(result.Causes, preflight.Cause{
+				Message: fmt.Sprintf("Failed to resolve project scope for image validation: %s. Please retry.", err),
+				Field:   c.field + ".project",
+			})
+			return result
+		}
+		var images []vmmv4.Image
+		if scopeCtx != nil {
+			images, err = getVMImagesInProject(ctx, c.nclient, c.machineDetails.Image, scopeCtx.projectUUID)
+		} else {
+			images, err = getVMImages(ctx, c.nclient, c.machineDetails.Image)
+		}
 		if err != nil {
 			result.Allowed = false
 			result.InternalError = true
@@ -102,6 +120,8 @@ func newVMImageChecks(
 				machineDetails: &cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails,
 				field:          controlPlaneMachineDetailsField,
 				nclient:        cd.nclient,
+				pcVersion:      cd.pcVersion,
+				projectRef:     cd.nutanixClusterConfigSpec.ControlPlane.Nutanix.MachineDetails.Project,
 			},
 		)
 	}
@@ -111,12 +131,14 @@ func newVMImageChecks(
 			checks = append(checks,
 				&imageCheck{
 					machineDetails: &nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails,
-					///nolint:lll // The field is long.
 					field: fmt.Sprintf(
-						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=workerConfig].value.nutanix.machineDetails",
+						"$.spec.topology.workers.machineDeployments[?@.name==%q].variables[?@.name=='%s'].value.nutanix.machineDetails", //nolint:lll // Field is long.
 						mdName,
+						carenv1.WorkerConfigVariableName,
 					),
-					nclient: cd.nclient,
+					nclient:    cd.nclient,
+					pcVersion:  cd.pcVersion,
+					projectRef: nutanixWorkerNodeConfigSpec.Nutanix.MachineDetails.Project,
 				},
 			)
 		}
@@ -147,20 +169,64 @@ func getVMImages(
 		return []vmmv4.Image{image}, nil
 	case id.IsName():
 		filter_ := fmt.Sprintf("name eq '%s'", *id.Name)
-		resp, err := client.ListImages(ctx, nil, nil, &filter_, nil, nil)
+		images, err := client.ListImagesByFilter(ctx, filter_)
 		if err != nil {
 			return nil, err
-		}
-		if resp == nil || resp.GetData() == nil {
-			// No images were returned.
-			return []vmmv4.Image{}, nil
-		}
-		images, ok := resp.GetData().([]vmmv4.Image)
-		if !ok {
-			return nil, fmt.Errorf("failed to get data returned by ListImages")
 		}
 		return images, nil
 	default:
 		return nil, fmt.Errorf("image identifier is missing both name and uuid")
 	}
+}
+
+func getVMImagesInProject(
+	ctx context.Context,
+	client client,
+	id *capxv1.NutanixResourceIdentifier,
+	projectUUID string,
+) ([]vmmv4.Image, error) {
+	projectUUID = escapeODataString(projectUUID)
+	switch {
+	case id.IsUUID():
+		filter := fmt.Sprintf(
+			"extId eq '%s' and (projectExtId eq '%s' or isSharedWithAllProjects eq true)",
+			escapeODataString(*id.UUID),
+			projectUUID,
+		)
+		images, err := client.ListImagesByFilter(ctx, filter)
+		if err != nil {
+			return nil, err
+		}
+		return images, nil
+	case id.IsName():
+		// Prefer project-owned entities over shared entities when both have the same name.
+		ownedFilter := fmt.Sprintf(
+			"name eq '%s' and projectExtId eq '%s'",
+			escapeODataString(*id.Name),
+			projectUUID,
+		)
+		images, err := client.ListImagesByFilter(ctx, ownedFilter)
+		if err != nil {
+			return nil, err
+		}
+		if len(images) > 0 {
+			return images, nil
+		}
+
+		sharedFilter := fmt.Sprintf(
+			"name eq '%s' and isSharedWithAllProjects eq true",
+			escapeODataString(*id.Name),
+		)
+		images, err = client.ListImagesByFilter(ctx, sharedFilter)
+		if err != nil {
+			return nil, err
+		}
+		return images, nil
+	default:
+		return nil, fmt.Errorf("image identifier is missing both name and uuid")
+	}
+}
+
+func escapeODataString(value string) string {
+	return strings.ReplaceAll(value, "'", "''")
 }

@@ -38,13 +38,14 @@ func newConfigurationCheck(
 	}
 
 	nutanixClusterConfigSpec := &carenv1.NutanixClusterConfigSpec{}
-	err := variables.UnmarshalClusterVariable(
-		variables.GetClusterVariableByName(
-			carenv1.ClusterConfigVariableName,
-			cd.cluster.Spec.Topology.Variables,
-		),
-		nutanixClusterConfigSpec,
+	clusterConfigVar := variables.GetClusterVariableByName(
+		carenv1.ClusterConfigVariableName,
+		cd.cluster.Spec.Topology.Variables,
 	)
+	var err error
+	if clusterConfigVar != nil {
+		err = variables.UnmarshalClusterVariable(clusterConfigVar, nutanixClusterConfigSpec)
+	}
 	if err != nil {
 		// Should not happen if the cluster passed CEL validation rules.
 		configurationCheck.result.Allowed = false
@@ -67,8 +68,8 @@ func newConfigurationCheck(
 		cd.nutanixClusterConfigSpec = nutanixClusterConfigSpec
 	}
 
-	failureDomainByMachineDeploymentName := make(map[string]string)
 	nutanixWorkerNodeConfigSpecByMachineDeploymentName := make(map[string]*carenv1.NutanixWorkerNodeConfigSpec)
+	failureDomainByMachineDeploymentName := make(map[string]string)
 
 	if len(cd.cluster.Spec.Topology.Workers.MachineDeployments) > 0 {
 		for i := range cd.cluster.Spec.Topology.Workers.MachineDeployments {

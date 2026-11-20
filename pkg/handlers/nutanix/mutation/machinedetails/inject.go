@@ -33,7 +33,15 @@ type nutanixMachineDetailsPatchHandler struct {
 	patchSelector     clusterv1.PatchSelector
 }
 
-// ErrNoImageOrImageLookupSet is an error that gets returned only if image and lookup are both set.
+func removeVMProfileConflictingFieldsFromNutanixMachineTemplate(u *unstructured.Unstructured) {
+	unstructured.RemoveNestedField(u.Object, "spec", "template", "spec", "vcpuSockets")
+	unstructured.RemoveNestedField(u.Object, "spec", "template", "spec", "vcpusPerSocket")
+	unstructured.RemoveNestedField(u.Object, "spec", "template", "spec", "memorySize")
+	unstructured.RemoveNestedField(u.Object, "spec", "template", "spec", "bootType")
+	unstructured.RemoveNestedField(u.Object, "spec", "template", "spec", "gpus")
+}
+
+// ErrNoImageOrImageLookupSet is returned when neither image nor imageLookup is set in the resulting template spec.
 var ErrNoImageOrImageLookupSet = errors.New("image or image lookup must be set")
 
 func newNutanixMachineDetailsPatchHandler(
@@ -82,7 +90,7 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 		nutanixMachineDetailsVar,
 	)
 
-	return patches.MutateIfApplicable(
+	if err := patches.MutateIfApplicable(
 		obj,
 		vars,
 		&holderRef,
@@ -96,11 +104,16 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 
 			spec := obj.Spec.Template.Spec
 
-			spec.BootType = nutanixMachineDetailsVar.BootType
 			if nutanixMachineDetailsVar.Cluster != nil {
 				spec.Cluster = *nutanixMachineDetailsVar.Cluster
 			}
 
+			if len(nutanixMachineDetailsVar.Subnets) > 0 {
+				spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
+			}
+
+			// If the variable specifies image/imageLookup, it overrides the template.
+			// Otherwise, keep the existing template value (ClusterClass templates often define it).
 			switch {
 			case nutanixMachineDetailsVar.Image != nil:
 				spec.Image = nutanixMachineDetailsVar.Image.DeepCopy()
@@ -112,21 +125,37 @@ func (h *nutanixMachineDetailsPatchHandler) Mutate(
 				return ErrNoImageOrImageLookupSet
 			}
 
-			spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
-			spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
-			spec.MemorySize = nutanixMachineDetailsVar.MemorySize
-			spec.SystemDiskSize = nutanixMachineDetailsVar.SystemDiskSize
-
-			if len(nutanixMachineDetailsVar.Subnets) > 0 {
-				spec.Subnets = slices.Clone(nutanixMachineDetailsVar.Subnets)
+			// VMProfile provides CPU, memory, and bootType configuration.
+			// When VMProfile is set, these fields must be omitted from the CAPX spec.
+			if nutanixMachineDetailsVar.VMProfile == nil {
+				spec.VMProfile = nil
+				spec.BootType = nutanixMachineDetailsVar.BootType
+				spec.VCPUSockets = nutanixMachineDetailsVar.VCPUSockets
+				spec.VCPUsPerSocket = nutanixMachineDetailsVar.VCPUsPerSocket
+				spec.MemorySize = nutanixMachineDetailsVar.MemorySize
+				spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
+			} else {
+				spec.VMProfile = nutanixMachineDetailsVar.VMProfile.DeepCopy()
 			}
 
+			spec.SystemDiskSize = nutanixMachineDetailsVar.SystemDiskSize
 			spec.AdditionalCategories = slices.Clone(nutanixMachineDetailsVar.AdditionalCategories)
-			spec.GPUs = slices.Clone(nutanixMachineDetailsVar.GPUs)
 			spec.Project = nutanixMachineDetailsVar.Project.DeepCopy()
 
 			obj.Spec.Template.Spec = spec
 			return nil
 		},
-	)
+	); err != nil {
+		return err
+	}
+
+	// Force-remove mutually exclusive fields when VMProfile is set.
+	//
+	// This ensures we emit explicit JSONPatch remove operations for fields that may be present in the base
+	// templates (e.g. the default Nutanix ClusterClass templates), satisfying CAPX's CEL validations.
+	if nutanixMachineDetailsVar.VMProfile != nil {
+		removeVMProfileConflictingFieldsFromNutanixMachineTemplate(obj)
+	}
+
+	return nil
 }
