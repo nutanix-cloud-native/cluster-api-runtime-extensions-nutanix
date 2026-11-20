@@ -36,7 +36,6 @@ const (
 	mockOIDCConfigMapName  = "mock-oidc-config"
 	mockOIDCCertSecretName = "mock-oidc-certs" //nolint:gosec // test helper constant
 	jwksKey                = "keys"
-	mockOIDCFixedClusterIP = "10.96.0.200"
 )
 
 // MockOIDC holds the mock OIDC server state.
@@ -55,28 +54,76 @@ type SetupInput struct {
 }
 
 // SetupMockOIDC deploys an in-cluster mock OIDC that serves OIDC discovery and JWKS over https.
-// It generates an ephemeral RSA keypair and self-signed CA, creates a Deployment/Service/Secret/ConfigMap
-// in the workload cluster, and returns the mock state.
+// It generates an ephemeral RSA keypair and self-signed CA, creates a Service to discover the
+// workload's serviceSubnet ClusterIP, then creates a Deployment/Secret/ConfigMap with a cert
+// valid for that IP. This avoids CoreDNS dependency during kubeadm join.
 func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	if input.Namespace == "" {
 		input.Namespace = "oidc-mock"
 	}
-	if input.IssuerHost == "" {
-		input.IssuerHost = "mock-oidc.oidc-mock.svc.cluster.local"
-	}
-	issuerURL := fmt.Sprintf("https://%s", input.IssuerHost)
-	discoveryURL := fmt.Sprintf("https://%s/.well-known/openid-configuration", input.IssuerHost)
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, fmt.Errorf("generating RSA key: %w", err)
 	}
 
+	// Create namespace.
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: input.Namespace,
+		},
+	}
+	if err := input.WorkloadClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
+		return nil, fmt.Errorf("creating namespace: %w", err)
+	}
+
+	// Create Service first to discover the workload's serviceSubnet ClusterIP.
+	labels := map[string]string{"app": mockOIDCAppLabel}
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      mockOIDCAppLabel,
+			Namespace: input.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Port:       443,
+					TargetPort: intstr.FromInt32(8443),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
+	if err := createOrUpdate(ctx, input.WorkloadClient, svc); err != nil {
+		return nil, err
+	}
+	// Read back allocated ClusterIP.
+	fetchedSvc := &corev1.Service{}
+	if err := input.WorkloadClient.Get(
+		ctx,
+		client.ObjectKey{Namespace: input.Namespace, Name: mockOIDCAppLabel},
+		fetchedSvc,
+	); err != nil {
+		return nil, fmt.Errorf("getting Service ClusterIP: %w", err)
+	}
+	clusterIP := fetchedSvc.Spec.ClusterIP
+	if clusterIP == "" || clusterIP == "None" {
+		return nil, fmt.Errorf("Service ClusterIP not allocated: %v", fetchedSvc.Spec)
+	}
+
+	issuerHost := input.IssuerHost
+	if issuerHost == "" {
+		issuerHost = clusterIP
+	}
+	issuerURL := fmt.Sprintf("https://%s", issuerHost)
+	discoveryURL := fmt.Sprintf("https://%s/.well-known/openid-configuration", issuerHost)
+
 	caCert, caPEM, caKey, err := generateCA()
 	if err != nil {
 		return nil, err
 	}
-	serverCertPEM, serverKeyPEM, err := generateServerCert(caCert, caKey, input.IssuerHost)
+	serverCertPEM, serverKeyPEM, err := generateServerCert(caCert, caKey, issuerHost, clusterIP)
 	if err != nil {
 		return nil, err
 	}
@@ -88,16 +135,6 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	discoveryJSON, err := buildDiscoveryJSON(issuerURL)
 	if err != nil {
 		return nil, err
-	}
-
-	// Create namespace.
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: input.Namespace,
-		},
-	}
-	if err := input.WorkloadClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
-		return nil, fmt.Errorf("creating namespace: %w", err)
 	}
 
 	// Create Secret with TLS cert.
@@ -134,7 +171,6 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	}
 
 	// Create Deployment.
-	labels := map[string]string{"app": mockOIDCAppLabel}
 	replicas := int32(1)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -218,29 +254,6 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 		},
 	}
 	if err := createOrUpdate(ctx, input.WorkloadClient, deployment); err != nil {
-		return nil, err
-	}
-
-	// Create Service with fixed ClusterIP to avoid CoreDNS dependency during kubeadm join.
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockOIDCAppLabel,
-			Namespace: input.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			ClusterIP:  mockOIDCFixedClusterIP,
-			ClusterIPs: []string{mockOIDCFixedClusterIP},
-			Selector:   labels,
-			Ports: []corev1.ServicePort{
-				{
-					Port:       443,
-					TargetPort: intstr.FromInt32(8443),
-					Protocol:   corev1.ProtocolTCP,
-				},
-			},
-		},
-	}
-	if err := createOrUpdate(ctx, input.WorkloadClient, svc); err != nil {
 		return nil, err
 	}
 
@@ -377,15 +390,8 @@ func generateCA() (*x509.Certificate, []byte, *rsa.PrivateKey, error) {
 func generateServerCert(
 	caCert *x509.Certificate,
 	caKey *rsa.PrivateKey,
-	host string,
+	host, clusterIP string,
 ) (certPEM, keyPEM []byte, err error) {
-	hosts := []string{
-		host,
-		"mock-oidc",
-		"mock-oidc.oidc-mock",
-		"mock-oidc.oidc-mock.svc",
-		"mock-oidc.oidc-mock.svc.cluster.local",
-	}
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
@@ -398,8 +404,14 @@ func generateServerCert(
 		NotAfter:     time.Now().Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:     hosts,
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP(mockOIDCFixedClusterIP)},
+		DNSNames: []string{
+			host,
+			"mock-oidc",
+			"mock-oidc.oidc-mock",
+			"mock-oidc.oidc-mock.svc",
+			"mock-oidc.oidc-mock.svc.cluster.local",
+		},
+		IPAddresses: []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP(clusterIP)},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, caCert, &key.PublicKey, caKey)
 	if err != nil {
