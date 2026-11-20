@@ -17,14 +17,14 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      # CAPI core minor upgrades get dedicated PRs via the capi-core-minor group below,
-      # while patch upgrades are handled by the all-go-mod-patch-and-minor group.
-      # This helps us handle breaking changes in CAPI core that happen frequently on minor releases.
+      # CAPI core upgrades (minor and patch) get dedicated PRs via the capi-core group below.
+      # This helps us handle breaking changes in CAPI core that happen frequently on minor releases
+      # and keeps all CAPI core artifacts (api, test, core) together in a single PR.
       # From Dependabot docs:
       #    > If a dependency matches more than one rule, it's included in the first group that it matches.
-      capi-core-minor:
-        patterns: [ "sigs.k8s.io/cluster-api", "sigs.k8s.io/cluster-api/test" ]
-        update-types: [ "minor" ]
+      capi-core:
+        patterns: [ "sigs.k8s.io/cluster-api", "sigs.k8s.io/cluster-api/api", "sigs.k8s.io/cluster-api/test" ]
+        update-types: [ "minor", "patch" ]
       all-go-mod-patch-and-minor:
         patterns: [ "*" ]
         update-types: [ "patch", "minor" ]
