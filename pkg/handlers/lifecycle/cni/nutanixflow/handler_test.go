@@ -9,14 +9,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestImagePullSecretNamespaces(t *testing.T) {
+func TestFlowNamespaces(t *testing.T) {
 	t.Parallel()
 
-	// Flow CNI 1.1.0 deploys private images into three namespaces. The handler
-	// copies imagePullCredentials into each so kubelet can pull them.
+	// Flow CNI 1.1.0 deploys into three namespaces. The handler always ensures
+	// they exist (including when imagePullCredentials are omitted for a
+	// registry mirror), and copies credentials into each when provided.
 	assert.ElementsMatch(t, []string{
 		"flow-cni-system",
 		"flow-cns-system",
 		"ovn-kubernetes",
-	}, imagePullSecretNamespaces)
+	}, flowNamespaces)
 }

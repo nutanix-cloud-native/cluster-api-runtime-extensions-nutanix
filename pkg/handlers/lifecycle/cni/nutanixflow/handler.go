@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,7 +33,11 @@ const (
 	defaultImagePullSecretName = "flow-cni-image-pull-secret"
 )
 
-var imagePullSecretNamespaces = []string{
+// flowNamespaces are where Flow CNI 1.1.0 deploys components. They must exist
+// even when imagePullCredentials are omitted (registry mirror / air-gapped),
+// because Helm installs workloads into these namespaces. When credentials are
+// provided, the same namespaces also receive the copied imagePullSecret.
+var flowNamespaces = []string{
 	"flow-cni-system",
 	"flow-cns-system",
 	"ovn-kubernetes",
@@ -187,6 +192,30 @@ func (c *NutanixFlowCNI) apply(
 		return
 	}
 
+	// Always create Flow namespaces up front. Previously they were only created
+	// as a side effect of copying imagePullCredentials; with a registry mirror
+	// Konvoy omits those credentials, so namespaces never appeared and Helm
+	// could not install into them.
+	remoteClient, err := remote.NewClusterClient(ctx, "", c.client, clusterKey)
+	if err != nil {
+		log.Error(err, "error creating client for remote cluster")
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("error creating client for remote cluster: %v", err))
+		return
+	}
+	for _, ns := range flowNamespaces {
+		if nsErr := handlersutils.EnsureNamespaceWithName(ctx, remoteClient, ns); nsErr != nil {
+			log.Error(nsErr, "error creating Flow CNI namespace on remote cluster", "namespace", ns)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to create Flow CNI namespace %q on remote cluster: %v",
+				ns,
+				nsErr,
+			))
+			return
+		}
+	}
+
 	var imagePullSecretName string
 	if cniVar.ImagePullCredentials != nil {
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
@@ -212,7 +241,7 @@ func (c *NutanixFlowCNI) apply(
 			return
 		}
 
-		for _, ns := range imagePullSecretNamespaces {
+		for _, ns := range flowNamespaces {
 			key := ctrlclient.ObjectKey{
 				Name:      defaultImagePullSecretName,
 				Namespace: ns,
