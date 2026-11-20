@@ -109,7 +109,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	}
 	clusterIP := fetchedSvc.Spec.ClusterIP
 	if clusterIP == "" || clusterIP == "None" {
-		return nil, fmt.Errorf("Service ClusterIP not allocated: %v", fetchedSvc.Spec)
+		return nil, fmt.Errorf("service ClusterIP not allocated: %v", fetchedSvc.Spec)
 	}
 
 	issuerHost := input.IssuerHost
