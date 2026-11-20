@@ -11,7 +11,7 @@
 
 **Architecture**: API types in `api/v1alpha1/` mirroring upstream `apiserver.config.k8s.io/v1` JWTAuthenticator shape (owned, not vendored via an import that would pull `k8s.io/kubernetes`). New mutation handler under `pkg/handlers/generic/mutation/kubeadm/authentication/` that follows the existing `admissionconfiguration.AddPlugin` pattern (Files + ExtraVolumes + ExtraArgs), registered in `pkg/handlers/generic/mutation/handlers.go` `MetaMutators()`. CEL markers + OpenAPI for early validation. Deterministic YAML via `sigs.k8s.io/yaml` marshaling of a local struct; `jwt` order preserved.
 
-**Tech Stack**: Go; kubebuilder/controller-gen markers + CEL (`XValidation`); CAPI topology mutation (`common/pkg/capi/clustertopology/{handlers/mutation,patches,selectors}` + `variables`); `sigs.k8s.io/yaml`; `testify` for pure API tests, `Ginkgo/Gomega` for handler tests; `make generate` for CRDs/deepcopy.
+**Tech Stack**: Go; kubebuilder/controller-gen markers + CEL (`XValidation`); CAPI topology mutation (`common/pkg/capi/clustertopology/{handlers/mutation,patches,selectors}` + `variables`); `sigs.k8s.io/yaml`; `testify` for pure API tests, `Ginkgo/Gomega` for handler + e2e tests; mock OIDC (ephemeral RSA + `https` + self-signed CA via `issuer.certificateAuthority`); `make generate` for CRDs/deepcopy.
 
 ---
 
@@ -22,7 +22,7 @@
 | I. API-First | Pass | Types live in `api/v1alpha1/` only; no business logic in the API module. |
 | II. Handler-per-Provider | Pass | Handler lives in `generic` (provider-agnostic), no cross-provider imports; shared helper stays reusable. |
 | III. Library-First | Pass | No `cmd/` changes; wiring only in library handler registration. |
-| IV. Tests Required | Pass | API validation tests + handler `Mutate` Ginkgo suite (opt-in, multi-issuer, coexistence, no-op, legacy-flag conflict, removal). |
+| IV. Tests Required | Pass | API validation tests + handler `Mutate` Ginkgo suite (opt-in, multi-issuer, coexistence, no-op, legacy-flag conflict, removal) + Docker e2e with in-cluster mock OIDC token validation (part of normal e2e, not skipped). |
 | V. Code Style | Pass | Import aliases per repo; `make fmt`/`make lint` gating. |
 | VI. Dependency Management | Pass | No new direct deps; types are owned (not importing `k8s.io/kubernetes/staging/...` which is a depguard/lint concern). |
 | VII. Handler Version Safety | Pass | Opt-in: `GeneratePatches` output for inputs not setting `authentication` must be byte-identical; no handler version bump needed (verify via the "omitted variable" test case in existing suite). |
@@ -54,6 +54,11 @@ pkg/handlers/generic/mutation/handlers.go  # MODIFY: register new patch in MetaM
 docs/content/customization/kubeadm/
 ├── authentication.md                   # CREATE
 └── _index.md                           # MODIFY: link new page
+
+test/e2e/
+├── data/oidc-mock/deployment.yaml      # CREATE: mock OIDC Deployment/Service (https, 443) for token e2e
+├── helpers/oidc/mock.go                # CREATE: ephemeral RSA keypair, CA, JWKS/discovery handlers, JWT mint helper
+└── specs/authentication_token_test.go  # CREATE: Docker e2e - mock OIDC + valid/invalid JWT validation (part of normal suite)
 
 hack/examples/...                        # NO CHANGE (feature is opt-in; examples.sync stays green)
 ```
@@ -194,11 +199,28 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
 
 ---
 
-### Task 5: Final verification gate
+### Task 5: Integration/e2e — in-cluster mock OIDC token validation (Docker, no external service)
+
+**Files:**
+
+- Create: `test/e2e/data/oidc-mock/deployment.yaml` (Deployment + Service `mock-oidc.oidc-mock.svc.cluster.local:443`, https, mounts server cert from Secret)
+- Create: `test/e2e/helpers/oidc/mock.go` (generate RSA 2048 + self-signed CA, JWKS, discovery handler, `MintJWT(claims) string`)
+- Create: `test/e2e/specs/authentication_token_test.go` (Ginkgo, `Label("provider:Docker","authentication")` — part of normal suite, not skipped)
+
+- [ ] **Step 1: Mock helper** — `mock.go`: `SetupMockOIDC(t, workloadK8sClient)` creates `oidc-mock` ns, generates CA + server cert for `mock-oidc.oidc-mock.svc.cluster.local`, creates `Secret` with cert/key, deploys mock Deployment that serves `/.well-known/openid-configuration` (`{issuer,jwks_uri}`) and `/keys` (JWKS) over `https`; returns `issuerURL`, `discoveryURL`, `caPEM`, `privateKey`, `MintJWT`.
+
+- [ ] **Step 2: Spec** — `authentication_token_test.go`: (a) Create Docker workload Cluster *without* auth → `Ready`; (b) `SetupMockOIDC` in workload cluster; (c) patch `Cluster.spec.topology.variables` to set `clusterConfig.authentication` (`issuer.url=https://mock-oidc.oidc-mock.svc.cluster.local`, `discoveryURL=https://mock-oidc.oidc-mock.svc.cluster.local/.well-known/openid-configuration`, `audiences:["e2e-aud"]`, `audienceMatchPolicy:MatchAny`, `certificateAuthority:caPEM`, `claimMappings.username:{claim:email}`, `groups:{claim:groups}`, `extra:[{key:example.org/foo,valueExpression:claims.foo}]`, `claimValidationRules:[{claim:hd,requiredValue:example.com}]`, `userValidationRules:[{expression:!user.username.startsWith('system:')}]`); wait KCP rollout (`Files` contains `authentication.yaml` + `ExtraArgs:authentication-config` + `ExtraVolumes`) and `Cluster` re-Ready (API server hot-reloads, poll every 60s); (d) mint valid JWT (`email=test@example.com,groups=[e2e-group],hd=example.com,foo=bar,aud=e2e-aud`) → `kubectl --token` `auth whoami` shows `test@example.com`/`e2e-group`/`example.org/foo=bar`; mint invalid JWTs (wrong `aud`, missing `hd`, expired, `system:` user) → `401`/`403`; (e) admin kubeconfig still works.
+
+- [ ] **Step 3: Verify** — `devbox run -- make e2e-test E2E_LABEL='provider:Docker && authentication' SKIP_BUILD=true` (or full `make e2e-test`) — green. Commit.
+
+---
+
+### Task 6: Final verification gate
 
 - [ ] `devbox run -- make generate` — clean (no diff beyond `api/` CRDs/deepcopy). `git status` shows no unintended `charts/`/`examples/` changes.
 - [ ] `devbox run -- make lint` and `devbox run -- make fmt` — clean.
 - [ ] `devbox run -- make test` (or at least `make test.root` + `go test ./api/v1alpha1` + `go test ./pkg/handlers/generic/mutation/kubeadm/authentication`) — green.
+- [ ] `devbox run -- make e2e-test E2E_LABEL='provider:Docker && authentication'` — mock OIDC token validation green (part of normal suite, not skipped).
 - [ ] Manual spec acceptance spot-checks (TDD cases above) still green; no version bump required for existing clusters.
 
 ---
@@ -210,9 +232,10 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
 | Importing `k8s.io/kubernetes` staging types pulls forbidden deps | Own the render types; mirror upstream JSON shape via local structs with identical tags. |
 | CEL `XValidation` for "exactly one of claim/expression" is tricky | Copy the pattern from `api/v1alpha1/kubelet_types.go`; add API-level integration test for rejection cases. |
 | Handler must coexist with `admissionconfiguration` handler | Use distinct well-known path/name/flag; tests cover additive composition. |
+| API server must reach in-cluster mock OIDC via SVC DNS | Mock runs as `https` Service `mock-oidc.oidc-mock.svc.cluster.local:443` inside workload cluster; CA passed via `issuer.certificateAuthority`; patch `Cluster` after mock Ready, wait for KCP rollout + 60s hot-reload. |
 
 ## Out of Scope (explicitly not in this plan)
 
 - `--oidc-*`flag migration assistant beyond the handler error.
 - `anonymous` / `webhook` subsections of `AuthenticationConfiguration` or `--service-account-*` flags.
-- E2E against a real cluster (covered by `test/e2e` label-driven tests if desired later).
+- External IdP (Okta/Auth0) — covered by in-cluster mock OIDC.
