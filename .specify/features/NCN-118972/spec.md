@@ -102,6 +102,26 @@ An operator typos an issuer URL or omits required fields. They get a clear error
 
 ---
 
+### User Story 5 — Operator end-to-end validates JWTs via in-cluster mock OIDC (Priority: P1)
+
+An operator configures `clusterConfig.authentication` to trust a mock OIDC issuer deployed **inside the workload cluster** (no external service). Tokens minted by that issuer are accepted by the API server with the configured claim mappings; invalid tokens are rejected. The same e2e proves the feature does not break admin cert auth.
+
+**Why this priority**: Proves the full loop — CAREN renders the file, mounts it, sets `--authentication-config`, API server hot-reloads and validates JWTs — without depending on an external IdP. Extra e2e time is acceptable.
+
+**Independent Test** (Docker provider, runs as part of normal e2e, not skipped): `test/e2e/specs/authentication_token_test.go` labeled `provider:Docker,authentication`. Steps:
+1. Create Docker workload Cluster *without* auth → `Ready`; admin kubeconfig works.
+2. Deploy mock OIDC `Deployment/Service` (`mock-oidc.oidc-mock.svc.cluster.local:443`, `https`) into workload cluster with ephemeral RSA keypair and self-signed CA; CA PEM is fed to `clusterConfig.authentication.jwt[0].issuer.certificateAuthority`.
+3. Patch `Cluster.spec.topology.variables` to set `clusterConfig.authentication` (`issuer.url=https://mock-oidc.oidc-mock.svc.cluster.local`, `discoveryURL=https://mock-oidc.oidc-mock.svc.cluster.local/.well-known/openid-configuration`, `audiences:["e2e-aud"]`, `audienceMatchPolicy:MatchAny`, `claimMappings.username:{claim:email}`, `groups:{claim:groups}`, `extra:[{key:example.org/foo,valueExpression:claims.foo}]`, `claimValidationRules:[{claim:hd,requiredValue:example.com}]`, `userValidationRules:[{expression:!user.username.startsWith('system:')}]`). Wait for KCP rollout → `Cluster` re-Ready.
+4. Mint valid JWT locally with same private key (`iss` = issuer URL, `aud` = `e2e-aud`, `email` = `test@example.com`, `groups` = `["e2e-group"]`, `hd` = `example.com`, `foo` = `bar`) → `kubectl --token=<jwt> auth whoami` shows `test@example.com` / `e2e-group` / extra `example.org/foo=bar`; invalid JWTs (wrong `aud`, `hd`, expired, `system:` username) → `401`/`403`.
+
+**Acceptance Scenarios**:
+
+1. **Given** a workload cluster with mock OIDC and valid `authentication` config, **When** a JWT with `email=test@example.com` and `aud=e2e-aud` is presented, **Then** the API server authenticates it as `test@example.com`.
+2. **Given** the same cluster, **When** a JWT missing `hd=example.com` or with `aud` mismatch or expired `exp` is presented, **Then** the API server rejects it.
+3. **Given** the same cluster, **When** admin cert auth is used, **Then** `Cluster` remains `Ready` and `kubectl` via admin kubeconfig still succeeds (no breakage).
+
+---
+
 ### Edge Cases
 
 - What happens when the user also sets legacy `--oidc-*` flags via `KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` directly? The handler **MUST fail the reconciliation** with a clear error when both are present; the API server would refuse to start if both were set. The error tells the user to remove the legacy flags and use `authentication` instead. (If the user later removes the file config, the legacy flags can be used again.)
@@ -126,6 +146,7 @@ An operator typos an issuer URL or omits required fields. They get a clear error
 - **FR-007**: API types MUST carry kubebuilder/CEL validation: `jwt` required non-empty when `authentication` is present; `issuer.url` required and `https://` URL pattern, unique within the list; `audiences` required non-empty, unique; at least one of `claim`/`expression` set where the upstream API says "either/or"; list size caps to bound input (align with `PodSecurityAdmission.MaxItems` precedent).
 - **FR-008**: The rendered file MUST be deterministic and stable (sorted only where order is semantically irrelevant; `jwt` order is preserved as the user's declared evaluation order; within a single authenticator, `audiences` order is preserved).
 - **FR-009**: The feature MUST be documented under `docs/content/customization/kubeadm/` (new page `authentication.md` plus a customization index/link update) with configuration tables, what it does, how to enable it, examples for single-issuer OIDC and multi-issuer, a mutual-exclusivity note vs `--oidc-*`, the minimum Kubernetes version, and example YAML.
+- **FR-010**: An **integration/e2e test** MUST exist that validates the full loop — CAREN renders/mounts the file and sets `--authentication-config`, workload Cluster reaches `Ready`, and a JWT minted by an **in-cluster mock OIDC** (no external service dependency) is accepted/rejected by the API server per the configured claim mappings/validation. The test runs under `provider:Docker` as part of normal e2e (no opt-in skip).
 
 ### Key Entities
 
@@ -143,10 +164,11 @@ An operator typos an issuer URL or omits required fields. They get a clear error
 - **SC-003**: Any Cluster YAML that sets `authentication` but omits or mis-formats a required field (issuer URL, audiences, username mapping) is rejected at admission with a message naming the offending field.
 - **SC-004**: Documentation page is published at `docs/content/customization/kubeadm/authentication.md` and linked from the customization index, with a working single-issuer example that can be copied directly.
 - **SC-005**: A Cluster that sets legacy `--oidc-*` `ExtraArgs` and also sets `clusterConfig.authentication` receives a clear handler error rather than a broken API server rollout.
+- **SC-006**: A Docker workload Cluster configured with an in-cluster mock OIDC reaches `Ready`, and a valid JWT minted by that mock issuer is authenticated by the API server (username/groups/extra per `claimMappings`) while invalid JWTs are rejected — with no external service dependency, as part of normal `make e2e-test` (`provider:Docker`).
 
 ## Out of Scope
 
-- Managing the IdP itself, Dex, `kube-oidc-proxy`, `ServiceAccount.issuer`, or `--service-account-*` flags — this feature concerns only the API server's **authentication** of OIDC/JWT bearer tokens via `AuthenticationConfiguration`.
+- Managing a production IdP, Dex, `kube-oidc-proxy`, `ServiceAccount.issuer`, or `--service-account-*` flags — this feature concerns only the API server's **authentication** of OIDC/JWT bearer tokens via `AuthenticationConfiguration`. An **in-cluster mock OIDC** is in-scope for e2e.
 - `anonymous` and `webhook` authenticator subsections of `AuthenticationConfiguration` — the initial implementation covers `jwt`. Those subsections can be added later in the same file without changing the API surface shape (additive, opt-in list entries).
 - Automated discovery/JWKS pre-validation at admission time (network reachability checks to the IdP) — validation covers structural correctness only.
 
@@ -163,3 +185,4 @@ An operator typos an issuer URL or omits required fields. They get a clear error
 | Handler | New `pkg/handlers/generic/mutation/kubeadm/authentication/` | Reuses the admission-configuration helper pattern (file + mount + flag) without cross-provider leakage. |
 | Username/groups mapping | `claim`+`prefix` vs `expression` per field | Mirrors upstream `PrefixedClaimOrExpression`/`ClaimOrExpression` so no semantic loss vs raw file. |
 | Validation | CRD CEL markers + OpenAPI schema | Immediate feedback; same technique as `kubelet_types.go` in this repo. |
+| E2E validation | In-cluster mock OIDC (`https` + CA via `issuer.certificateAuthority`) | Proves file+flag+hot-reload+JWT validation without external service; runs as part of normal `provider:Docker` e2e. |
