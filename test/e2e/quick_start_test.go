@@ -365,9 +365,19 @@ var _ = Describe("Quick start", func() {
 													// to avoid spinning a dedicated Cluster just for auth. Runs for
 													// the first flavor per provider (provider-agnostic) as part of
 													// normal quick-start, without extra provider label.
-													if flavor == fmt.Sprintf("topology-%s-%s", strings.ToLower(cniProvider), strategy) {
-														By("Authentication with mock OIDC (provider-agnostic, in-cluster)")
-														workloadProxy := proxy.GetWorkloadCluster(ctx, namespace, clusterName)
+													if flavor == fmt.Sprintf(
+														"topology-%s-%s",
+														strings.ToLower(cniProvider),
+														strategy,
+													) {
+														By(
+															"Authentication with mock OIDC (provider-agnostic, in-cluster)",
+														)
+														workloadProxy := proxy.GetWorkloadCluster(
+															ctx,
+															namespace,
+															clusterName,
+														)
 														workloadClient := workloadProxy.GetClient()
 														mock, err := oidc.SetupMockOIDC(ctx, oidc.SetupInput{
 															WorkloadClient: workloadClient,
@@ -378,11 +388,19 @@ var _ = Describe("Quick start", func() {
 
 														Eventually(func() bool {
 															dep := &appsv1.Deployment{}
-															if err := workloadClient.Get(ctx, client.ObjectKey{Namespace: "oidc-mock", Name: "mock-oidc"}, dep); err != nil {
+															if err := workloadClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: "oidc-mock",
+																	Name:      "mock-oidc",
+																},
+																dep,
+															); err != nil {
 																return false
 															}
 															for _, c := range dep.Status.Conditions {
-																if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue {
+																if c.Type == appsv1.DeploymentAvailable &&
+																	c.Status == corev1.ConditionTrue {
 																	return true
 																}
 															}
@@ -392,7 +410,16 @@ var _ = Describe("Quick start", func() {
 														By("Patching Cluster with authentication configuration")
 														bootstrapClient := proxy.GetClient()
 														cluster := &clusterv1beta2.Cluster{}
-														Expect(bootstrapClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: clusterName}, cluster)).To(Succeed())
+														Expect(
+															bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																cluster,
+															),
+														).To(Succeed())
 														Expect(cluster.Spec.Topology).ToNot(BeNil())
 														auth := v1alpha1.Authentication{
 															JWT: []v1alpha1.JWTAuthenticator{
@@ -405,32 +432,53 @@ var _ = Describe("Quick start", func() {
 																		CertificateAuthority: mock.CAPEM,
 																	},
 																	ClaimMappings: v1alpha1.ClaimMappings{
-																		Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
-																		Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups"},
+																		Username: v1alpha1.PrefixedClaimOrExpression{
+																			Claim: "email",
+																		},
+																		Groups: &v1alpha1.PrefixedClaimOrExpression{
+																			Claim: "groups",
+																		},
 																		Extra: []v1alpha1.ExtraMapping{
-																			{Key: "example.org/foo", ValueExpression: "claims.foo"},
+																			{
+																				Key:             "example.org/foo",
+																				ValueExpression: "claims.foo",
+																			},
 																		},
 																	},
 																	ClaimValidationRules: []v1alpha1.ClaimValidationRule{
 																		{Claim: "hd", RequiredValue: "example.com"},
 																	},
 																	UserValidationRules: []v1alpha1.UserValidationRule{
-																		{Expression: "!user.username.startsWith('system:')", Message: "system: prefix reserved"},
+																		{
+																			Expression: "!user.username.startsWith('system:')",
+																			Message:    "system: prefix reserved",
+																		},
 																	},
 																},
 															},
 														}
-														cluster.Spec.Topology.Variables = upsertAuthenticationVariable(cluster.Spec.Topology.Variables, auth)
+														cluster.Spec.Topology.Variables = upsertAuthenticationVariable(
+															cluster.Spec.Topology.Variables,
+															auth,
+														)
 														Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
 
 														By("Waiting for Cluster to be Ready after authentication patch")
 														Eventually(func() bool {
 															c := &clusterv1beta2.Cluster{}
-															if err := bootstrapClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: clusterName}, c); err != nil {
+															if err := bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																c,
+															); err != nil {
 																return false
 															}
 															for _, cond := range c.Status.Conditions {
-																if cond.Type == clusterv1beta2.ReadyCondition && cond.Status == metav1.ConditionTrue {
+																if cond.Type == clusterv1beta2.ReadyCondition &&
+																	cond.Status == metav1.ConditionTrue {
 																	return true
 																}
 															}
@@ -439,7 +487,13 @@ var _ = Describe("Quick start", func() {
 
 														By("Verifying admin kubeconfig still works after auth")
 														pods := &corev1.PodList{}
-														Expect(workloadClient.List(ctx, pods, client.InNamespace("kube-system"))).To(Succeed())
+														Expect(
+															workloadClient.List(
+																ctx,
+																pods,
+																client.InNamespace("kube-system"),
+															),
+														).To(Succeed())
 
 														By("Validating valid JWT is accepted")
 														validClaims := map[string]interface{}{
@@ -452,21 +506,41 @@ var _ = Describe("Quick start", func() {
 														}
 														validToken, err := mock.MintJWT(validClaims)
 														Expect(err).ToNot(HaveOccurred())
-														Expect(validateTokenAuth(ctx, workloadProxy, validToken, true)).To(Succeed())
+														Expect(
+															validateTokenAuth(ctx, workloadProxy, validToken, true),
+														).To(Succeed())
 
 														By("Validating invalid JWTs are rejected")
 														invalidCases := []map[string]interface{}{
-															{"email": "test@example.com", "groups": []string{"e2e-group"}, "hd": "wrong.com", "aud": "e2e-aud"},
-															{"email": "test@example.com", "hd": "example.com", "aud": "wrong-aud"},
-															{"email": "test@example.com", "hd": "example.com", "aud": "e2e-aud", "exp": time.Now().Add(-time.Hour).Unix()},
+															{
+																"email":  "test@example.com",
+																"groups": []string{"e2e-group"},
+																"hd":     "wrong.com",
+																"aud":    "e2e-aud",
+															},
+															{
+																"email": "test@example.com",
+																"hd":    "example.com",
+																"aud":   "wrong-aud",
+															},
+															{
+																"email": "test@example.com",
+																"hd":    "example.com",
+																"aud":   "e2e-aud",
+																"exp":   time.Now().Add(-time.Hour).Unix(),
+															},
 														}
 														for _, claims := range invalidCases {
 															token, err := mock.MintJWT(claims)
 															Expect(err).ToNot(HaveOccurred())
-															Expect(validateTokenAuth(ctx, workloadProxy, token, false)).To(Succeed())
+															Expect(
+																validateTokenAuth(ctx, workloadProxy, token, false),
+															).To(Succeed())
 														}
 
-														By("Validating system: prefix is rejected via userValidationRule")
+														By(
+															"Validating system: prefix is rejected via userValidationRule",
+														)
 														sysClaims := map[string]interface{}{
 															"email": "system:evil@example.com",
 															"hd":    "example.com",
@@ -474,7 +548,9 @@ var _ = Describe("Quick start", func() {
 														}
 														sysToken, err := mock.MintJWT(sysClaims)
 														Expect(err).ToNot(HaveOccurred())
-														Expect(validateTokenAuth(ctx, workloadProxy, sysToken, false)).To(Succeed())
+														Expect(
+															validateTokenAuth(ctx, workloadProxy, sysToken, false),
+														).To(Succeed())
 													}
 												},
 											}
@@ -490,7 +566,10 @@ var _ = Describe("Quick start", func() {
 	}
 })
 
-func upsertAuthenticationVariable(vars []clusterv1beta2.ClusterVariable, auth v1alpha1.Authentication) []clusterv1beta2.ClusterVariable {
+func upsertAuthenticationVariable(
+	vars []clusterv1beta2.ClusterVariable,
+	auth v1alpha1.Authentication,
+) []clusterv1beta2.ClusterVariable {
 	authMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&auth)
 	Expect(err).ToNot(HaveOccurred())
 	for i, v := range vars {
@@ -536,7 +615,9 @@ func validateTokenAuth(ctx context.Context, proxy capiframework.ClusterProxy, to
 	if err == nil {
 		return fmt.Errorf("expected token to be rejected but succeeded")
 	}
-	if strings.Contains(err.Error(), "Unauthorized") || strings.Contains(err.Error(), "Forbidden") || strings.Contains(err.Error(), "401") || strings.Contains(err.Error(), "403") {
+	if strings.Contains(err.Error(), "Unauthorized") || strings.Contains(err.Error(), "Forbidden") ||
+		strings.Contains(err.Error(), "401") ||
+		strings.Contains(err.Error(), "403") {
 		return nil
 	}
 	return fmt.Errorf("expected Unauthorized/Forbidden but got: %w", err)
