@@ -572,7 +572,9 @@ var _ = Describe("Quick start", func() {
 														)
 														Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
 
-														By("Waiting for Cluster to be Available after authentication patch")
+														By(
+															"Waiting for Cluster to be Available after authentication patch",
+														)
 														Eventually(func() bool {
 															c := &clusterv1beta2.Cluster{}
 															if err := bootstrapClient.Get(
