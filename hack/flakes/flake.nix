@@ -3,10 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # gh-stack needs Go >= 1.26, newer than the locked nixpkgs above provides.
+    nixpkgs-gh-stack.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = inputs @ { self, nixpkgs, flake-utils }:
+  outputs = inputs @ { self, nixpkgs, nixpkgs-gh-stack, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       with nixpkgs.legacyPackages.${system}; rec {
         # clusterctl 1.12.3 (v1beta2-compatible) from CAPI release binaries
@@ -48,6 +50,24 @@
             subPackages = [ "." ];
             vendorHash = null;
             ldflags = [ "-s" "-w" ];
+          };
+
+          gh-stack = nixpkgs-gh-stack.legacyPackages.${system}.buildGo126Module rec {
+            pname = "gh-stack";
+            version = "0.3.0";
+            src = fetchFromGitHub {
+              owner = "github";
+              repo = "gh-stack";
+              rev = "v${version}";
+              hash = "sha256-dENuxVuz68Y7P8WW5C7pzVbfJRxGMGIKQ2AnWrTacOs=";
+            };
+            doCheck = false;
+            vendorHash = "sha256-y+eTfmZTdSkHh943o/XtFrrMWv/lxvWekKUp/JKb0h4=";
+            ldflags = [
+              "-s"
+              "-w"
+              "-X github.com/github/gh-stack/cmd.Version=${version}"
+            ];
           };
 
           clusterctl-aws = buildGo124Module rec {
