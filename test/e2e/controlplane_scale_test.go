@@ -9,9 +9,13 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/authentication"
 )
 
 func TestClusterControlPlaneSettled(t *testing.T) {
@@ -49,6 +53,67 @@ func TestClusterControlPlaneSettled(t *testing.T) {
 	}
 	if clusterControlPlaneSettled(readyOnly) {
 		t.Fatal("v1beta2 Cluster Ready is not the settled signal")
+	}
+}
+
+func TestAuthenticationConfigCurrent(t *testing.T) {
+	t.Parallel()
+
+	kcp := &controlplanev1.KubeadmControlPlane{
+		ObjectMeta: metav1.ObjectMeta{Generation: 3},
+		Spec: controlplanev1.KubeadmControlPlaneSpec{
+			Replicas: ptr.To(int32(1)),
+			KubeadmConfigSpec: bootstrapv1.KubeadmConfigSpec{
+				Files: []bootstrapv1.File{{
+					Path: authentication.AuthenticationConfigPath,
+				}},
+			},
+		},
+		Status: controlplanev1.KubeadmControlPlaneStatus{
+			ObservedGeneration: 3,
+			Replicas:           ptr.To(int32(1)),
+			ReadyReplicas:      ptr.To(int32(1)),
+		},
+	}
+	if !authenticationConfigCurrent(kcp) {
+		t.Fatal("expected current authentication config")
+	}
+
+	beforeReconcile := kcp.DeepCopy()
+	beforeReconcile.Status.ObservedGeneration = 2
+	if authenticationConfigCurrent(beforeReconcile) {
+		t.Fatal("unobserved generation is not current")
+	}
+
+	noFile := kcp.DeepCopy()
+	noFile.Spec.KubeadmConfigSpec.Files = nil
+	if authenticationConfigCurrent(noFile) {
+		t.Fatal("missing authentication file is not current")
+	}
+}
+
+func TestBearerOnlyConfigDropsAdminCert(t *testing.T) {
+	t.Parallel()
+
+	cfg := &rest.Config{
+		Host:     "https://apiserver",
+		Username: "kubernetes-admin",
+		Password: "secret",
+	}
+	cfg.BearerToken = "admin-token"
+	cfg.BearerTokenFile = "/tmp/token"
+	cfg.CertFile = "/tmp/admin.crt"
+	cfg.KeyFile = "/tmp/admin.key"
+	cfg.CertData = []byte("cert")
+	cfg.KeyData = []byte("key")
+	out := bearerOnlyConfig(cfg, "jwt")
+	if out.BearerToken != "jwt" || out.CertData != nil || out.KeyData != nil ||
+		out.CertFile != "" || out.KeyFile != "" || out.Username != "" || out.Password != "" ||
+		out.BearerTokenFile != "" {
+		t.Fatalf("admin credentials leaked into bearer config: %#v", out)
+	}
+	if cfg.CertData == nil || cfg.Username != "kubernetes-admin" {
+		t.Fatal("bearerOnlyConfig mutated the input config")
 	}
 }
 
