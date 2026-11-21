@@ -8,7 +8,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	apiserver "k8s.io/apiserver/pkg/apis/apiserver"
+	"k8s.io/apiserver/pkg/apis/apiserver/install"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
+	"k8s.io/apiserver/pkg/apis/apiserver/validation"
+	authenticationcel "k8s.io/apiserver/pkg/authentication/cel"
 	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -318,7 +325,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "username prefix dash disables prefix",
+			name: "username prefix dash is a literal prefix",
 			input: &v1alpha1.Authentication{
 				JWT: []v1alpha1.JWTAuthenticator{
 					{
@@ -552,4 +559,60 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 func TestStringPtrOrNil(t *testing.T) {
 	assert.Nil(t, stringPtrOrNil(""))
 	assert.Equal(t, "x", *stringPtrOrNil("x"))
+}
+
+func TestRenderedAuthenticationConfigAPIServerValidation(t *testing.T) {
+	t.Parallel()
+
+	valid := &v1alpha1.Authentication{
+		JWT: []v1alpha1.JWTAuthenticator{{
+			Issuer: v1alpha1.Issuer{
+				URL:                 "https://issuer.example.com",
+				Audiences:           []string{"e2e-aud"},
+				AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
+			},
+			ClaimMappings: v1alpha1.ClaimMappings{
+				Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
+				Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups", Prefix: new("")},
+				Extra: []v1alpha1.ExtraMapping{{
+					Key:             "example.org/foo",
+					ValueExpression: "claims.foo",
+				}},
+			},
+			ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+				{Claim: "hd", RequiredValue: "example.com"},
+			},
+			UserValidationRules: []v1alpha1.UserValidationRule{
+				{Expression: "!user.username.startsWith('system:')", Message: "system: prefix reserved"},
+			},
+		}},
+	}
+	_, raw := mustRender(t, valid)
+	require.Empty(t, apiServerAuthnErrors(t, raw))
+
+	missingPrefix := &v1alpha1.Authentication{
+		JWT: []v1alpha1.JWTAuthenticator{{
+			Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+			ClaimMappings: v1alpha1.ClaimMappings{
+				Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+				Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups"},
+			},
+		}},
+	}
+	_, raw = mustRender(t, missingPrefix)
+	errs := apiServerAuthnErrors(t, raw)
+	require.NotEmpty(t, errs)
+	assert.Contains(t, errs.ToAggregate().Error(), "prefix is required when claim is set")
+}
+
+func apiServerAuthnErrors(t *testing.T, raw string) field.ErrorList {
+	t.Helper()
+	scheme := runtime.NewScheme()
+	install.Install(scheme)
+	codecs := serializer.NewCodecFactory(scheme, serializer.EnableStrict)
+	obj, err := runtime.Decode(codecs.UniversalDecoder(), []byte(raw))
+	require.NoError(t, err)
+	cfg, ok := obj.(*apiserver.AuthenticationConfiguration)
+	require.Truef(t, ok, "decoded %T", obj)
+	return validation.ValidateAuthenticationConfiguration(authenticationcel.NewDefaultCompiler(), cfg, nil)
 }

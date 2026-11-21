@@ -105,7 +105,7 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
   - `Issuer.URL`: `+kubebuilder:validation:Required` + `Pattern=^https://` + `MinLength=1` + `MaxLength=2048`; add top-level CEL on `Authentication`: CEL to enforce `jwt` issuer URLs unique (`self.jwt.all(...)`).
   - `Issuer.Audiences`: `Required` + `MinItems=1` + `MaxItems=32` + items `MinLength=1` + `MaxLength=256` + `UniqueItems=true`.
   - `ClaimValidationRule`: CEL `XValidation` per entry: exactly one of (`claim` set) xor (`expression` set); when `claim` set `requiredValue` required; `expression` when set needs non-empty; `Message` optional. Use `(has(self.claim) && has(self.requiredValue) && !has(self.expression)) || (!has(self.claim) && has(self.expression))` pattern (see `kubelet_types.go` mutual-exclusivity examples).
-  - `ClaimMappings.Username`: required; `PrefixedClaimOrExpression` with `claim` or `expression` (not both); if `claim` present, `prefix` nil allowed (nil → upstream default `<issuer.url>#`, `"-"` → no prefix).
+  - `ClaimMappings.Username`: required; `PrefixedClaimOrExpression` with `expression`, or `claim` plus `prefix` (not both). `prefix` is required when `claim` is set; `""` disables prefixing. `"-"` is a literal prefix. kube-apiserver rejects a missing prefix.
   - Lists capped with `MaxItems` (e.g., `claimValidationRules` 32, `userValidationRules` 32, `extra` 32).
 
 - [ ] **Step 4: Plumb into `KubeadmClusterConfigSpec`** — in `api/v1alpha1/clusterconfig_types.go`:

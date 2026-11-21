@@ -23,10 +23,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 )
 
 const (
@@ -73,8 +74,8 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			Name: input.Namespace,
 		},
 	}
-	if err := input.WorkloadClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
-		return nil, fmt.Errorf("creating namespace: %w", err)
+	if err := k8sclient.ServerSideApply(ctx, input.WorkloadClient, ns, k8sclient.ForceOwnership); err != nil {
+		return nil, fmt.Errorf("applying namespace: %w", err)
 	}
 
 	// Create Service first to discover the workload's serviceSubnet ClusterIP.
@@ -95,7 +96,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			},
 		},
 	}
-	if err := createOrUpdate(ctx, input.WorkloadClient, svc); err != nil {
+	if err := k8sclient.ServerSideApply(ctx, input.WorkloadClient, svc, k8sclient.ForceOwnership); err != nil {
 		return nil, err
 	}
 	// Read back allocated ClusterIP.
@@ -149,7 +150,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			corev1.TLSPrivateKeyKey: serverKeyPEM,
 		},
 	}
-	if err := createOrUpdate(ctx, input.WorkloadClient, secret); err != nil {
+	if err := k8sclient.ServerSideApply(ctx, input.WorkloadClient, secret, k8sclient.ForceOwnership); err != nil {
 		return nil, err
 	}
 
@@ -166,7 +167,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			jwksKey:                jwksJSON,
 		},
 	}
-	if err := createOrUpdate(ctx, input.WorkloadClient, cm); err != nil {
+	if err := k8sclient.ServerSideApply(ctx, input.WorkloadClient, cm, k8sclient.ForceOwnership); err != nil {
 		return nil, err
 	}
 
@@ -253,7 +254,7 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 			},
 		},
 	}
-	if err := createOrUpdate(ctx, input.WorkloadClient, deployment); err != nil {
+	if err := k8sclient.ServerSideApply(ctx, input.WorkloadClient, deployment, k8sclient.ForceOwnership); err != nil {
 		return nil, err
 	}
 
@@ -284,13 +285,6 @@ func (m *MockOIDC) MintJWT(claims map[string]interface{}) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, mapClaims)
 	token.Header["kid"] = "e2e"
 	return token.SignedString(m.PrivateKey)
-}
-
-// VerifyTLS verifies the mock server's TLS config can be parsed (sanity check).
-func (m *MockOIDC) VerifyTLS() error {
-	_, err := tls.X509KeyPair([]byte(m.CAPEM), []byte(m.CAPEM))
-	_ = err
-	return nil
 }
 
 func buildJWKS(privateKey *rsa.PrivateKey) (string, error) {
@@ -424,14 +418,4 @@ func generateServerCert(
 		return nil, nil, err
 	}
 	return certPEM, keyPEM, nil
-}
-
-func createOrUpdate(ctx context.Context, c client.Client, obj client.Object) error {
-	if err := c.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			return c.Update(ctx, obj)
-		}
-		return fmt.Errorf("creating %T %s/%s: %w", obj, obj.GetNamespace(), obj.GetName(), err)
-	}
-	return nil
 }

@@ -72,8 +72,10 @@ spec:
                 claimMappings:
                   username:
                     claim: email
+                    prefix: ""
                   groups:
                     claim: groups
+                    prefix: ""
 ```
 
 Applying this configuration will result in the following being applied to the
@@ -111,6 +113,7 @@ spec:
                     prefix: a.example.com#
                   groups:
                     claim: groups
+                    prefix: ""
               - issuer:
                   url: https://issuer-b.example.com
                   audiences:
@@ -158,6 +161,7 @@ spec:
                     expression: 'claims.email + ":ext"'
                   groups:
                     claim: groups
+                    prefix: ""
                   uid:
                     claim: sub
                   extra:
@@ -184,6 +188,7 @@ jwt:
     claimMappings:
       username:
         claim: email
+        prefix: ""
 ```
 
 For the multi-issuer and CEL examples the corresponding fields (`discoveryURL`,
@@ -191,8 +196,10 @@ For the multi-issuer and CEL examples the corresponding fields (`discoveryURL`,
 `claimMappings.extra`, `userValidationRules`) appear in the same positions with
 the values provided in the CAREN variable.
 
-The file is polled by the API server every minute and hot-reloaded on change;
-no API server restart is needed after CAREN updates the file.
+kube-apiserver re-reads this file about once a minute. CAREN does not edit the
+file in place. Enabling or changing `authentication` updates the
+KubeadmControlPlane spec (the file and the `--authentication-config` argument),
+and Cluster API replaces control-plane machines for that change.
 
 ## Removing authentication configuration
 
