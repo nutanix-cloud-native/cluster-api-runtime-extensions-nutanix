@@ -1,0 +1,268 @@
+status: Success
+variables:
+- name: clusterConfig
+  required: true
+  schema:
+    openAPIV3Schema:
+      description: GenericClusterConfigSpec defines the desired state of GenericClusterConfig.
+      exclusiveMaximum: false
+      exclusiveMinimum: false
+      properties:
+        globalImageRegistryMirror:
+          description: GlobalImageRegistryMirror sets default mirror configuration
+            for all the image registries.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            credentials:
+              description: Credentials and CA certificate for the image registry mirror
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              properties:
+                secretRef:
+                  description: |-
+                    A reference to the Secret containing the registry credentials and optional CA certificate
+                    using the keys `username`, `password` and `ca.crt`.
+                    This credentials Secret is not required for some registries, e.g. ECR.
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  properties:
+                    name:
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      exclusiveMaximum: false
+                      exclusiveMinimum: false
+                      maxLength: 253
+                      minLength: 1
+                      type: string
+                      uniqueItems: false
+                      x-kubernetes-preserve-unknown-fields: false
+                  required:
+                  - name
+                  type: object
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+              type: object
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            url:
+              description: Registry mirror URL.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              format: uri
+              pattern: ^https?://
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          required:
+          - url
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        imageRegistries:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          items:
+            exclusiveMaximum: false
+            exclusiveMinimum: false
+            properties:
+              credentials:
+                description: Credentials and CA certificate for the image registry
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                properties:
+                  secretRef:
+                    description: |-
+                      A reference to the Secret containing the registry credentials and optional CA certificate
+                      using the keys `username`, `password` and `ca.crt`.
+                      This credentials Secret is not required for some registries, e.g. ECR.
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                    properties:
+                      name:
+                        description: |-
+                          Name of the referent.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        exclusiveMaximum: false
+                        exclusiveMinimum: false
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                        uniqueItems: false
+                        x-kubernetes-preserve-unknown-fields: false
+                    required:
+                    - name
+                    type: object
+                    uniqueItems: false
+                    x-kubernetes-preserve-unknown-fields: false
+                type: object
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              url:
+                description: Registry URL.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                format: uri
+                pattern: ^https?://
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+            required:
+            - url
+            type: object
+            uniqueItems: false
+            x-kubernetes-preserve-unknown-fields: false
+          maxItems: 32
+          type: array
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        ntp:
+          description: NTP defines the NTP configuration for the cluster.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            servers:
+              description: Servers is a list of NTP servers to use for time synchronization.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 253
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 16
+              minItems: 1
+              type: array
+              uniqueItems: true
+              x-kubernetes-preserve-unknown-fields: false
+              x-kubernetes-validations:
+              - message: Each server must be a valid IP address, hostname, or domain
+                  name
+                rule: self.all(server, isIP(server) || server.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\\.?$'))
+          required:
+          - servers
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        proxy:
+          description: HTTPProxy required for providing proxy configuration.
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          properties:
+            additionalNo:
+              description: |-
+                AdditionalNo Proxy list that will be added to the automatically calculated
+                values that will apply no_proxy configuration for cluster internal network.
+                Default values: localhost,127.0.0.1,<POD_NETWORK>,<SERVICE_NETWORK>,kubernetes
+                  ,kubernetes.default,.svc,.svc.<SERVICE_DOMAIN>
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              items:
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 253
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              maxItems: 128
+              type: array
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            http:
+              description: HTTP proxy value.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxLength: 2048
+              minLength: 1
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+            https:
+              description: HTTPS proxy value.
+              exclusiveMaximum: false
+              exclusiveMinimum: false
+              maxLength: 2048
+              minLength: 1
+              type: string
+              uniqueItems: false
+              x-kubernetes-preserve-unknown-fields: false
+          type: object
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+        users:
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+          items:
+            description: User defines the input for a generated user in cloud-init.
+            exclusiveMaximum: false
+            exclusiveMinimum: false
+            properties:
+              hashedPassword:
+                description: |-
+                  HashedPassword is a hashed password for the user, formatted as described
+                  by the crypt(5) man page. See your distribution's documentation for
+                  instructions to create a hashed password.
+                  An empty string is not marshalled, because it is not a valid value.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              name:
+                description: Name specifies the user name.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              sshAuthorizedKeys:
+                description: |-
+                  SSHAuthorizedKeys is a list of public SSH keys to write to the
+                  machine. Use the corresponding private SSH keys to authenticate. See SSH
+                  documentation for instructions to create a key pair.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                items:
+                  exclusiveMaximum: false
+                  exclusiveMinimum: false
+                  maxLength: 2048
+                  minLength: 1
+                  type: string
+                  uniqueItems: false
+                  x-kubernetes-preserve-unknown-fields: false
+                maxItems: 100
+                type: array
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+              sudo:
+                description: |-
+                  Sudo is a sudo user specification, formatted as described in the sudo
+                  documentation.
+                  An empty string is not marshalled, because it is not a valid value.
+                exclusiveMaximum: false
+                exclusiveMinimum: false
+                maxLength: 256
+                minLength: 1
+                type: string
+                uniqueItems: false
+                x-kubernetes-preserve-unknown-fields: false
+            required:
+            - name
+            type: object
+            uniqueItems: false
+            x-kubernetes-preserve-unknown-fields: false
+          maxItems: 32
+          type: array
+          uniqueItems: false
+          x-kubernetes-preserve-unknown-fields: false
+      type: object
+      uniqueItems: false
+      x-kubernetes-preserve-unknown-fields: false
