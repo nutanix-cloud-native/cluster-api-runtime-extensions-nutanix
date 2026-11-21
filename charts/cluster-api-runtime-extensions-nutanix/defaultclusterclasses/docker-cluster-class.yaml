@@ -38,11 +38,11 @@ spec:
       name: docker-quick-start-cluster
   patches:
     - external:
-        discoverVariablesExtension: dockerclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: dockerclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: dockerclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: cluster-config
     - external:
-        discoverVariablesExtension: dockerworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: dockerworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: dockerworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: worker-config
   workers:

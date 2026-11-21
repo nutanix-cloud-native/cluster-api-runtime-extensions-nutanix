@@ -17,11 +17,11 @@ spec:
       name: eks-quick-start
   patches:
     - external:
-        discoverVariablesExtension: eksclusterconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: eksclusterconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: eksclusterv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: cluster-config
     - external:
-        discoverVariablesExtension: eksworkerconfigvars-dv.cluster-api-runtime-extensions-nutanix
+        discoverVariablesExtension: eksworkerconfigvarsv7-dv.cluster-api-runtime-extensions-nutanix
         generatePatchesExtension: eksworkerv7configpatch-gp.cluster-api-runtime-extensions-nutanix
       name: worker-config
   workers:
