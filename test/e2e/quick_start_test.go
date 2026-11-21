@@ -19,14 +19,17 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
@@ -363,15 +366,9 @@ var _ = Describe("Quick start", func() {
 														)
 													}
 
-													// Authentication e2e: extend quick-start with in-cluster mock OIDC
-													// to avoid spinning a dedicated Cluster just for auth. Runs for
-													// the first flavor per provider (provider-agnostic) as part of
-													// normal quick-start, without extra provider label.
-													if flavor == fmt.Sprintf(
-														"topology-%s-%s",
-														strings.ToLower(cniProvider),
-														strategy,
-													) {
+													// Authentication e2e: one control-plane rollout per provider.
+													// Other quick-start flavors do not pay for it.
+													if flavor == "topology-cilium-helm-addon" {
 														By(
 															"Authentication with mock OIDC (provider-agnostic, in-cluster)",
 														)
@@ -511,32 +508,15 @@ var _ = Describe("Quick start", func() {
 																}
 																for _, cond := range c.Status.Conditions {
 																	if cond.Type == clusterv1beta2.ReadyCondition &&
-																		cond.Status == metav1.ConditionTrue {
-																		// Also check KCP replicas ==1
-																		kcpList := &unstructured.UnstructuredList{}
-																		kcpList.SetGroupVersionKind(
-																			schema.GroupVersionKind{
-																				Group:   "controlplane.cluster.x-k8s.io",
-																				Version: "v1beta2",
-																				Kind:    "KubeadmControlPlane",
-																			},
-																		)
-																		if err := bootstrapClient.List(
+																		cond.Status == metav1.ConditionTrue &&
+																		controlPlaneAtReplicas(
 																			ctx,
-																			kcpList,
-																			client.InNamespace(namespace),
-																		); err == nil {
-																			for _, item := range kcpList.Items {
-																				if replicas, ok := item.Object["status"]; ok {
-																					if statusMap, ok := replicas.(map[string]interface{}); ok {
-																						if r, ok := statusMap["replicas"]; ok &&
-																							r == int64(1) {
-																							return true
-																						}
-																					}
-																				}
-																			}
-																		}
+																			bootstrapClient,
+																			namespace,
+																			clusterName,
+																			1,
+																		) {
+																		return true
 																	}
 																}
 																return false
@@ -566,10 +546,12 @@ var _ = Describe("Quick start", func() {
 																	},
 																	ClaimMappings: v1alpha1.ClaimMappings{
 																		Username: v1alpha1.PrefixedClaimOrExpression{
-																			Claim: "email",
+																			Claim:  "email",
+																			Prefix: ptr.To(""),
 																		},
 																		Groups: &v1alpha1.PrefixedClaimOrExpression{
-																			Claim: "groups",
+																			Claim:  "groups",
+																			Prefix: ptr.To(""),
 																		},
 																		Extra: []v1alpha1.ExtraMapping{
 																			{
@@ -666,9 +648,14 @@ var _ = Describe("Quick start", func() {
 														}
 														validToken, err := mock.MintJWT(validClaims)
 														Expect(err).ToNot(HaveOccurred())
-														Expect(
-															validateTokenAuth(ctx, workloadProxy, validToken, true),
-														).To(Succeed())
+														Eventually(func() error {
+															return validateTokenAuth(
+																ctx,
+																workloadProxy,
+																validToken,
+																true,
+															)
+														}, time.Minute, 5*time.Second).Should(Succeed())
 
 														By("Validating invalid JWTs are rejected")
 														invalidCases := []map[string]interface{}{
@@ -754,31 +741,82 @@ func upsertAuthenticationVariable(
 	})
 }
 
-func validateTokenAuth(ctx context.Context, proxy capiframework.ClusterProxy, token string, shouldSucceed bool) error {
+func controlPlaneAtReplicas(
+	ctx context.Context,
+	c client.Client,
+	namespace, clusterName string,
+	want int32,
+) bool {
+	kcpList := &controlplanev1.KubeadmControlPlaneList{}
+	if err := c.List(
+		ctx,
+		kcpList,
+		client.InNamespace(namespace),
+		client.MatchingLabels{clusterv1beta2.ClusterNameLabel: clusterName},
+	); err != nil {
+		return false
+	}
+	for i := range kcpList.Items {
+		if kubeadmControlPlaneAtReplicas(&kcpList.Items[i], want) {
+			return true
+		}
+	}
+	return false
+}
+
+// kubeadmControlPlaneAtReplicas reports whether spec, observed, and ready replica
+// counts all equal want. Status numbers on typed objects are *int32, so this does
+// not depend on unstructured JSON decoding.
+func kubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want int32) bool {
+	if kcp.Spec.Replicas == nil || *kcp.Spec.Replicas != want {
+		return false
+	}
+	if kcp.Status.Replicas == nil || *kcp.Status.Replicas != want {
+		return false
+	}
+	if kcp.Status.ReadyReplicas == nil || *kcp.Status.ReadyReplicas != want {
+		return false
+	}
+	return true
+}
+
+func validateTokenAuth(
+	ctx context.Context,
+	proxy capiframework.ClusterProxy,
+	token string,
+	shouldSucceed bool,
+) error {
 	restConfig := rest.CopyConfig(proxy.GetRESTConfig())
 	restConfig.BearerToken = token
 	restConfig.BearerTokenFile = ""
 	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
+	if err := authenticationv1.AddToScheme(scheme); err != nil {
+		return err
+	}
 	c, err := client.New(restConfig, client.Options{Scheme: scheme})
 	if err != nil {
 		return err
 	}
-	pods := &corev1.PodList{}
-	err = c.List(ctx, pods, client.InNamespace("default"))
+	review := &authenticationv1.SelfSubjectReview{}
+	err = c.Create(ctx, review)
 	if shouldSucceed {
 		if err != nil {
-			return fmt.Errorf("expected token to succeed but got error: %w", err)
+			return fmt.Errorf("expected token to authenticate: %w", err)
+		}
+		username := review.Status.UserInfo.Username
+		if username == "" || username == "system:anonymous" {
+			return fmt.Errorf("expected an authenticated user, got %q", username)
 		}
 		return nil
 	}
 	if err == nil {
-		return fmt.Errorf("expected token to be rejected but succeeded")
+		return fmt.Errorf(
+			"expected token to be rejected but authenticated as %q",
+			review.Status.UserInfo.Username,
+		)
 	}
-	if strings.Contains(err.Error(), "Unauthorized") || strings.Contains(err.Error(), "Forbidden") ||
-		strings.Contains(err.Error(), "401") ||
-		strings.Contains(err.Error(), "403") {
+	if apierrors.IsUnauthorized(err) {
 		return nil
 	}
-	return fmt.Errorf("expected Unauthorized/Forbidden but got: %w", err)
+	return fmt.Errorf("expected Unauthorized: %w", err)
 }

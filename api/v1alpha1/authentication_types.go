@@ -52,6 +52,7 @@ type JWTAuthenticator struct {
 }
 
 // Issuer holds OIDC provider connection settings for one JWT authenticator.
+// +kubebuilder:validation:XValidation:rule="size(self.audiences) <= 1 || (has(self.audienceMatchPolicy) && self.audienceMatchPolicy == 'MatchAny')",message="audienceMatchPolicy must be MatchAny when more than one audience is set"
 type Issuer struct {
 	// URL is the OIDC issuer URL (must be https://).
 	// Must match the iss claim in presented JWTs.
@@ -84,6 +85,7 @@ type Issuer struct {
 
 	// AudienceMatchPolicy defines how audiences matches the aud claim.
 	// Valid values are \"\" (default, single-audience semantics) or MatchAny.
+	// MatchAny is required when more than one audience is set.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum="";MatchAny
 	AudienceMatchPolicy AudienceMatchPolicy `json:"audienceMatchPolicy,omitempty"`
@@ -111,6 +113,7 @@ type ClaimMappings struct {
 }
 
 // ClaimOrExpression selects a JWT claim or a CEL expression.
+// +kubebuilder:validation:XValidation:rule="(has(self.claim) && !has(self.expression)) || (!has(self.claim) && has(self.expression))",message="set either claim or expression"
 type ClaimOrExpression struct {
 	// Claim is the JWT claim name to use.
 	// +kubebuilder:validation:Optional
@@ -125,7 +128,8 @@ type ClaimOrExpression struct {
 	Expression string `json:"expression,omitempty"`
 }
 
-// PrefixedClaimOrExpression selects a claim with optional prefix, or a CEL expression.
+// PrefixedClaimOrExpression selects a claim plus a prefix, or a CEL expression.
+// +kubebuilder:validation:XValidation:rule="(has(self.expression) && !has(self.claim) && !has(self.prefix)) || (has(self.claim) && has(self.prefix) && !has(self.expression))",message="set either expression, or claim and prefix; prefix may be an empty string to disable prefixing"
 type PrefixedClaimOrExpression struct {
 	// Claim is the JWT claim name to use.
 	// +kubebuilder:validation:Optional
@@ -133,9 +137,9 @@ type PrefixedClaimOrExpression struct {
 	// +kubebuilder:validation:MaxLength=256
 	Claim string `json:"claim,omitempty"`
 
-	// Prefix is prepended to the claim value to avoid name clashes.
-	// \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
-	// defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+	// Prefix is prepended to the claim value to prevent clashes with existing names.
+	// Required when claim is set. An empty string disables prefixing.
+	// "-" is a literal prefix. Mutually exclusive with expression.
 	// +kubebuilder:validation:Optional
 	Prefix *string `json:"prefix,omitempty"`
 
@@ -164,7 +168,7 @@ type ExtraMapping struct {
 }
 
 // ClaimValidationRule is one validation rule for token claims.
-// +kubebuilder:validation:XValidation:rule="(has(self.claim) && has(self.requiredValue) && !has(self.expression)) || (!has(self.claim) && !has(self.requiredValue) && has(self.expression))",message="claimValidationRules entry must be either {claim + requiredValue} or {expression}"
+// +kubebuilder:validation:XValidation:rule="(has(self.claim) && has(self.requiredValue) && !has(self.expression) && !has(self.message)) || (!has(self.claim) && !has(self.requiredValue) && has(self.expression))",message="claimValidationRules entry must be either {claim + requiredValue} or {expression + optional message}"
 type ClaimValidationRule struct {
 	// Claim is the required claim name.
 	// +kubebuilder:validation:Optional

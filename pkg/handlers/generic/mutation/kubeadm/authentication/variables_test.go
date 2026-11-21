@@ -13,6 +13,10 @@ import (
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
+func usernameClaim(claim string) v1alpha1.PrefixedClaimOrExpression {
+	return v1alpha1.PrefixedClaimOrExpression{Claim: claim, Prefix: new("")}
+}
+
 var testDefs = []capitest.VariableTestDef{{
 	Name: "unset",
 	Vals: v1alpha1.KubeadmClusterConfigSpec{},
@@ -27,7 +31,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"e2e-aud"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+						Username: usernameClaim("email"),
 					},
 				},
 			},
@@ -44,7 +48,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"aud-a"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+						Username: usernameClaim("email"),
 					},
 				},
 				{
@@ -53,7 +57,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"aud-b"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+						Username: usernameClaim("sub"),
 					},
 				},
 			},
@@ -70,7 +74,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"e2e-aud"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+						Username: usernameClaim("email"),
 					},
 				},
 			},
@@ -88,7 +92,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"aud-a"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+						Username: usernameClaim("email"),
 					},
 				},
 				{
@@ -97,7 +101,7 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{"aud-b"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+						Username: usernameClaim("sub"),
 					},
 				},
 			},
@@ -115,6 +119,24 @@ var testDefs = []capitest.VariableTestDef{{
 						Audiences: []string{},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "claim without prefix",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
 						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
 					},
 				},
@@ -122,6 +144,85 @@ var testDefs = []capitest.VariableTestDef{{
 		},
 	},
 	ExpectError: true,
+}, {
+	Name: "claim and expression both set",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{
+							Claim:      "email",
+							Prefix:     new(""),
+							Expression: "claims.email",
+						},
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "message set on claim validation rule",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+					ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+						{Claim: "hd", RequiredValue: "example.com", Message: "nope"},
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "multiple audiences without MatchAny",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"a", "b"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "multiple audiences with MatchAny",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:                 "https://issuer.example.com",
+						Audiences:           []string{"a", "b"},
+						AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
 }}
 
 func TestVariableValidation_AWS(t *testing.T) {

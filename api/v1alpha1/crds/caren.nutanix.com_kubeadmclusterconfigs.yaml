@@ -100,11 +100,14 @@ spec:
                                     type: string
                                   prefix:
                                     description: |-
-                                      Prefix is prepended to the claim value to avoid name clashes.
-                                      \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
-                                      defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                      Prefix is prepended to the claim value to prevent clashes with existing names.
+                                      Required when claim is set. An empty string disables prefixing.
+                                      "-" is a literal prefix. Mutually exclusive with expression.
                                     type: string
                                 type: object
+                                x-kubernetes-validations:
+                                  - message: set either expression, or claim and prefix; prefix may be an empty string to disable prefixing
+                                    rule: (has(self.expression) && !has(self.claim) && !has(self.prefix)) || (has(self.claim) && has(self.prefix) && !has(self.expression))
                               uid:
                                 description: UID maps a claim or CEL expression to the UID.
                                 properties:
@@ -119,6 +122,9 @@ spec:
                                     minLength: 1
                                     type: string
                                 type: object
+                                x-kubernetes-validations:
+                                  - message: set either claim or expression
+                                    rule: (has(self.claim) && !has(self.expression)) || (!has(self.claim) && has(self.expression))
                               username:
                                 description: Username maps a claim or CEL expression to the username.
                                 properties:
@@ -136,11 +142,14 @@ spec:
                                     type: string
                                   prefix:
                                     description: |-
-                                      Prefix is prepended to the claim value to avoid name clashes.
-                                      \"-\" disables prefix; \"\" (nil-equivalent when paired with claim)
-                                      defaults to <issuer.url># per upstream. Mutually exclusive with expression.
+                                      Prefix is prepended to the claim value to prevent clashes with existing names.
+                                      Required when claim is set. An empty string disables prefixing.
+                                      "-" is a literal prefix. Mutually exclusive with expression.
                                     type: string
                                 type: object
+                                x-kubernetes-validations:
+                                  - message: set either expression, or claim and prefix; prefix may be an empty string to disable prefixing
+                                    rule: (has(self.expression) && !has(self.claim) && !has(self.prefix)) || (has(self.claim) && has(self.prefix) && !has(self.expression))
                             required:
                               - username
                             type: object
@@ -171,8 +180,8 @@ spec:
                                   type: string
                               type: object
                               x-kubernetes-validations:
-                                - message: claimValidationRules entry must be either {claim + requiredValue} or {expression}
-                                  rule: (has(self.claim) && has(self.requiredValue) && !has(self.expression)) || (!has(self.claim) && !has(self.requiredValue) && has(self.expression))
+                                - message: claimValidationRules entry must be either {claim + requiredValue} or {expression + optional message}
+                                  rule: (has(self.claim) && has(self.requiredValue) && !has(self.expression) && !has(self.message)) || (!has(self.claim) && !has(self.requiredValue) && has(self.expression))
                             maxItems: 32
                             type: array
                           issuer:
@@ -220,6 +229,9 @@ spec:
                               - audiences
                               - url
                             type: object
+                            x-kubernetes-validations:
+                              - message: audienceMatchPolicy must be MatchAny when more than one audience is set
+                                rule: size(self.audiences) <= 1 || (has(self.audienceMatchPolicy) && self.audienceMatchPolicy == 'MatchAny')
                           userValidationRules:
                             description: |-
                               UserValidationRules are applied to the final user info before
