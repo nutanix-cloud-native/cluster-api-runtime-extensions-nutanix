@@ -6,11 +6,13 @@ package nutanixflow
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
+	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,7 +34,11 @@ const (
 	defaultImagePullSecretName = "flow-cni-image-pull-secret"
 )
 
-var imagePullSecretNamespaces = []string{
+// flowNamespaces are where Flow CNI 1.1.0 deploys components. They must exist
+// even when imagePullCredentials are omitted (registry mirror / air-gapped),
+// because Helm installs workloads into these namespaces. When credentials are
+// provided, the same namespaces also receive the copied imagePullSecret.
+var flowNamespaces = []string{
 	"flow-cni-system",
 	"flow-cns-system",
 	"ovn-kubernetes",
@@ -123,10 +129,13 @@ func (c *NutanixFlowCNI) apply(
 	cluster *clusterv1.Cluster,
 	resp *runtimehooksv1.CommonResponse,
 ) {
+	start := time.Now()
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
+		"handler",
+		c.Name(),
 	)
 
 	if cluster.Spec.InfrastructureRef.Kind != "NutanixCluster" {
@@ -163,6 +172,19 @@ func (c *NutanixFlowCNI) apply(
 		return
 	}
 
+	hasImagePullCredentials := cniVar.ImagePullCredentials != nil &&
+		cniVar.ImagePullCredentials.SecretRef.Name != ""
+	sourceImagePullSecret := ""
+	if hasImagePullCredentials {
+		sourceImagePullSecret = cniVar.ImagePullCredentials.SecretRef.Name
+	}
+	log.Info("applying Nutanix Flow CNI",
+		"provider", cniVar.Provider,
+		"strategy", cniVar.Strategy,
+		"hasImagePullCredentials", hasImagePullCredentials,
+		"imagePullSecret", sourceImagePullSecret,
+	)
+
 	if cniVar.Strategy != v1alpha1.AddonStrategyHelmAddon {
 		log.Error(nil, fmt.Sprintf(
 			"Nutanix Flow CNI only supports %q strategy, got %q",
@@ -186,15 +208,68 @@ func (c *NutanixFlowCNI) apply(
 		)
 		return
 	}
+	log.Info("resolved Flow CNI helm chart",
+		"chartName", helmChart.Name,
+		"chartVersion", helmChart.Version,
+		"repositoryURL", helmChart.Repository,
+	)
+
+	// Always create Flow namespaces up front. Previously they were only created
+	// as a side effect of copying imagePullCredentials; with a registry mirror
+	// Konvoy omits those credentials, so namespaces never appeared and Helm
+	// could not install into them.
+	remoteClientStart := time.Now()
+	log.Info("creating remote cluster client for Flow CNI namespace ensure")
+	remoteClient, err := remote.NewClusterClient(ctx, "", c.client, clusterKey)
+	if err != nil {
+		log.Error(err, "error creating client for remote cluster",
+			"duration", time.Since(remoteClientStart).String(),
+			"ctxErr", ctx.Err(),
+		)
+		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetMessage(fmt.Sprintf("error creating client for remote cluster: %v", err))
+		return
+	}
+	log.Info("created remote cluster client for Flow CNI",
+		"duration", time.Since(remoteClientStart).String(),
+	)
+
+	for _, ns := range flowNamespaces {
+		nsStart := time.Now()
+		log.Info("ensuring Flow CNI namespace on remote cluster", "namespace", ns)
+		if nsErr := handlersutils.EnsureNamespaceWithName(ctx, remoteClient, ns); nsErr != nil {
+			log.Error(nsErr, "error creating Flow CNI namespace on remote cluster",
+				"namespace", ns,
+				"duration", time.Since(nsStart).String(),
+				"ctxErr", ctx.Err(),
+			)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf(
+				"failed to create Flow CNI namespace %q on remote cluster: %v",
+				ns,
+				nsErr,
+			))
+			return
+		}
+		log.Info("ensured Flow CNI namespace on remote cluster",
+			"namespace", ns,
+			"duration", time.Since(nsStart).String(),
+		)
+	}
 
 	var imagePullSecretName string
-	if cniVar.ImagePullCredentials != nil {
+	if hasImagePullCredentials {
+		secretName := cniVar.ImagePullCredentials.SecretRef.Name
+		log.Info("copying Flow CNI image pull credentials to remote namespaces",
+			"secret", secretName,
+			"namespaces", flowNamespaces,
+		)
 		err := handlersutils.EnsureClusterOwnerReferenceForObject(
 			ctx,
 			c.client,
 			corev1.TypedLocalObjectReference{
 				Kind: "Secret",
-				Name: cniVar.ImagePullCredentials.SecretRef.Name,
+				Name: secretName,
 			},
 			cluster,
 		)
@@ -202,7 +277,7 @@ func (c *NutanixFlowCNI) apply(
 			log.Error(
 				err,
 				"error updating Cluster's owner reference on Flow CNI image pull Secret",
-				"name", cniVar.ImagePullCredentials.SecretRef.Name,
+				"name", secretName,
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(fmt.Sprintf(
@@ -212,7 +287,8 @@ func (c *NutanixFlowCNI) apply(
 			return
 		}
 
-		for _, ns := range imagePullSecretNamespaces {
+		for _, ns := range flowNamespaces {
+			copyStart := time.Now()
 			key := ctrlclient.ObjectKey{
 				Name:      defaultImagePullSecretName,
 				Namespace: ns,
@@ -220,7 +296,7 @@ func (c *NutanixFlowCNI) apply(
 			err = handlersutils.CopySecretToRemoteCluster(
 				ctx,
 				c.client,
-				cniVar.ImagePullCredentials.SecretRef.Name,
+				secretName,
 				key,
 				cluster,
 			)
@@ -229,6 +305,10 @@ func (c *NutanixFlowCNI) apply(
 					err,
 					"error copying image pull Secret for Flow CNI to remote cluster",
 					"namespace", ns,
+					"sourceSecret", secretName,
+					"destinationSecret", defaultImagePullSecretName,
+					"duration", time.Since(copyStart).String(),
+					"ctxErr", ctx.Err(),
 				)
 				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				resp.SetMessage(fmt.Sprintf(
@@ -238,9 +318,16 @@ func (c *NutanixFlowCNI) apply(
 				))
 				return
 			}
+			log.Info("copied Flow CNI image pull Secret to remote cluster",
+				"namespace", ns,
+				"destinationSecret", defaultImagePullSecretName,
+				"duration", time.Since(copyStart).String(),
+			)
 		}
 
 		imagePullSecretName = defaultImagePullSecretName
+	} else {
+		log.Info("skipping Flow CNI image pull Secret copy; no imagePullCredentials configured")
 	}
 
 	targetNamespace := c.config.DefaultsNamespace()
@@ -275,6 +362,14 @@ func (c *NutanixFlowCNI) apply(
 		}
 	}
 
+	log.Info("applying Flow CNI HelmChartProxy",
+		"releaseName", defaultNutanixFlowReleaseName,
+		"releaseNamespace", defaultNutanixFlowNamespace,
+		"valuesConfigMap", helmValuesSourceRefName,
+		"valuesConfigMapNamespace", targetNamespace,
+		"imagePullSecretName", imagePullSecretName,
+	)
+
 	strategy := addons.NewHelmAddonApplier(
 		addons.NewHelmAddonConfig(
 			helmValuesSourceRefName,
@@ -290,11 +385,21 @@ func (c *NutanixFlowCNI) apply(
 		WithDefaultWaiter().
 		WithTakeOwnership()
 
+	helmStart := time.Now()
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		log.Error(err, "failed to apply Flow CNI helm addon",
+			"duration", time.Since(helmStart).String(),
+			"totalDuration", time.Since(start).String(),
+			"ctxErr", ctx.Err(),
+		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
 	}
 
+	log.Info("successfully applied Nutanix Flow CNI",
+		"helmDuration", time.Since(helmStart).String(),
+		"totalDuration", time.Since(start).String(),
+	)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
