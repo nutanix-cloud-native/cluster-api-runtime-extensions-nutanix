@@ -70,6 +70,10 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 
 	// Create namespace.
 	ns := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: input.Namespace,
 		},
@@ -81,6 +85,10 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	// Create Service first to discover the workload's serviceSubnet ClusterIP.
 	labels := map[string]string{"app": mockOIDCAppLabel}
 	svc := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Service",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockOIDCAppLabel,
 			Namespace: input.Namespace,
@@ -140,6 +148,10 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 
 	// Create Secret with TLS cert.
 	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockOIDCCertSecretName,
 			Namespace: input.Namespace,
@@ -157,6 +169,10 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	// Create ConfigMap with nginx server config + discovery + jwks.
 	nginxConf := buildNginxConf()
 	cm := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockOIDCConfigMapName,
 			Namespace: input.Namespace,
@@ -174,6 +190,10 @@ func SetupMockOIDC(ctx context.Context, input SetupInput) (*MockOIDC, error) {
 	// Create Deployment.
 	replicas := int32(1)
 	deployment := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appsv1.SchemeGroupVersion.String(),
+			Kind:       "Deployment",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mock-oidc",
 			Namespace: input.Namespace,
