@@ -35,7 +35,7 @@ the `make` targets below fan out to every module.
 | Concern | Path |
 | --- | --- |
 | API types and variables | `api/v1alpha1/` |
-| Active mutation handlers | `pkg/handlers/{aws,nutanix,docker,eks,generic}/mutation/` |
+| Active mutation handlers | `pkg/handlers/vN/{aws,nutanix,docker,eks,generic}/mutation/` |
 | Previous handler versions | `pkg/handlers/vN/` |
 | Lifecycle addon hooks | `pkg/handlers/lifecycle/` |
 | Webhooks | `pkg/webhook/` |
@@ -99,7 +99,7 @@ go test ./pkg/webhook/...
 Pure unit packages run directly, for example:
 
 ```shell
-go test ./pkg/handlers/generic/mutation/kubeadm/auditpolicy/
+go test ./pkg/handlers/v7/generic/mutation/kubeadm/auditpolicy/
 ```
 
 End-to-end tests build a release snapshot, create their own Kind management
