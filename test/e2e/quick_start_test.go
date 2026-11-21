@@ -6,25 +6,40 @@
 package e2e
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
+	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/authentication"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/helpers/oidc"
 )
 
 type providerConfiguration struct {
@@ -369,6 +384,344 @@ var _ = Describe("Quick start", func() {
 															},
 														)
 													}
+
+													// Authentication e2e: one control-plane rollout per provider.
+													// Other quick-start flavors do not pay for it.
+													if flavor == "topology-cilium-helm-addon" {
+														By(
+															"Authentication with mock OIDC (provider-agnostic, in-cluster)",
+														)
+														workloadProxy := proxy.GetWorkloadCluster(
+															ctx,
+															namespace,
+															clusterName,
+														)
+														workloadClient := workloadProxy.GetClient()
+														mock, err := oidc.SetupMockOIDC(ctx, oidc.SetupInput{
+															WorkloadClient: workloadClient,
+															Namespace:      "oidc-mock",
+														})
+														Expect(err).ToNot(HaveOccurred(), "setting up mock OIDC")
+														By(fmt.Sprintf("Mock OIDC issuer: %s", mock.IssuerURL))
+
+														Eventually(func() bool {
+															dep := &appsv1.Deployment{}
+															if err := workloadClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: "oidc-mock",
+																	Name:      "mock-oidc",
+																},
+																dep,
+															); err != nil {
+																Logf("failed to get mock-oidc deployment: %v", err)
+																return false
+															}
+															for _, c := range dep.Status.Conditions {
+																if c.Type == appsv1.DeploymentAvailable &&
+																	c.Status == corev1.ConditionTrue {
+																	return true
+																}
+															}
+															Logf(
+																"mock-oidc deployment not yet available: generation %d observed %d replicas %d/%d/%d conditions %v",
+																dep.Generation,
+																dep.Status.ObservedGeneration,
+																dep.Status.Replicas,
+																dep.Status.ReadyReplicas,
+																dep.Status.AvailableReplicas,
+																dep.Status.Conditions,
+															)
+															// Diagnostics: list pods and events on failure path (logged every poll)
+															podList := &corev1.PodList{}
+															if err := workloadClient.List(
+																ctx,
+																podList,
+																client.InNamespace("oidc-mock"),
+															); err == nil {
+																for _, pod := range podList.Items {
+																	Logf(
+																		"mock-oidc pod %s phase %s conditions %v containerStatuses %v initStatuses %v",
+																		pod.Name,
+																		pod.Status.Phase,
+																		pod.Status.Conditions,
+																		pod.Status.ContainerStatuses,
+																		pod.Status.InitContainerStatuses,
+																	)
+																	for _, cs := range pod.Status.ContainerStatuses {
+																		if cs.State.Waiting != nil {
+																			Logf(
+																				"pod %s container %s waiting: %s %s",
+																				pod.Name,
+																				cs.Name,
+																				cs.State.Waiting.Reason,
+																				cs.State.Waiting.Message,
+																			)
+																		}
+																		if cs.State.Terminated != nil {
+																			Logf(
+																				"pod %s container %s terminated: %s %s exit %d",
+																				pod.Name,
+																				cs.Name,
+																				cs.State.Terminated.Reason,
+																				cs.State.Terminated.Message,
+																				cs.State.Terminated.ExitCode,
+																			)
+																		}
+																	}
+																}
+															}
+															eventList := &corev1.EventList{}
+															if err := workloadClient.List(
+																ctx,
+																eventList,
+																client.InNamespace("oidc-mock"),
+															); err == nil {
+																for _, ev := range eventList.Items {
+																	Logf(
+																		"event %s %s %s: %s",
+																		ev.InvolvedObject.Kind,
+																		ev.InvolvedObject.Name,
+																		ev.Reason,
+																		ev.Message,
+																	)
+																}
+															}
+															return false
+														}, 5*time.Minute, 5*time.Second).Should(BeTrue(), "mock OIDC deployment not available")
+
+														// Ensure single control-plane replica to avoid etcd quorum loss during KCP rollout (2 replicas need 2 healthy).
+														By(
+															"Ensuring single control-plane replica for safe auth rollout",
+														)
+														bootstrapClient := proxy.GetClient()
+														cluster := &clusterv1beta2.Cluster{}
+														Expect(
+															bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																cluster,
+															),
+														).To(Succeed())
+														Expect(cluster.Spec.Topology).ToNot(BeNil())
+														if cluster.Spec.Topology.ControlPlane.Replicas == nil ||
+															*cluster.Spec.Topology.ControlPlane.Replicas != 1 {
+															cluster.Spec.Topology.ControlPlane.Replicas = ptr.To[int32](
+																1,
+															)
+															Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
+															Eventually(func() bool {
+																c := &clusterv1beta2.Cluster{}
+																if err := bootstrapClient.Get(
+																	ctx,
+																	client.ObjectKey{
+																		Namespace: namespace,
+																		Name:      clusterName,
+																	},
+																	c,
+																); err != nil {
+																	return false
+																}
+																return clusterControlPlaneSettled(c) &&
+																	controlPlaneAtReplicas(
+																		ctx,
+																		bootstrapClient,
+																		namespace,
+																		clusterName,
+																		1,
+																	)
+															}, 5*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster not Ready with 1 CP replica")
+														}
+
+														By("Patching Cluster with authentication configuration")
+														Expect(
+															bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																cluster,
+															),
+														).To(Succeed())
+														auth := v1alpha1.Authentication{
+															JWT: []v1alpha1.JWTAuthenticator{
+																{
+																	Issuer: v1alpha1.Issuer{
+																		URL:                  mock.IssuerURL,
+																		DiscoveryURL:         mock.DiscoveryURL,
+																		Audiences:            []string{"e2e-aud"},
+																		AudienceMatchPolicy:  v1alpha1.AudienceMatchPolicyMatchAny,
+																		CertificateAuthority: mock.CAPEM,
+																	},
+																	ClaimMappings: v1alpha1.ClaimMappings{
+																		Username: v1alpha1.PrefixedClaimOrExpression{
+																			Claim:  "email",
+																			Prefix: ptr.To(""),
+																		},
+																		Groups: &v1alpha1.PrefixedClaimOrExpression{
+																			Claim:  "groups",
+																			Prefix: ptr.To(""),
+																		},
+																		Extra: []v1alpha1.ExtraMapping{
+																			{
+																				Key:             "example.org/foo",
+																				ValueExpression: "claims.foo",
+																			},
+																		},
+																	},
+																	ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+																		{Claim: "hd", RequiredValue: "example.com"},
+																	},
+																	UserValidationRules: []v1alpha1.UserValidationRule{
+																		{
+																			Expression: "!user.username.startsWith('system:')",
+																			Message:    "system: prefix reserved",
+																		},
+																	},
+																},
+															},
+														}
+														cluster.Spec.Topology.Variables = upsertAuthenticationVariable(
+															cluster.Spec.Topology.Variables,
+															auth,
+														)
+														Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
+
+														By(
+															"Waiting for authentication config to roll out",
+														)
+														Eventually(func() bool {
+															c := &clusterv1beta2.Cluster{}
+															if err := bootstrapClient.Get(
+																ctx,
+																client.ObjectKey{
+																	Namespace: namespace,
+																	Name:      clusterName,
+																},
+																c,
+															); err != nil {
+																Logf("failed to get Cluster: %v", err)
+																return false
+															}
+															if !clusterControlPlaneSettled(c) {
+																Logf(
+																	"Cluster control plane not settled, conditions: %v",
+																	c.Status.Conditions,
+																)
+																return false
+															}
+															kcpList := &controlplanev1.KubeadmControlPlaneList{}
+															if err := bootstrapClient.List(
+																ctx,
+																kcpList,
+																client.InNamespace(namespace),
+																client.MatchingLabels{
+																	clusterv1beta2.ClusterNameLabel: clusterName,
+																},
+															); err != nil {
+																Logf("failed to list KubeadmControlPlanes: %v", err)
+																return false
+															}
+															for i := range kcpList.Items {
+																kcp := &kcpList.Items[i]
+																if authenticationConfigCurrent(kcp) {
+																	return true
+																}
+																Logf(
+																	"KCP %s generation %d observed %d auth file %t replicas %v ready %v",
+																	kcp.Name,
+																	kcp.Generation,
+																	kcp.Status.ObservedGeneration,
+																	kubeadmControlPlaneHasFile(
+																		kcp,
+																		authentication.AuthenticationConfigPath,
+																	),
+																	kcp.Status.Replicas,
+																	kcp.Status.ReadyReplicas,
+																)
+															}
+															return false
+														}, 10*time.Minute, 10*time.Second).Should(
+															BeTrue(),
+															"authentication config did not roll out",
+														)
+
+														By("Verifying admin kubeconfig still works after auth")
+														pods := &corev1.PodList{}
+														Expect(
+															workloadClient.List(
+																ctx,
+																pods,
+																client.InNamespace("kube-system"),
+															),
+														).To(Succeed())
+
+														By("Validating valid JWT is accepted")
+														validClaims := map[string]interface{}{
+															"email":  "test@example.com",
+															"groups": []string{"e2e-group"},
+															"hd":     "example.com",
+															"foo":    "bar",
+															"aud":    "e2e-aud",
+															"sub":    "123",
+														}
+														validToken, err := mock.MintJWT(validClaims)
+														Expect(err).ToNot(HaveOccurred())
+														Eventually(func() error {
+															return validateTokenAuth(
+																ctx,
+																workloadProxy,
+																validToken,
+																"test@example.com",
+															)
+														}, time.Minute, 5*time.Second).Should(Succeed())
+
+														By("Validating invalid JWTs are rejected")
+														invalidCases := []map[string]interface{}{
+															{
+																"email":  "test@example.com",
+																"groups": []string{"e2e-group"},
+																"hd":     "wrong.com",
+																"aud":    "e2e-aud",
+															},
+															{
+																"email": "test@example.com",
+																"hd":    "example.com",
+																"aud":   "wrong-aud",
+															},
+															{
+																"email": "test@example.com",
+																"hd":    "example.com",
+																"aud":   "e2e-aud",
+																"exp":   time.Now().Add(-time.Hour).Unix(),
+															},
+														}
+														for _, claims := range invalidCases {
+															token, err := mock.MintJWT(claims)
+															Expect(err).ToNot(HaveOccurred())
+															Expect(
+																validateTokenAuth(ctx, workloadProxy, token, ""),
+															).To(Succeed())
+														}
+
+														By(
+															"Validating system: prefix is rejected via userValidationRule",
+														)
+														sysClaims := map[string]interface{}{
+															"email": "system:evil@example.com",
+															"hd":    "example.com",
+															"aud":   "e2e-aud",
+														}
+														sysToken, err := mock.MintJWT(sysClaims)
+														Expect(err).ToNot(HaveOccurred())
+														Expect(
+															validateTokenAuth(ctx, workloadProxy, sysToken, ""),
+														).To(Succeed())
+													}
 												},
 											}
 										})
@@ -382,3 +735,154 @@ var _ = Describe("Quick start", func() {
 		})
 	}
 })
+
+func upsertAuthenticationVariable(
+	vars []clusterv1beta2.ClusterVariable,
+	auth v1alpha1.Authentication,
+) []clusterv1beta2.ClusterVariable {
+	authMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&auth)
+	Expect(err).ToNot(HaveOccurred())
+	for i, v := range vars {
+		if v.Name == "clusterConfig" {
+			existing := map[string]interface{}{}
+			if len(v.Value.Raw) > 0 {
+				Expect(json.Unmarshal(v.Value.Raw, &existing)).To(Succeed())
+			}
+			existing["authentication"] = authMap
+			raw, err := json.Marshal(existing)
+			Expect(err).ToNot(HaveOccurred())
+			vars[i].Value.Raw = raw
+			return vars
+		}
+	}
+	payload := map[string]interface{}{"authentication": authMap}
+	raw, err := json.Marshal(payload)
+	Expect(err).ToNot(HaveOccurred())
+	return append(vars, clusterv1beta2.ClusterVariable{
+		Name:  "clusterConfig",
+		Value: apiextensionsv1.JSON{Raw: raw},
+	})
+}
+
+// clusterControlPlaneSettled reports whether a v1beta2 Cluster has finished a
+// control-plane rollout. Cluster has no Ready condition; Available plus
+// up-to-date control-plane machines is the settled state.
+func clusterControlPlaneSettled(c *clusterv1beta2.Cluster) bool {
+	conds := c.Status.Conditions
+	return apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterAvailableCondition) &&
+		apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterControlPlaneMachinesUpToDateCondition) &&
+		!apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterRollingOutCondition)
+}
+
+func controlPlaneAtReplicas(
+	ctx context.Context,
+	c client.Client,
+	namespace, clusterName string,
+	want int32,
+) bool {
+	kcpList := &controlplanev1.KubeadmControlPlaneList{}
+	if err := c.List(
+		ctx,
+		kcpList,
+		client.InNamespace(namespace),
+		client.MatchingLabels{clusterv1beta2.ClusterNameLabel: clusterName},
+	); err != nil {
+		return false
+	}
+	for i := range kcpList.Items {
+		if kubeadmControlPlaneAtReplicas(&kcpList.Items[i], want) {
+			return true
+		}
+	}
+	return false
+}
+
+// kubeadmControlPlaneAtReplicas reports whether spec, observed, and ready replica
+// counts all equal want. Status numbers on typed objects are *int32, so this does
+// not depend on unstructured JSON decoding.
+func kubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want int32) bool {
+	if kcp.Spec.Replicas == nil || *kcp.Spec.Replicas != want {
+		return false
+	}
+	if kcp.Status.Replicas == nil || *kcp.Status.Replicas != want {
+		return false
+	}
+	if kcp.Status.ReadyReplicas == nil || *kcp.Status.ReadyReplicas != want {
+		return false
+	}
+	return true
+}
+
+func authenticationConfigCurrent(kcp *controlplanev1.KubeadmControlPlane) bool {
+	return kcp.Generation > 0 &&
+		kcp.Status.ObservedGeneration == kcp.Generation &&
+		kubeadmControlPlaneAtReplicas(kcp, 1) &&
+		kubeadmControlPlaneHasFile(kcp, authentication.AuthenticationConfigPath)
+}
+
+func kubeadmControlPlaneHasFile(kcp *controlplanev1.KubeadmControlPlane, path string) bool {
+	for _, f := range kcp.Spec.KubeadmConfigSpec.Files {
+		if f.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
+// bearerOnlyConfig returns a copy that presents token and not the admin client
+// certificate. The workload kubeconfig authenticates as kubernetes-admin via
+// that certificate, which otherwise takes precedence over the bearer token.
+func bearerOnlyConfig(cfg *rest.Config, token string) *rest.Config {
+	out := rest.CopyConfig(cfg)
+	out.BearerToken = token
+	out.BearerTokenFile = ""
+	out.CertFile = ""
+	out.KeyFile = ""
+	out.CertData = nil
+	out.KeyData = nil
+	out.Username = ""
+	out.Password = ""
+	out.AuthProvider = nil
+	out.ExecProvider = nil
+	out.Impersonate = rest.ImpersonationConfig{}
+	return out
+}
+
+func validateTokenAuth(
+	ctx context.Context,
+	proxy capiframework.ClusterProxy,
+	token string,
+	wantUser string,
+) error {
+	restConfig := bearerOnlyConfig(proxy.GetRESTConfig(), token)
+	scheme := runtime.NewScheme()
+	if err := authenticationv1.AddToScheme(scheme); err != nil {
+		return err
+	}
+	c, err := client.New(restConfig, client.Options{Scheme: scheme})
+	if err != nil {
+		return err
+	}
+	review := &authenticationv1.SelfSubjectReview{}
+	err = c.Create(ctx, review)
+	if wantUser != "" {
+		if err != nil {
+			return fmt.Errorf("expected token to authenticate: %w", err)
+		}
+		username := review.Status.UserInfo.Username
+		if username != wantUser {
+			return fmt.Errorf("authenticated as %q, want %q", username, wantUser)
+		}
+		return nil
+	}
+	if err == nil {
+		return fmt.Errorf(
+			"expected token to be rejected but authenticated as %q",
+			review.Status.UserInfo.Username,
+		)
+	}
+	if apierrors.IsUnauthorized(err) {
+		return nil
+	}
+	return fmt.Errorf("expected Unauthorized: %w", err)
+}
