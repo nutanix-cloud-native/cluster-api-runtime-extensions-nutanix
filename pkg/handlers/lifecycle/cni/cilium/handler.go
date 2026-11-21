@@ -150,10 +150,13 @@ func (c *CiliumCNI) apply(
 	resp *runtimehooksv1.CommonResponse,
 	opts applyOpts,
 ) {
+	start := time.Now()
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"cluster",
 		clusterKey,
+		"handler",
+		c.Name(),
 	)
 
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
@@ -189,12 +192,19 @@ func (c *CiliumCNI) apply(
 		return
 	}
 
+	log.Info("applying Cilium CNI",
+		"provider", cniVar.Provider,
+		"strategy", cniVar.Strategy,
+		"shouldRunPreflight", opts.shouldRunPreflight,
+	)
+
 	targetNamespace := c.config.DefaultsNamespace()
 
 	var strategy addons.Applier
 	var preflightDeleter addons.Deleter
 	switch cniVar.Strategy {
 	case v1alpha1.AddonStrategyClusterResourceSet:
+		log.Info("using ClusterResourceSet strategy for Cilium CNI")
 		strategy = crsStrategy{
 			config: c.config.crsConfig,
 			client: c.client,
@@ -205,6 +215,7 @@ func (c *CiliumCNI) apply(
 			log.Error(
 				err,
 				"failed to get configmap with helm settings",
+				"ctxErr", ctx.Err(),
 			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(
@@ -214,6 +225,11 @@ func (c *CiliumCNI) apply(
 			)
 			return
 		}
+		log.Info("resolved Cilium helm chart",
+			"chartName", helmChart.Name,
+			"chartVersion", helmChart.Version,
+			"repositoryURL", helmChart.Repository,
+		)
 
 		helmValuesSourceRefName := c.config.helmAddonConfig.defaultValuesTemplateConfigMapName
 		if cniVar.Values != nil && cniVar.Values.SourceRef != nil {
@@ -265,6 +281,10 @@ func (c *CiliumCNI) apply(
 			preflightDeleter = preflightStrategy
 
 			if err := runPreflightApply(ctx, cluster, preflightStrategy, targetNamespace, log); err != nil {
+				log.Error(err, "Cilium preflight apply failed",
+					"totalDuration", time.Since(start).String(),
+					"ctxErr", ctx.Err(),
+				)
 				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				resp.SetMessage(err.Error())
 				return
@@ -272,12 +292,22 @@ func (c *CiliumCNI) apply(
 
 			// When the resources are Ready, the preflight check has passed.
 			if err := waitForCiliumPreflightResources(ctx, c.client, cluster, log); err != nil {
+				log.Error(err, "waiting for Cilium preflight resources failed",
+					"totalDuration", time.Since(start).String(),
+					"ctxErr", ctx.Err(),
+				)
 				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 				resp.SetMessage(err.Error())
 				return
 			}
 		}
 
+		log.Info("applying Cilium HelmChartProxy",
+			"releaseName", defaultCiliumReleaseName,
+			"releaseNamespace", defaultCiliumNamespace,
+			"valuesConfigMap", helmValuesSourceRefName,
+			"valuesConfigMapNamespace", targetNamespace,
+		)
 		strategy = addons.NewHelmAddonApplier(
 			addons.NewHelmAddonConfig(
 				helmValuesSourceRefName,
@@ -299,6 +329,11 @@ func (c *CiliumCNI) apply(
 	}
 
 	if err := runApply(ctx, c.client, cluster, strategy, targetNamespace, log); err != nil {
+		log.Error(err, "failed to apply Cilium CNI",
+			"strategy", cniVar.Strategy,
+			"totalDuration", time.Since(start).String(),
+			"ctxErr", ctx.Err(),
+		)
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		return
@@ -307,13 +342,19 @@ func (c *CiliumCNI) apply(
 	// Delete the Cilium preflight HelmChartProxy only after Cilium has been deployed.
 	if opts.shouldRunPreflight && preflightDeleter != nil {
 		if err := preflightDeleter.Delete(ctx, cluster, log); err != nil {
-			log.Error(err, "failed to delete Cilium preflight HelmChartProxy")
+			log.Error(err, "failed to delete Cilium preflight HelmChartProxy",
+				"ctxErr", ctx.Err(),
+			)
 			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 			resp.SetMessage(fmt.Sprintf("failed to delete Cilium preflight release: %v", err))
 			return
 		}
 	}
 
+	log.Info("successfully applied Cilium CNI",
+		"strategy", cniVar.Strategy,
+		"totalDuration", time.Since(start).String(),
+	)
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 }
 
@@ -325,9 +366,20 @@ func runApply(
 	targetNamespace string,
 	log logr.Logger,
 ) error {
+	applyStart := time.Now()
+	log.Info("starting Cilium addon apply",
+		"targetNamespace", targetNamespace,
+	)
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		log.Error(err, "Cilium addon apply failed",
+			"duration", time.Since(applyStart).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return err
 	}
+	log.Info("Cilium addon apply completed",
+		"duration", time.Since(applyStart).String(),
+	)
 
 	// It is possible to disable kube-proxy and migrate to Cilium's kube-proxy replacement feature in a running cluster.
 	// In this case, we need to wait for Cilium to be restarted with new configuration and then cleanup kube-proxy.
@@ -339,9 +391,12 @@ func runApply(
 	}
 
 	if !kubeProxyIsDisabled {
+		log.Info("kube-proxy is enabled; skipping Cilium kube-proxy replacement cleanup")
 		return nil
 	}
 
+	log.Info("kube-proxy is disabled; starting Cilium kube-proxy replacement cleanup")
+	remoteClientStart := time.Now()
 	remoteClient, err := remote.NewClusterClient(
 		ctx,
 		"",
@@ -349,16 +404,27 @@ func runApply(
 		ctrlclient.ObjectKeyFromObject(cluster),
 	)
 	if err != nil {
+		log.Error(err, "error creating remote cluster client for kube-proxy cleanup",
+			"duration", time.Since(remoteClientStart).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("error creating remote cluster client: %w", err)
 	}
+	log.Info("created remote cluster client for kube-proxy cleanup",
+		"duration", time.Since(remoteClientStart).String(),
+	)
 
 	// If kube-proxy is not installed,
 	// assume that the one-time migration of kube-proxy is complete and return early.
 	isKubeProxyInstalled, err := isKubeProxyInstalled(ctx, remoteClient)
 	if err != nil {
+		log.Error(err, "failed to check if kube-proxy is installed",
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to check if kube-proxy is installed: %w", err)
 	}
 	if !isKubeProxyInstalled {
+		log.Info("kube-proxy is not installed; skipping cleanup")
 		return nil
 	}
 
@@ -369,6 +435,9 @@ func runApply(
 		),
 	)
 	if err := waitForCiliumConfigMapToBeUpdatedWithKubeProxyReplacement(ctx, remoteClient); err != nil {
+		log.Error(err, "failed waiting for Cilium ConfigMap kube-proxy replacement update",
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to wait for Cilium ConfigMap to be updated: %w", err)
 	}
 
@@ -379,6 +448,9 @@ func runApply(
 		),
 	)
 	if err := forceCiliumRollout(ctx, remoteClient); err != nil {
+		log.Error(err, "failed to force Cilium DaemonSet rollout",
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to force trigger a rollout of Cilium DaemonSet Pods: %w", err)
 	}
 
@@ -386,9 +458,13 @@ func runApply(
 		fmt.Sprintf("Cleaning up kube-proxy for cluster %s", ctrlclient.ObjectKeyFromObject(cluster)),
 	)
 	if err := cleanupKubeProxy(ctx, remoteClient); err != nil {
+		log.Error(err, "failed to cleanup kube-proxy",
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to cleanup kube-proxy: %w", err)
 	}
 
+	log.Info("completed Cilium kube-proxy replacement cleanup")
 	return nil
 }
 
@@ -399,15 +475,24 @@ func runPreflightApply(
 	targetNamespace string,
 	log logr.Logger,
 ) error {
+	start := time.Now()
 	log.Info(
 		fmt.Sprintf(
 			"Applying Cilium preflight helm release for cluster %s",
 			ctrlclient.ObjectKeyFromObject(cluster),
 		),
+		"targetNamespace", targetNamespace,
 	)
 	if err := strategy.Apply(ctx, cluster, targetNamespace, log); err != nil {
+		log.Error(err, "Cilium preflight helm apply failed",
+			"duration", time.Since(start).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return err
 	}
+	log.Info("Cilium preflight helm apply completed",
+		"duration", time.Since(start).String(),
+	)
 
 	return nil
 }
@@ -418,6 +503,8 @@ func waitForCiliumPreflightResources(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {
+	remoteClientStart := time.Now()
+	log.Info("creating remote cluster client for Cilium preflight wait")
 	remoteClient, err := remote.NewClusterClient(
 		ctx,
 		"",
@@ -425,8 +512,15 @@ func waitForCiliumPreflightResources(
 		ctrlclient.ObjectKeyFromObject(cluster),
 	)
 	if err != nil {
+		log.Error(err, "error creating remote cluster client for Cilium preflight wait",
+			"duration", time.Since(remoteClientStart).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("error creating remote cluster client: %w", err)
 	}
+	log.Info("created remote cluster client for Cilium preflight wait",
+		"duration", time.Since(remoteClientStart).String(),
+	)
 
 	log.Info(
 		fmt.Sprintf(
@@ -435,13 +529,29 @@ func waitForCiliumPreflightResources(
 		),
 	)
 
+	dsStart := time.Now()
 	if err := waitForCiliumPreflightDaemonset(ctx, remoteClient); err != nil {
+		log.Error(err, "failed to wait for Cilium preflight DaemonSet",
+			"duration", time.Since(dsStart).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to wait for Cilium preflight DaemonSet to be ready: %w", err)
 	}
+	log.Info("Cilium preflight DaemonSet is ready",
+		"duration", time.Since(dsStart).String(),
+	)
 
+	deployStart := time.Now()
 	if err := waitForCiliumPreflightDeployment(ctx, remoteClient); err != nil {
+		log.Error(err, "failed to wait for Cilium preflight Deployment",
+			"duration", time.Since(deployStart).String(),
+			"ctxErr", ctx.Err(),
+		)
 		return fmt.Errorf("failed to wait for Cilium preflight Deployment to be ready: %w", err)
 	}
+	log.Info("Cilium preflight Deployment is ready",
+		"duration", time.Since(deployStart).String(),
+	)
 
 	return nil
 }
