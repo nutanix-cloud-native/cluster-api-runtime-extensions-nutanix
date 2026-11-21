@@ -41,8 +41,8 @@ var _ = Describe("Generate Authentication patches", func() {
 						Audiences: []string{"k8s"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
-						Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups"},
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
+						Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups", Prefix: new("")},
 					},
 				},
 			},
@@ -58,16 +58,17 @@ var _ = Describe("Generate Authentication patches", func() {
 						Audiences: []string{"aud-a"},
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 					},
 				},
 				{
 					Issuer: v1alpha1.Issuer{
-						URL:       "https://issuer-b.example.com",
-						Audiences: []string{"aud-b-1", "aud-b-2"},
+						URL:                 "https://issuer-b.example.com",
+						Audiences:           []string{"aud-b-1", "aud-b-2"},
+						AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
 					},
 					ClaimMappings: v1alpha1.ClaimMappings{
-						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 					},
 				},
 			},
