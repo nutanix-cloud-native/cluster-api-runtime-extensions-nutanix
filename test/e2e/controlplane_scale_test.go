@@ -8,9 +8,49 @@ package e2e
 import (
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
+
+func TestClusterControlPlaneSettled(t *testing.T) {
+	t.Parallel()
+
+	settled := &clusterv1beta2.Cluster{
+		Status: clusterv1beta2.ClusterStatus{
+			Conditions: []metav1.Condition{
+				{Type: clusterv1beta2.ClusterAvailableCondition, Status: metav1.ConditionTrue},
+				{Type: clusterv1beta2.ClusterControlPlaneMachinesUpToDateCondition, Status: metav1.ConditionTrue},
+				{Type: clusterv1beta2.ClusterRollingOutCondition, Status: metav1.ConditionFalse},
+			},
+		},
+	}
+	if !clusterControlPlaneSettled(settled) {
+		t.Fatal("expected settled cluster")
+	}
+
+	rolling := settled.DeepCopy()
+	for i := range rolling.Status.Conditions {
+		if rolling.Status.Conditions[i].Type == clusterv1beta2.ClusterRollingOutCondition {
+			rolling.Status.Conditions[i].Status = metav1.ConditionTrue
+		}
+	}
+	if clusterControlPlaneSettled(rolling) {
+		t.Fatal("rolling cluster is not settled")
+	}
+
+	readyOnly := &clusterv1beta2.Cluster{
+		Status: clusterv1beta2.ClusterStatus{
+			Conditions: []metav1.Condition{
+				{Type: clusterv1beta2.ReadyCondition, Status: metav1.ConditionTrue},
+			},
+		},
+	}
+	if clusterControlPlaneSettled(readyOnly) {
+		t.Fatal("v1beta2 Cluster Ready is not the settled signal")
+	}
+}
 
 func TestKubeadmControlPlaneAtReplicas(t *testing.T) {
 	t.Parallel()

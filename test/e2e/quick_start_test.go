@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -526,20 +526,14 @@ var _ = Describe("Quick start", func() {
 																); err != nil {
 																	return false
 																}
-																for _, cond := range c.Status.Conditions {
-																	if cond.Type == clusterv1beta2.ReadyCondition &&
-																		cond.Status == metav1.ConditionTrue &&
-																		controlPlaneAtReplicas(
-																			ctx,
-																			bootstrapClient,
-																			namespace,
-																			clusterName,
-																			1,
-																		) {
-																		return true
-																	}
-																}
-																return false
+																return clusterControlPlaneSettled(c) &&
+																	controlPlaneAtReplicas(
+																		ctx,
+																		bootstrapClient,
+																		namespace,
+																		clusterName,
+																		1,
+																	)
 															}, 5*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster not Ready with 1 CP replica")
 														}
 
@@ -598,7 +592,7 @@ var _ = Describe("Quick start", func() {
 														)
 														Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
 
-														By("Waiting for Cluster to be Ready after authentication patch")
+														By("Waiting for Cluster to be Available after authentication patch")
 														Eventually(func() bool {
 															c := &clusterv1beta2.Cluster{}
 															if err := bootstrapClient.Get(
@@ -612,15 +606,12 @@ var _ = Describe("Quick start", func() {
 																Logf("failed to get Cluster: %v", err)
 																return false
 															}
-															for _, cond := range c.Status.Conditions {
-																if cond.Type == clusterv1beta2.ReadyCondition &&
-																	cond.Status == metav1.ConditionTrue {
-																	return true
-																}
+															if clusterControlPlaneSettled(c) {
+																return true
 															}
 															// Diagnostic: log Cluster conditions and KCP status on each poll
 															Logf(
-																"Cluster not Ready, conditions: %v",
+																"Cluster control plane not settled, conditions: %v",
 																c.Status.Conditions,
 															)
 															kcpList := &unstructured.UnstructuredList{}
@@ -645,7 +636,7 @@ var _ = Describe("Quick start", func() {
 																}
 															}
 															return false
-														}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster not Ready after authentication patch")
+														}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster control plane not settled after authentication patch")
 
 														By("Verifying admin kubeconfig still works after auth")
 														pods := &corev1.PodList{}
@@ -759,6 +750,16 @@ func upsertAuthenticationVariable(
 		Name:  "clusterConfig",
 		Value: apiextensionsv1.JSON{Raw: raw},
 	})
+}
+
+// clusterControlPlaneSettled reports whether a v1beta2 Cluster has finished a
+// control-plane rollout. Cluster has no Ready condition; Available plus
+// up-to-date control-plane machines is the settled state.
+func clusterControlPlaneSettled(c *clusterv1beta2.Cluster) bool {
+	conds := c.Status.Conditions
+	return apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterAvailableCondition) &&
+		apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterControlPlaneMachinesUpToDateCondition) &&
+		!apimeta.IsStatusConditionTrue(conds, clusterv1beta2.ClusterRollingOutCondition)
 }
 
 func controlPlaneAtReplicas(
