@@ -468,6 +468,7 @@ spec:
                                 description: |-
                                   AudienceMatchPolicy defines how audiences matches the aud claim.
                                   Valid values are \"\" (default, single-audience semantics) or MatchAny.
+                                  MatchAny is required when more than one audience is set.
                                 enum:
                                   - ""
                                   - MatchAny
