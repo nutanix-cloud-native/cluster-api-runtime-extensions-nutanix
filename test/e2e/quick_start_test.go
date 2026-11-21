@@ -24,9 +24,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
@@ -39,6 +37,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/authentication"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/helpers/oidc"
 )
 
@@ -573,7 +572,7 @@ var _ = Describe("Quick start", func() {
 														Expect(bootstrapClient.Update(ctx, cluster)).To(Succeed())
 
 														By(
-															"Waiting for Cluster to be Available after authentication patch",
+															"Waiting for authentication config to roll out",
 														)
 														Eventually(func() bool {
 															c := &clusterv1beta2.Cluster{}
@@ -588,37 +587,48 @@ var _ = Describe("Quick start", func() {
 																Logf("failed to get Cluster: %v", err)
 																return false
 															}
-															if clusterControlPlaneSettled(c) {
-																return true
+															if !clusterControlPlaneSettled(c) {
+																Logf(
+																	"Cluster control plane not settled, conditions: %v",
+																	c.Status.Conditions,
+																)
+																return false
 															}
-															// Diagnostic: log Cluster conditions and KCP status on each poll
-															Logf(
-																"Cluster control plane not settled, conditions: %v",
-																c.Status.Conditions,
-															)
-															kcpList := &unstructured.UnstructuredList{}
-															kcpList.SetGroupVersionKind(
-																schema.GroupVersionKind{
-																	Group:   "controlplane.cluster.x-k8s.io",
-																	Version: "v1beta2",
-																	Kind:    "KubeadmControlPlane",
-																},
-															)
+															kcpList := &controlplanev1.KubeadmControlPlaneList{}
 															if err := bootstrapClient.List(
 																ctx,
 																kcpList,
 																client.InNamespace(namespace),
-															); err == nil {
-																for _, item := range kcpList.Items {
-																	Logf(
-																		"KCP %s status: %v",
-																		item.GetName(),
-																		item.Object["status"],
-																	)
+																client.MatchingLabels{
+																	clusterv1beta2.ClusterNameLabel: clusterName,
+																},
+															); err != nil {
+																Logf("failed to list KubeadmControlPlanes: %v", err)
+																return false
+															}
+															for i := range kcpList.Items {
+																kcp := &kcpList.Items[i]
+																if authenticationConfigCurrent(kcp) {
+																	return true
 																}
+																Logf(
+																	"KCP %s generation %d observed %d auth file %t replicas %v ready %v",
+																	kcp.Name,
+																	kcp.Generation,
+																	kcp.Status.ObservedGeneration,
+																	kubeadmControlPlaneHasFile(
+																		kcp,
+																		authentication.AuthenticationConfigPath,
+																	),
+																	kcp.Status.Replicas,
+																	kcp.Status.ReadyReplicas,
+																)
 															}
 															return false
-														}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Cluster control plane not settled after authentication patch")
+														}, 10*time.Minute, 10*time.Second).Should(
+															BeTrue(),
+															"authentication config did not roll out",
+														)
 
 														By("Verifying admin kubeconfig still works after auth")
 														pods := &corev1.PodList{}
@@ -646,7 +656,7 @@ var _ = Describe("Quick start", func() {
 																ctx,
 																workloadProxy,
 																validToken,
-																true,
+																"test@example.com",
 															)
 														}, time.Minute, 5*time.Second).Should(Succeed())
 
@@ -674,7 +684,7 @@ var _ = Describe("Quick start", func() {
 															token, err := mock.MintJWT(claims)
 															Expect(err).ToNot(HaveOccurred())
 															Expect(
-																validateTokenAuth(ctx, workloadProxy, token, false),
+																validateTokenAuth(ctx, workloadProxy, token, ""),
 															).To(Succeed())
 														}
 
@@ -689,7 +699,7 @@ var _ = Describe("Quick start", func() {
 														sysToken, err := mock.MintJWT(sysClaims)
 														Expect(err).ToNot(HaveOccurred())
 														Expect(
-															validateTokenAuth(ctx, workloadProxy, sysToken, false),
+															validateTokenAuth(ctx, workloadProxy, sysToken, ""),
 														).To(Succeed())
 													}
 												},
@@ -783,15 +793,48 @@ func kubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want
 	return true
 }
 
+func authenticationConfigCurrent(kcp *controlplanev1.KubeadmControlPlane) bool {
+	return kcp.Generation > 0 &&
+		kcp.Status.ObservedGeneration == kcp.Generation &&
+		kubeadmControlPlaneAtReplicas(kcp, 1) &&
+		kubeadmControlPlaneHasFile(kcp, authentication.AuthenticationConfigPath)
+}
+
+func kubeadmControlPlaneHasFile(kcp *controlplanev1.KubeadmControlPlane, path string) bool {
+	for _, f := range kcp.Spec.KubeadmConfigSpec.Files {
+		if f.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
+// bearerOnlyConfig returns a copy that presents token and not the admin client
+// certificate. The workload kubeconfig authenticates as kubernetes-admin via
+// that certificate, which otherwise takes precedence over the bearer token.
+func bearerOnlyConfig(cfg *rest.Config, token string) *rest.Config {
+	out := rest.CopyConfig(cfg)
+	out.BearerToken = token
+	out.BearerTokenFile = ""
+	out.CertFile = ""
+	out.KeyFile = ""
+	out.CertData = nil
+	out.KeyData = nil
+	out.Username = ""
+	out.Password = ""
+	out.AuthProvider = nil
+	out.ExecProvider = nil
+	out.Impersonate = rest.ImpersonationConfig{}
+	return out
+}
+
 func validateTokenAuth(
 	ctx context.Context,
 	proxy capiframework.ClusterProxy,
 	token string,
-	shouldSucceed bool,
+	wantUser string,
 ) error {
-	restConfig := rest.CopyConfig(proxy.GetRESTConfig())
-	restConfig.BearerToken = token
-	restConfig.BearerTokenFile = ""
+	restConfig := bearerOnlyConfig(proxy.GetRESTConfig(), token)
 	scheme := runtime.NewScheme()
 	if err := authenticationv1.AddToScheme(scheme); err != nil {
 		return err
@@ -802,13 +845,13 @@ func validateTokenAuth(
 	}
 	review := &authenticationv1.SelfSubjectReview{}
 	err = c.Create(ctx, review)
-	if shouldSucceed {
+	if wantUser != "" {
 		if err != nil {
 			return fmt.Errorf("expected token to authenticate: %w", err)
 		}
 		username := review.Status.UserInfo.Username
-		if username == "" || username == "system:anonymous" {
-			return fmt.Errorf("expected an authenticated user, got %q", username)
+		if username != wantUser {
+			return fmt.Errorf("authenticated as %q, want %q", username, wantUser)
 		}
 		return nil
 	}
