@@ -39,6 +39,42 @@ spec:
                 name: my-mirror-ca-cert
 ```
 
+Both `https://` and `http://` URL schemes are supported. When `http://` is used, containerd is configured to access the mirror over plain HTTP (insecure registry). Credentials are optional — a non-authenticated `http://` registry can be configured without `credentials`. For example, to use an insecure registry as a global mirror:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          globalImageRegistryMirror:
+            url: http://registry.example.com/library
+            # credentials omitted for non-authenticated registry
+```
+
+With authentication:
+
+```yaml
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: <NAME>
+spec:
+  topology:
+    variables:
+      - name: clusterConfig
+        value:
+          globalImageRegistryMirror:
+            url: http://registry.example.com/library
+            credentials:
+              secretRef:
+                name: my-mirror-credentials
+```
+
 Applying this configuration will result in following new files on the
 `KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate` resources:
 
