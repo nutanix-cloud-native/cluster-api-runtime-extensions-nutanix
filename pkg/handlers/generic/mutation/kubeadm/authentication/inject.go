@@ -7,12 +7,19 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	apiserver "k8s.io/apiserver/pkg/apis/apiserver"
+	apiserverinstall "k8s.io/apiserver/pkg/apis/apiserver/install"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
+	apiservervalidation "k8s.io/apiserver/pkg/apis/apiserver/validation"
+	authenticationcel "k8s.io/apiserver/pkg/authentication/cel"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -26,6 +33,13 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
+
+var apiserverValidator = sync.OnceValues(func() (runtime.Decoder, authenticationcel.Compiler) {
+	scheme := runtime.NewScheme()
+	apiserverinstall.Install(scheme)
+	codecs := serializer.NewCodecFactory(scheme, serializer.EnableStrict)
+	return codecs.UniversalDecoder(), authenticationcel.NewDefaultCompiler()
+})
 
 const (
 	// VariableName is the external patch variable name.
@@ -109,14 +123,31 @@ func (h *authPatchHandler) Mutate(
 				}
 			}
 
-			// Conflict check: existing --authentication-config with unexpected path.
+			// Conflict check: existing --authentication-config with nil or unexpected path.
 			for _, arg := range apiServer.ExtraArgs {
-				if arg.Name == AuthenticationConfigArg && arg.Value != nil && *arg.Value != AuthenticationConfigPath {
-					return fmt.Errorf(
-						"existing --%s flag value %q does not match expected path %q",
-						AuthenticationConfigArg, *arg.Value, AuthenticationConfigPath,
-					)
+				if arg.Name == AuthenticationConfigArg {
+					if arg.Value == nil {
+						return fmt.Errorf(
+							"existing --%s flag has nil value; expected %q",
+							AuthenticationConfigArg, AuthenticationConfigPath,
+						)
+					}
+					if *arg.Value != AuthenticationConfigPath {
+						return fmt.Errorf(
+							"existing --%s flag value %q does not match expected path %q",
+							AuthenticationConfigArg, *arg.Value, AuthenticationConfigPath,
+						)
+					}
 				}
+			}
+
+			extraVolumes, err := ensureVolumeMount(
+				apiServer.ExtraVolumes,
+				AuthenticationConfigPath,
+				authenticationConfigVolumeName,
+			)
+			if err != nil {
+				return err
 			}
 
 			content, err := renderAuthenticationConfig(authVar)
@@ -131,11 +162,7 @@ func (h *authPatchHandler) Mutate(
 
 			spec := &obj.Spec.Template.Spec.KubeadmConfigSpec
 			spec.Files = ensureFile(spec.Files, AuthenticationConfigPath, content)
-			apiServer.ExtraVolumes = ensureVolumeMount(
-				apiServer.ExtraVolumes,
-				AuthenticationConfigPath,
-				authenticationConfigVolumeName,
-			)
+			apiServer.ExtraVolumes = extraVolumes
 			apiServer.ExtraArgs = ensureArg(apiServer.ExtraArgs, AuthenticationConfigArg, AuthenticationConfigPath)
 
 			return nil
@@ -219,7 +246,26 @@ func renderAuthenticationConfig(auth *v1alpha1.Authentication) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if err := validateRenderedAuthenticationConfig(out); err != nil {
+		return "", err
+	}
 	return string(out), nil
+}
+
+func validateRenderedAuthenticationConfig(raw []byte) error {
+	decoder, compiler := apiserverValidator()
+	obj, err := runtime.Decode(decoder, raw)
+	if err != nil {
+		return fmt.Errorf("decoding rendered AuthenticationConfiguration: %w", err)
+	}
+	internalCfg, ok := obj.(*apiserver.AuthenticationConfiguration)
+	if !ok {
+		return fmt.Errorf("unexpected decoded type %T", obj)
+	}
+	if errs := apiservervalidation.ValidateAuthenticationConfiguration(compiler, internalCfg, nil); len(errs) > 0 {
+		return errs.ToAggregate()
+	}
+	return nil
 }
 
 func stringPtrOrNil(s string) *string {
@@ -244,10 +290,19 @@ func ensureFile(files []bootstrapv1.File, path, content string) []bootstrapv1.Fi
 	})
 }
 
-func ensureVolumeMount(volumes []bootstrapv1.HostPathMount, path, name string) []bootstrapv1.HostPathMount {
+func ensureVolumeMount(
+	volumes []bootstrapv1.HostPathMount,
+	path, name string,
+) ([]bootstrapv1.HostPathMount, error) {
 	for _, v := range volumes {
-		if v.MountPath == path {
-			return volumes
+		if v.Name == name || v.MountPath == path || v.HostPath == path {
+			if v.Name != name || v.MountPath != path || v.HostPath != path {
+				return nil, fmt.Errorf(
+					"existing apiServer extraVolume %q (%s -> %s) conflicts with %q (%s -> %s)",
+					v.Name, v.HostPath, v.MountPath, name, path, path,
+				)
+			}
+			return volumes, nil
 		}
 	}
 	return append(volumes, bootstrapv1.HostPathMount{
@@ -256,7 +311,7 @@ func ensureVolumeMount(volumes []bootstrapv1.HostPathMount, path, name string) [
 		MountPath: path,
 		ReadOnly:  new(true),
 		PathType:  corev1.HostPathFile,
-	})
+	}), nil
 }
 
 func ensureArg(args []bootstrapv1.Arg, name, value string) []bootstrapv1.Arg {

@@ -8,7 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/yaml"
 
@@ -29,6 +31,14 @@ var _ = Describe("Generate Authentication patches", func() {
 		return mutation.NewMetaGeneratePatchesHandler(
 			"", helpers.TestEnv.Client, NewPatch(),
 		).(mutation.GeneratePatches)
+	}
+
+	requestWithExtraVolumes := func(volumes ...bootstrapv1.HostPathMount) runtimehooksv1.GeneratePatchesRequestItem {
+		item := request.NewKubeadmControlPlaneTemplateRequestItem("")
+		cpTemplate := &controlplanev1.KubeadmControlPlaneTemplate{}
+		gomega.Expect(yaml.Unmarshal(item.Object.Raw, cpTemplate)).To(gomega.Succeed())
+		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraVolumes = volumes
+		return request.NewRequestItem(cpTemplate, &item.HolderReference, item.UID)
 	}
 
 	// helpers to build variables.
@@ -238,6 +248,80 @@ var _ = Describe("Generate Authentication patches", func() {
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
 					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "existing authentication-config with nil value conflicts",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: nil}}).
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "existing extraVolume with same name and different mountPath conflicts",
+			RequestItem: requestWithExtraVolumes(bootstrapv1.HostPathMount{
+				Name:      authenticationConfigVolumeName,
+				HostPath:  "/etc/kubernetes/other.yaml",
+				MountPath: "/etc/kubernetes/other.yaml",
+				ReadOnly:  new(true),
+				PathType:  corev1.HostPathFile,
+			}),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "existing extraVolume with same mountPath and different hostPath conflicts",
+			RequestItem: requestWithExtraVolumes(bootstrapv1.HostPathMount{
+				Name:      "custom-auth",
+				HostPath:  "/etc/kubernetes/custom-auth.yaml",
+				MountPath: AuthenticationConfigPath,
+				ReadOnly:  new(true),
+				PathType:  corev1.HostPathFile,
+			}),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name:        "invalid CEL expression in authentication config returns error",
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.Authentication{
+						JWT: []v1alpha1.JWTAuthenticator{{
+							Issuer: v1alpha1.Issuer{
+								URL:       "https://issuer.example.com",
+								Audiences: []string{"k8s"},
+							},
+							ClaimMappings: v1alpha1.ClaimMappings{
+								Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+							},
+							ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+								{Expression: "claims.exp - (("},
+							},
+						}},
+					},
 					VariableName,
 				),
 			},
