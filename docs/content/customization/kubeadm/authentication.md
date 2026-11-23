@@ -28,6 +28,25 @@ Kubernetes version (`builtin.controlPlane.version`) is older than `1.34.0`, the
 topology mutation handler returns an error rather than rendering an
 `AuthenticationConfiguration` file that the API server cannot parse.
 
+## Configuration
+
+Each entry under `clusterConfig.authentication.jwt` mirrors an upstream
+`apiserver.config.k8s.io/v1` `JWTAuthenticator`:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `issuer.url` | `string` (`https://`) | Yes | OIDC issuer URL (no query or fragment), unique across `jwt` entries. Must match the `iss` claim in presented tokens. |
+| `issuer.discoveryURL` | `string` (`https://`) | No | Overrides `{issuer.url}/.well-known/openid-configuration`. Must differ from `issuer.url` and be unique across `jwt` entries. |
+| `issuer.certificateAuthority` | `string` (PEM) | No | Inline PEM-encoded CA certificate bundle used to verify TLS connections to the OIDC issuer. |
+| `issuer.audiences` | `[]string` | Yes | Acceptable JWT audiences (non-empty, unique items). |
+| `issuer.audienceMatchPolicy` | `""` \| `MatchAny` | When `len(audiences) > 1` | Must be set to `MatchAny` when more than one audience is configured. |
+| `claimValidationRules` | `[]ClaimValidationRule` | No | Each rule sets either `claim` + `requiredValue` or a boolean CEL `expression` (with optional `message`). |
+| `claimMappings.username` | `PrefixedClaimOrExpression` | Yes | Either `expression` (CEL) or `claim` + `prefix` (`prefix: ""` disables prefixing; `"-"` is a literal prefix). |
+| `claimMappings.groups` | `PrefixedClaimOrExpression` | No | Either `expression` (CEL) or `claim` + `prefix` (`prefix: ""` disables prefixing; `"-"` is a literal prefix). |
+| `claimMappings.uid` | `ClaimOrExpression` | No | Either `claim` or `expression` (CEL). |
+| `claimMappings.extra` | `[]ExtraMapping` | No | Unique lowercase domain-prefixed `key` + CEL `valueExpression` pairs (`k8s.io`, `kubernetes.io`, and their subdomains are reserved). |
+| `userValidationRules` | `[]UserValidationRule` | No | Boolean CEL `expression` rules (with optional `message`) evaluated against the mapped `user` object. |
+
 ## Mutual exclusivity with `--oidc-*` flags
 
 The file-based `AuthenticationConfiguration` and the legacy `--oidc-*` API server
@@ -41,12 +60,22 @@ contains any flag whose name starts with `oidc-` and `clusterConfig.authenticati
 is also set, the handler returns an error instructing the operator to remove the
 legacy flags and use `authentication` instead. Likewise, if `ExtraArgs` already
 contains `--authentication-config` with a value other than the expected path
-`/etc/kubernetes/authentication.yaml`, the handler returns an error rather than
-silently overwriting a user-managed path.
+`/etc/kubernetes/authentication.yaml`, or if `APIServer.ExtraVolumes` already
+defines a conflicting `authentication-config` volume or `/etc/kubernetes/authentication.yaml`
+mount, the handler returns an error rather than silently overwriting a
+user-managed configuration.
 
 To migrate from flag-based OIDC, remove all `--oidc-*` entries from
 `KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` and express the
-same intent through `clusterConfig.authentication`.
+same intent through `clusterConfig.authentication`:
+
+- **`prefix` is required when `claim` is set** on `claimMappings.username` or
+  `claimMappings.groups`. Set `prefix: ""` to disable prefixing; `prefix: "-"`
+  prepends a literal `"-"` (unlike legacy `--oidc-username-prefix="-"`, which
+  disabled prefixing).
+- **`--oidc-ca-file` becomes inline PEM** in `issuer.certificateAuthority`
+  rather than a host file path.
+- **Multiple audiences require `audienceMatchPolicy: MatchAny`** on `issuer`.
 
 ## Examples
 
@@ -209,9 +238,13 @@ and Cluster API replaces control-plane machines for that change.
 
 ## Removing authentication configuration
 
-Setting `authentication` back to absent (or removing the variable) is a no-op on
-the next reconciliation — the handler emits no patches, consistent with other
-handlers.
+When `authentication` is unset or omitted, the handler emits no patches against
+the `ClusterClass` `KubeadmControlPlaneTemplate`. Clusters that never set
+`authentication` are unaffected, while removing `authentication` from a cluster
+that previously enabled it reconciles `KubeadmControlPlane` back to the
+unpatched `ClusterClass` template — removing `/etc/kubernetes/authentication.yaml`,
+its volume mount, and `--authentication-config`, and rolling control-plane
+machines.
 
 ## See also
 
