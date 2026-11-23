@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math/big"
 	"net"
 	"slices"
@@ -68,6 +69,7 @@ const (
 	mockOIDCCertSecretName = "mock-oidc-certs" //nolint:gosec // test helper constant
 	jwksKey                = "keys"
 	jwksKeyID              = "e2e"
+	jwtSigningAlg          = "RS256"
 	yamlStringTag          = "!!str"
 )
 
@@ -176,9 +178,7 @@ func (b *Bundle) AuthenticationConfig() v1alpha1.Authentication {
 // MintJWT signs a compact RS256 JWT using the Go standard library.
 func (b *Bundle) MintJWT(claims map[string]any) (string, error) {
 	payload := make(map[string]any, len(claims)+3)
-	for k, v := range claims {
-		payload[k] = v
-	}
+	maps.Copy(payload, claims)
 	now := time.Now()
 	if _, ok := payload["iss"]; !ok {
 		payload["iss"] = b.IssuerURL
@@ -190,14 +190,11 @@ func (b *Bundle) MintJWT(claims map[string]any) (string, error) {
 		payload["exp"] = now.Add(time.Hour).Unix()
 	}
 
-	headerJSON, err := json.Marshal(map[string]string{
-		"alg": "RS256",
+	headerJSON, _ := json.Marshal(map[string]string{
+		"alg": jwtSigningAlg,
 		"kid": jwksKeyID,
 		"typ": "JWT",
 	})
-	if err != nil {
-		return "", fmt.Errorf("marshalling JWT header: %w", err)
-	}
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return "", fmt.Errorf("marshalling JWT claims: %w", err)
@@ -585,8 +582,8 @@ func KubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want
 
 // KubeadmControlPlaneHasFile reports whether kcp's KubeadmConfigSpec includes a file at path.
 func KubeadmControlPlaneHasFile(kcp *controlplanev1.KubeadmControlPlane, path string) bool {
-	for _, f := range kcp.Spec.KubeadmConfigSpec.Files {
-		if f.Path == path {
+	for i := range kcp.Spec.KubeadmConfigSpec.Files {
+		if kcp.Spec.KubeadmConfigSpec.Files[i].Path == path {
 			return true
 		}
 	}
@@ -702,7 +699,7 @@ func buildJWKS(privateKey *rsa.PrivateKey) (string, error) {
 			{
 				"kty": "RSA",
 				"kid": jwksKeyID,
-				"alg": "RS256",
+				"alg": jwtSigningAlg,
 				"use": "sig",
 				"n":   n,
 				"e":   e,
@@ -722,7 +719,7 @@ func buildDiscoveryJSON(issuerURL string) (string, error) {
 		"jwks_uri":                              issuerURL + "/keys",
 		"response_types_supported":              []string{"id_token"},
 		"subject_types_supported":               []string{"public"},
-		"id_token_signing_alg_values_supported": []string{"RS256"},
+		"id_token_signing_alg_values_supported": []string{jwtSigningAlg},
 		"claims_supported": []string{
 			"sub",
 			"email",
@@ -914,9 +911,9 @@ func expandTemplateVar(expr string, lookupVar func(string) (string, bool)) strin
 	name := inner
 	defVal := ""
 	for _, sep := range []string{":-", ":=", "-", "="} {
-		if idx := strings.Index(inner, sep); idx >= 0 {
-			name = inner[:idx]
-			defVal = strings.Trim(inner[idx+len(sep):], `"'`)
+		if before, after, ok := strings.Cut(inner, sep); ok {
+			name = before
+			defVal = strings.Trim(after, `"'`)
 			break
 		}
 	}

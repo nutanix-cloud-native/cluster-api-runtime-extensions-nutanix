@@ -463,7 +463,12 @@ var _ = Describe("Quick start", func() {
 															"KubeadmControlPlane did not settle with authentication config",
 														)
 
-														By(fmt.Sprintf("Deploying mock OIDC at %s", mockOIDCBundle.IssuerURL))
+														By(
+															fmt.Sprintf(
+																"Deploying mock OIDC at %s",
+																mockOIDCBundle.IssuerURL,
+															),
+														)
 														Expect(
 															mockOIDCBundle.Deploy(
 																ctx,
@@ -506,7 +511,9 @@ var _ = Describe("Quick start", func() {
 															"mock OIDC deployment not available",
 														)
 
-														By("Verifying admin kubeconfig still works with authentication enabled")
+														By(
+															"Verifying admin kubeconfig still works with authentication enabled",
+														)
 														pods := &corev1.PodList{}
 														Expect(
 															workloadClient.List(
@@ -516,7 +523,9 @@ var _ = Describe("Quick start", func() {
 															),
 														).To(Succeed())
 
-														By("Validating valid JWT maps username, groups, and extra claims")
+														By(
+															"Validating valid JWT maps username, groups, and extra claims",
+														)
 														validToken, err := mockOIDCBundle.MintJWT(map[string]any{
 															"email":  "test@example.com",
 															"groups": []string{"e2e-group"},
