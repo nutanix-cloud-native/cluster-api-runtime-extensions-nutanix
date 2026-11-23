@@ -26,7 +26,7 @@
 | V. Code Style | Pass | Import aliases per `.golangci.yml:importas`; `make fmt`/`make lint` gating. |
 | VI. Dependency Management | Pass | No new direct deps; only `bootstrapv1.Arg` + existing patch helpers. |
 | VII. Handler Version Safety | Pass* | Opt-in pointer field; `GeneratePatches` output for inputs not setting `serviceAccountIssuer` is byte-identical to pre-change (verified by omitted-variable test). No handler version bump required under current `main`. *If `origin/NCN-107121` versioning lands before merge, re-evaluate — plan notes fallback (see Risks). |
-| VIII. Handler Documentation | Pass | New page `docs/content/customization/kubeadm/service-account-issuer.md` + index link in same PR. |
+| VIII. Handler Documentation | Pass | New page `docs/content/customization/kubeadm/service-account-issuer.md` (auto-indexed by Hugo) in same PR. |
 
 ---
 
@@ -53,39 +53,50 @@ Single owned type + pointer on `KubeadmClusterConfigSpec`:
 
 // ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
 // When nil on KubeadmClusterConfigSpec, no issuer flags are set (no-op).
-// Maps to --service-account-issuer, --api-audiences, --service-account-jwks-uri.
+// Maps to --service-account-issuer, --api-audiences, --service-account-jwks-uri,
+// --service-account-max-token-expiration.
 type ServiceAccountIssuer struct {
-  // Issuer is the identifier asserted in ServiceAccount JWT `iss` claims.
-  // Must be an https:// URL. Triggers --service-account-issuer.
+  // Issuer is the identifier asserted in ServiceAccount JWT iss claims.
+  // Must be an https:// URL without userinfo, query, or fragment. Triggers --service-account-issuer.
   // +kubebuilder:validation:Required
   // +kubebuilder:validation:Format=uri
-  // +kubebuilder:validation:Pattern=`^https://`
-  // +kubebuilder:validation:MinLength=1
+  // +kubebuilder:validation:Pattern=`^https://[^/?#@\s]+(/[^\s?#]*)?$`
+  // +kubebuilder:validation:XValidation:rule="isURL(self) && url(self).getHostname() != ''",message="must be a valid https URL with a non-empty hostname"
+  // +kubebuilder:validation:MinLength=9
   // +kubebuilder:validation:MaxLength=2048
   Issuer string `json:"issuer"`
 
   // Audiences is an optional list of audiences tokens are bound to.
-  // When set, rendered as comma-joined --api-audiences in declared order.
+  // When set, rendered as comma-joined --api-audiences sorted alphabetically.
   // When absent, --api-audiences is not set (API server defaults to issuer URL).
   // +kubebuilder:validation:Optional
   // +kubebuilder:validation:MaxItems=50
-  // +kubebuilder:validation:XValidation:rule="self.all(x, size(x) > 0 && size(x) <= 253)",message="each audience must be 1-253 characters"
+  // +kubebuilder:validation:UniqueItems=true
   // +kubebuilder:validation:items:MinLength=1
   // +kubebuilder:validation:items:MaxLength=253
-  // +listType=set  (unique items — enforced by XListType or CEL; choose one)
+  // +kubebuilder:validation:items:Pattern=`^[^\s,"]+$`
   Audiences []string `json:"audiences,omitempty"`
 
   // JWKSURI overrides the JWKS URI advertised in the OIDC discovery document.
-  // When set, must be an https:// URL. Triggers --service-account-jwks-uri.
+  // When set, must be an https:// URL without userinfo or fragment. Triggers --service-account-jwks-uri.
   // +kubebuilder:validation:Optional
   // +kubebuilder:validation:Format=uri
-  // +kubebuilder:validation:Pattern=`^https://`
-  // +kubebuilder:validation:MinLength=1
+  // +kubebuilder:validation:Pattern=`^https://[^/?#@\s]+(/[^\s#]*)?$`
+  // +kubebuilder:validation:XValidation:rule="isURL(self) && url(self).getHostname() != ''",message="must be a valid https URL with a non-empty hostname"
+  // +kubebuilder:validation:MinLength=9
   // +kubebuilder:validation:MaxLength=2048
   JWKSURI string `json:"jwksURI,omitempty"`
+
+  // MaxTokenExpiration is the maximum lifetime for ServiceAccount tokens.
+  // Must be between 1h and 2^32 seconds (1193046h28m16s).
+  // When set, triggers --service-account-max-token-expiration.
+  // +kubebuilder:validation:Optional
+  // +kubebuilder:validation:XValidation:rule="duration(self) >= duration('1h') && duration(self) <= duration('1193046h28m16s')",message="must be between 1h and 1193046h28m16s (2^32s)"
+  MaxTokenExpiration *metav1.Duration `json:"maxTokenExpiration,omitempty"`
 }
 
-// In api/v1alpha1/clusterconfig_types.go — add to KubeadmClusterConfigSpec:
+// In api/v1alpha1/clusterconfig_types.go — add to KubeadmClusterConfigSpec
+// (plus CEL ensuring authentication.jwt[].issuer.url != serviceAccountIssuer.issuer):
   // ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
   // When unset, no issuer flags are set (API server uses kubeadm defaults).
   // +kubebuilder:validation:Optional
@@ -94,97 +105,83 @@ type ServiceAccountIssuer struct {
 
 **Validation / design notes**:
 
-- `Issuer` required when block present (pointer semantics give opt-in; `Issuer` itself is `Required` non-pointer string — empty string rejected by `MinLength=1` + `Pattern`).
-- `Audiences` — `MaxItems=50`, each `1–253`, unique (`+listType=set` preferred over bespoke CEL; verify controller-gen supports it on `string` lists — fallback to CEL `self.all(x, self.exists_one(y, x == y))` if needed).
-- `JWKSURI` — `omitempty`; when empty, field is absent and not set; when non-empty, validated as `https://` URI.
-- JSON tag `jwksURI` preserves spec casing (spec: `jwksURI`); repo precedent for URI fields uses `URL` (all-caps) but this is a leaf field on an owned type — either is acceptable as long as it matches spec and CRD schema. Prefer `jwksURI` to match spec/FR-004 verbatim.
-- No `Format=binary` / `byte` concerns; pure string validation.
-- CEL vs OpenAPI: `Pattern` + `Format=uri` gives immediate admission rejection per FR-007; CEL on `audiences` length/uniqueness covers edge cases without webhook.
+- `Issuer` required when block present (`Required`, `Format=uri`, no userinfo/query/fragment `Pattern`, CEL `isURL(self) && url(self).getHostname() != ''`, `MinLength=9`, `MaxLength=2048`). Validated in handler via upstream `k8s.io/apiserver/pkg/util/webhook.ValidateWebhookURL` + `k8s.io/apimachinery/pkg/util/validation.IsValidPortNum`.
+- `Audiences` — `MaxItems=50`, each `1–253`, `UniqueItems=true`, `items:Pattern=^[^\s,"]+$` (forbids whitespace, commas, and quotes so `pflag.StringSlice` CSV parsing cannot split or crash), sorted alphabetically before comma-joining, and verified via upstream `github.com/spf13/pflag.NewFlagSet`.
+- `JWKSURI` — `omitempty`; when set, validated as `https://` URL with non-empty hostname, no userinfo or fragment (query parameters allowed per OpenID Discovery 1.0 Section 3).
+- `MaxTokenExpiration` — `*metav1.Duration` bounded to `[1h, 1193046h28m16s]` (`[1h, 2^32s]`), matching `kube-apiserver`'s startup validation in `ServiceAccountTokenOptions.Validate()`.
+- Cross-field validation: `KubeadmClusterConfigSpec` CEL and handler validation reject `serviceAccountIssuer.issuer` overlapping any `authentication.jwt[].issuer.url` (`kube-apiserver` `disallowedIssuers`).
 
 ## File Structure
 
 ```text
 api/v1alpha1/
 ├── serviceaccountissuer_types.go        # CREATE: ServiceAccountIssuer type + markers
-├── serviceaccountissuer_types_test.go   # CREATE: testify sanity (optional, mirrors authentication/ kubelet tests)
-├── clusterconfig_types.go               # MODIFY: add ServiceAccountIssuer *ServiceAccountIssuer to KubeadmClusterConfigSpec
+├── serviceaccountissuer_types_test.go   # CREATE: testify round-trip / omitted / nil tests
+├── clusterconfig_types.go               # MODIFY: add ServiceAccountIssuer + non-overlapping issuer CEL on KubeadmClusterConfigSpec
 ├── zz_generated.deepcopy.go             # GENERATED (make go-generate)
-└── crds/caren.nutanix.com_kubeadmclusterconfigs.yaml  # GENERATED (+ siblings for AWS/Docker/Nutanix if shared schema propagates)
+└── crds/caren.nutanix.com_*clusterconfigs.yaml  # GENERATED
 
 pkg/handlers/generic/mutation/kubeadm/
 ├── serviceaccountissuer/
 │   ├── doc.go                           # CREATE: package doc
-│   ├── inject.go                        # CREATE: handler (NewPatch, Mutate, helpers)
-│   └── inject_test.go                   # CREATE: Ginkgo suite (FR-005/006 + no-op + audiences + jwksURI + conflict + coexistence)
+│   ├── inject.go                        # CREATE: handler + upstream webhook/pflag validation + idempotent ensureArg
+│   ├── inject_test.go                   # CREATE: Ginkgo suite (exact ConsistOf matchers, conflicts, idempotency, coexistence)
+│   └── variables_test.go                # CREATE: CRD OpenAPI + CEL validation suite across Docker, AWS, Nutanix, and EKS
 ├── podsecurityadmission/inject.go       # READ-ONLY reference
 ├── extraapiservercertsans/inject.go     # READ-ONLY reference
 └── sortextraargs/                       # READ-ONLY — ordering guarantee
 
-pkg/handlers/generic/mutation/handlers.go  # MODIFY: register serviceaccountissuer.NewPatch() in MetaMutators() before sortextraargs
+pkg/handlers/generic/mutation/handlers.go  # MODIFY: register serviceaccountissuer.NewPatch() in MetaMutators()
 
 docs/content/customization/kubeadm/
-├── service-account-issuer.md            # CREATE: user-facing docs per FR-010
-└── _index.md                            # MODIFY: link new page
+└── service-account-issuer.md            # CREATE: user-facing docs per FR-010 (auto-indexed by Hugo)
+
+test/framework/oidc/
+├── oidc.go                              # MODIFY: shared clusterConfig YAML AST helper
+├── serviceaccountissuer.go              # CREATE: self-contained discovery, JWKS, TokenRequest, SelfSubjectReview helpers
+└── serviceaccountissuer_test.go         # CREATE: unit + envtest kube-apiserver integration tests
+
+test/e2e/
+└── quick_start_test.go                  # MODIFY: boot-time template injection + post-provision verification
 
 .specify/features/NCN-119065/
-├── spec.md                              # (exists)
-├── plan.md                              # (this file)
-└── tasks.md                             # (next — optional)
-
-charts/ + examples/                       # GENERATED only via make go-generate / make examples.sync — expect clean aside from CRD deepcopy unless schema touches ClusterClass defaults (it should not; opt-in pointer)
+├── spec.md
+└── plan.md
 ```
 
-**Structure Decision**: Single new handler package mirroring `podsecurityadmission` / `encryptionatrest` — provider-agnostic, isolated, testable. No change to provider-specific handlers or `hack/examples/overlays/clusterclasses` (opt-in feature — default ClusterClasses carry no `serviceAccountIssuer`).
+**Structure Decision**: Single new handler package mirroring `podsecurityadmission` / `authentication` — provider-agnostic, isolated, testable. No change to provider-specific handlers or `hack/examples/overlays/clusterclasses` (opt-in feature — default ClusterClasses carry no `serviceAccountIssuer`).
 
 ---
 
-## Tasks (TDD-ordered outline — detailed tasks.md follows)
+## Tasks
 
 ### Task 1: API types — `ServiceAccountIssuer` + plumbing
 
-- [ ] Write failing test in `api/v1alpha1/serviceaccountissuer_types_test.go` (or extend `common_types_test.go`) — marshal round-trip / nil vs zero distinction.
-- [ ] Create `api/v1alpha1/serviceaccountissuer_types.go` with markers above; add pointer field to `KubeadmClusterConfigSpec` in `clusterconfig_types.go`.
-- [ ] `make go-generate` → deepcopy + CRDs regenerated; verify `charts/` + `examples/` diff is only CRD propagation (expected for shared schema).
-- [ ] `go test ./api/v1alpha1 -run TestServiceAccountIssuer` → PASS.
+- [x] Write failing test in `api/v1alpha1/serviceaccountissuer_types_test.go` — marshal round-trip / nil vs zero distinction.
+- [x] Create `api/v1alpha1/serviceaccountissuer_types.go` with markers above; add pointer field and non-overlapping issuer CEL to `KubeadmClusterConfigSpec` in `clusterconfig_types.go`.
+- [x] `make go-generate` → deepcopy + CRDs regenerated; verify `charts/` + `examples/` diff is clean.
+- [x] `go test ./api/v1alpha1 -run TestServiceAccountIssuer` + `variables_test.go` (Docker, AWS, Nutanix, EKS) → PASS.
 
-### Task 2: Mutation handler — extraArgs + conflict detection
+### Task 2: Mutation handler — extraArgs + upstream validation + idempotent conflict detection
 
-- [ ] Write failing Ginkgo suite in `pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer/inject_test.go`:
-  - omitted variable → zero patches (no-op, FR-001/SC-003)
-  - `issuer` only → `service-account-issuer` arg added
-  - `issuer` + `audiences` (single, multi, order preserved, absent → no flag)
-  - `jwksURI` present → `service-account-jwks-uri` added; absent → not set
-  - pre-existing `service-account-issuer` / `api-audiences` / `service-account-jwks-uri` in `extraArgs` → error with remediation message (FR-006)
-  - coexistence with other handlers (e.g. existing `extraArgs` for unrelated flags are preserved)
-  - removal (nil/empty audiences) → no-op, no active deletion (edge case per spec)
-- [ ] Implement `inject.go`:
-  ```go
-  const (
-    VariableName = "serviceAccountIssuer"
-    ServiceAccountIssuerArg = "service-account-issuer"
-    APIAudiencesArg         = "api-audiences"
-    ServiceAccountJWKSURIArg = "service-account-jwks-uri"
-  )
-  type handler struct { variableName, variableFieldPath string }
-  func NewPatch() *handler { return newHandler(v1alpha1.ClusterConfigVariableName, VariableName) }
-  func (h *handler) Mutate(ctx, obj, vars, holderRef, clusterKey, clusterGetter) error
-  ```
-  - `variables.Get[*v1alpha1.ServiceAccountIssuer](vars, ...)`; `IsNotFound → no-op`; `nil → no-op`.
-  - Inspect `obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs`; if any entry has `Name` in `{service-account-issuer, api-audiences, service-account-jwks-uri}` → return error `... is mutually exclusive with serviceAccountIssuer; remove the direct extraArgs and use clusterConfig.serviceAccountIssuer instead`.
-  - Else append/update `extraArgs` entries: `service-account-issuer` always; `api-audiences` as `strings.Join(audiences, ",")` if non-empty; `service-account-jwks-uri` if non-empty. Use `Value: &v` form (`bootstrapv1.Arg{Name, Value *string}`).
-  - No file/volume handling; do not touch `CertSANs`/`Files`/`ExtraVolumes`.
-- [ ] `go test ./pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer -count=1` → PASS.
+- [x] Write failing Ginkgo suite in `pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer/inject_test.go`:
+  - omitted variable / worker template → zero patches (no-op, FR-001/SC-003)
+  - `issuer` only, `audiences` (single, multi sorted), `jwksURI`, `maxTokenExpiration`, all four → exact `ConsistOf` `extraArgs`
+  - pre-existing conflicting `extraArgs` (mismatched value or unset optional flag) → error with remediation message (FR-006)
+  - idempotent second `Mutate` / matching pre-existing `extraArgs` → succeeds without duplicating flags (FR-005)
+  - overlapping `authentication.jwt[].issuer.url == serviceAccountIssuer.issuer` → error
+  - coexistence with unrelated `extraArgs` (`authentication-config`) → preserved
+- [x] Implement `inject.go` using upstream `k8s.io/apiserver/pkg/util/webhook.ValidateWebhookURL`, `k8s.io/apimachinery/pkg/util/validation.IsValidPortNum`, and `github.com/spf13/pflag.NewFlagSet`.
+- [x] `go test ./pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer -count=1` → PASS.
 
 ### Task 3: Wiring — register handler
 
-- [ ] In `pkg/handlers/generic/mutation/handlers.go`, import `serviceaccountissuer` and add `serviceaccountissuer.NewPatch()` to `MetaMutators()` return slice **before** `sortextraargs.NewPatch()` (FR-008 ordering). No change to `ControlPlaneMetaMutators`/`WorkerMetaMutators` — this handler lives in `MetaMutators` (generic) pipeline, matching `extraapiservercertsans` / `podsecurityadmission`.
-- [ ] `go vet ./pkg/handlers/generic/mutation/...` + `go test ./pkg/handlers/generic/mutation/... -count=1` smoke; verify omitted-variable case still produces no patches.
+- [x] In `pkg/handlers/generic/mutation/handlers.go`, import `serviceaccountissuer` and add `serviceaccountissuer.NewPatch()` to `MetaMutators()` (which executes before `ControlPlaneMetaMutators()`'s `sortextraargs.NewPatch()`).
+- [x] `go vet ./pkg/handlers/generic/mutation/...` + `go test ./pkg/handlers/generic/mutation/... -count=1` → PASS.
 
-### Task 4: Docs — customization page + index
+### Task 4: Docs — customization page
 
-- [ ] Create `docs/content/customization/kubeadm/service-account-issuer.md` per FR-010: what it does (workload identity via OIDC discovery), provider scoping (kubeadm-only, EKS excluded), minimum K8s version note, configuration table (`issuer` / `audiences` / `jwksURI`), single-issuer example, audiences example, jwksURI example, rollout/validity note (“changing issuer triggers control-plane rollout; prior tokens remain valid until expiry”), conflict note (`extraArgs` vs typed field).
-- [ ] Update `docs/content/customization/kubeadm/_index.md` (or `docs/content/customization/_index.md` — verify on branch) to link new page.
-- [ ] `make preview-docs` smoke — page renders without warnings.
+- [x] Create `docs/content/customization/kubeadm/service-account-issuer.md` per FR-010 (Hugo auto-indexes pages under `docs/content/customization/kubeadm/`): Kubernetes version note, provider scoping (kubeadm-only, EKS excluded), configuration table (`issuer`, `audiences`, `jwksURI`, `maxTokenExpiration` `[1h, 2^32s]`), examples, `--service-account-extend-token-expiration` note, accurate day-2 rollout token invalidation warning, conflict/composition notes, and removal section.
 
 ### Task 5: Integration/e2e — boot-time Cluster template injection & self-contained OIDC/JWKS token validation
 
@@ -197,10 +194,10 @@ charts/ + examples/                       # GENERATED only via make go-generate 
 
 ### Task 6: Final verification gate
 
-- [ ] `make go-generate` clean (no diff beyond `api/` CRDs/deepcopy); `git status` shows no unintended `charts/`/`examples/` changes or only expected CRD deepcopy.
-- [ ] `make fmt` + `make lint` + `make pre-commit` clean (license headers current year).
-- [ ] `make test` (or targeted `make test.root` + `go test ./api/v1alpha1` + handler suite) — green.
-- [ ] Manual SC-003 spot-check: `GeneratePatches` with no `serviceAccountIssuer` set produces byte-identical output before/after (no version bump).
+- [x] `make go-generate` clean (no diff beyond `api/` CRDs/deepcopy); `git status` shows no unintended `charts/`/`examples/` changes.
+- [x] `make fmt` + `make lint` + `prek` clean (license headers current year).
+- [x] `make test` — green across `root`, `api`, and `common` modules.
+- [x] SC-003 spot-check: `GeneratePatches` with no `serviceAccountIssuer` set produces byte-identical output (no version bump).
 
 ---
 
