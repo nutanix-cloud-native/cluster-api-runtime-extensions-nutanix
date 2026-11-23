@@ -156,6 +156,8 @@ spec:
                     requiredValue: example.com
                   - expression: 'claims.exp - claims.nbf <= 86400'
                     message: token lifetime must not exceed 24 hours
+                  - expression: 'claims.email_verified == true'
+                    message: email must be verified
                 claimMappings:
                   username:
                     expression: 'claims.email + ":ext"'
