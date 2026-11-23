@@ -5,9 +5,7 @@ package openapi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
@@ -16,6 +14,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/defaulting"
 	structuralpruning "k8s.io/apiextensions-apiserver/pkg/apiserver/schema/pruning"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
+	k8sjson "k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	celconfig "k8s.io/apiserver/pkg/apis/cel"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -46,9 +45,8 @@ func ValidateClusterVariable[T any](
 		return err
 	}
 
-	var oldVariableValue T
 	// Validate variable against the schema using CEL.
-	if err := validateCEL[T](fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
+	if err := validateCEL(fldPath, value, nil, variableValue, structuralSchema); err != nil {
 		return err
 	}
 
@@ -65,7 +63,7 @@ func unmarshalAndDefaultVariableValue[T any](
 	// Only try to unmarshal the clusterVariable if it is not nil, otherwise the variableValue is nil.
 	// Note: A clusterVariable with a nil value is the result of setting the variable value to "null" via YAML.
 	if value.Value.Raw != nil {
-		if err := json.Unmarshal(value.Value.Raw, &variableValue); err != nil {
+		if err := k8sjson.Unmarshal(value.Value.Raw, &variableValue); err != nil {
 			return variableValue, field.Invalid(
 				fldPath.Child("value"), string(value.Value.Raw),
 				fmt.Sprintf("variable %q could not be parsed: %v", value.Name, err),
@@ -124,9 +122,10 @@ func validatorAndSchemas(
 	return validator, apiExtensionsSchema, s, nil
 }
 
-func validateCEL[T any](
+func validateCEL(
 	fldPath *field.Path,
-	variableValue, oldVariableValue T,
+	value, oldValue *clusterv1.ClusterVariable,
+	badValueForError any,
 	structuralSchema *structuralschema.Structural,
 ) field.ErrorList {
 	// Note: k/k CR validation also uses celconfig.PerCallLimit when creating the validator for a custom resource.
@@ -138,21 +137,34 @@ func validateCEL[T any](
 		return nil
 	}
 
+	celVal, fieldErr := unmarshalAndDefaultVariableValue[any](fldPath, value, structuralSchema)
+	if fieldErr != nil {
+		return field.ErrorList{fieldErr}
+	}
+
+	var oldCELVal any
+	if oldValue != nil {
+		var oldFieldErr *field.Error
+		oldCELVal, oldFieldErr = unmarshalAndDefaultVariableValue[any](fldPath, oldValue, structuralSchema)
+		if oldFieldErr != nil {
+			return field.ErrorList{oldFieldErr}
+		}
+	}
+
 	// Note: k/k CRD validation also uses celconfig.RuntimeCELCostBudget for the Validate call.
 	// The current RuntimeCELCostBudget gives roughly 1 second for the validation of a variable value.
-	if validationErrors := validateCELRecursively(
+	if validationErrors, _ := celValidator.Validate(
 		context.Background(),
-		celValidator,
 		fldPath.Child("value"),
 		structuralSchema,
-		reflect.ValueOf(variableValue),
-		reflect.ValueOf(oldVariableValue),
+		celVal,
+		oldCELVal,
 		celconfig.RuntimeCELCostBudget,
 	); len(validationErrors) > 0 {
-		var allErrs field.ErrorList
+		allErrs := make(field.ErrorList, 0, len(validationErrors))
 		for _, validationError := range validationErrors {
 			// Set correct value in the field error. ValidateCustomResource sets the type instead of the value.
-			validationError.BadValue = variableValue
+			validationError.BadValue = badValueForError
 			allErrs = append(allErrs, validationError)
 		}
 		return allErrs
@@ -246,7 +258,7 @@ func ValidateClusterVariableUpdate[T any](
 	}
 
 	// Validate variable against the schema using CEL.
-	if err := validateCEL[T](fldPath, variableValue, oldVariableValue, structuralSchema); err != nil {
+	if err := validateCEL(fldPath, value, oldValue, variableValue, structuralSchema); err != nil {
 		return err
 	}
 
