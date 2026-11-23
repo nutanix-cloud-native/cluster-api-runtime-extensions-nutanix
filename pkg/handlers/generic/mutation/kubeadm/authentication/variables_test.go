@@ -109,6 +109,200 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 	ExpectError: true,
 }, {
+	Name: "set with identical duplicate jwt entries",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"aud-a"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"aud-a"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with bare https:// issuer URL",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with discoveryURL equal to issuer URL",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer.example.com",
+						DiscoveryURL: "https://issuer.example.com",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with discoveryURL equal to issuer URL with trailing slash",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer.example.com",
+						DiscoveryURL: "https://issuer.example.com/",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with duplicate discoveryURLs",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer-a.example.com",
+						DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer-b.example.com",
+						DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("sub"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with empty audience string",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{""},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with reserved kubernetes.io extra key",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+						Extra: []v1alpha1.ExtraMapping{
+							{Key: "kubernetes.io/foo", ValueExpression: "claims.foo"},
+						},
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with reserved .k8s.io subdomain extra key",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+						Extra: []v1alpha1.ExtraMapping{
+							{Key: "sub.k8s.io/foo", ValueExpression: "claims.foo"},
+						},
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with duplicate extra keys",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+						Extra: []v1alpha1.ExtraMapping{
+							{Key: "example.org/foo", ValueExpression: "claims.foo"},
+							{Key: "example.org/foo", ValueExpression: "claims.bar"},
+						},
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
 	Name: "set with missing audiences",
 	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Authentication: &v1alpha1.Authentication{

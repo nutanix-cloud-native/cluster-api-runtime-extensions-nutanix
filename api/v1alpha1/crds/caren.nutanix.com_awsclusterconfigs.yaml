@@ -349,6 +349,9 @@ spec:
                                       minLength: 1
                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[a-z0-9._-]+$
                                       type: string
+                                      x-kubernetes-validations:
+                                        - message: k8s.io, kubernetes.io, and their subdomains are reserved
+                                          rule: '!(self.split(''/'')[0] in [''k8s.io'', ''kubernetes.io'']) && !self.split(''/'')[0].endsWith(''.k8s.io'') && !self.split(''/'')[0].endsWith(''.kubernetes.io'')'
                                     valueExpression:
                                       description: ValueExpression is a CEL expression whose result populates the extra value.
                                       maxLength: 4096
@@ -360,6 +363,9 @@ spec:
                                   type: object
                                 maxItems: 32
                                 type: array
+                                x-kubernetes-validations:
+                                  - message: extra mapping keys must be unique
+                                    rule: self.all(a, self.exists_one(b, b.key == a.key))
                               groups:
                                 description: Groups maps a claim or CEL expression to the groups.
                                 properties:
@@ -380,6 +386,7 @@ spec:
                                       Prefix is prepended to the claim value to prevent clashes with existing names.
                                       Required when claim is set. An empty string disables prefixing.
                                       "-" is a literal prefix. Mutually exclusive with expression.
+                                    maxLength: 256
                                     type: string
                                 type: object
                                 x-kubernetes-validations:
@@ -422,6 +429,7 @@ spec:
                                       Prefix is prepended to the claim value to prevent clashes with existing names.
                                       Required when claim is set. An empty string disables prefixing.
                                       "-" is a literal prefix. Mutually exclusive with expression.
+                                    maxLength: 256
                                     type: string
                                 type: object
                                 x-kubernetes-validations:
@@ -476,6 +484,8 @@ spec:
                               audiences:
                                 description: Audiences is the set of acceptable audiences the JWT must be issued to.
                                 items:
+                                  maxLength: 256
+                                  minLength: 1
                                   type: string
                                 maxItems: 32
                                 minItems: 1
@@ -485,6 +495,8 @@ spec:
                                 description: |-
                                   CertificateAuthority contains PEM-encoded CA certificates for
                                   validating the OIDC discovery connection.
+                                maxLength: 65536
+                                minLength: 1
                                 type: string
                               discoveryURL:
                                 description: |-
@@ -492,16 +504,16 @@ spec:
                                   If set, discovery is fetched from this exact value instead of
                                   {url}/.well-known/openid-configuration.
                                 maxLength: 2048
-                                minLength: 1
-                                pattern: ^https://
+                                minLength: 9
+                                pattern: ^https://[^/?#\s]+(/[^\s?#]*)?$
                                 type: string
                               url:
                                 description: |-
-                                  URL is the OIDC issuer URL (must be https://).
+                                  URL is the OIDC issuer URL (must be https:// without query or fragment).
                                   Must match the iss claim in presented JWTs.
                                 maxLength: 2048
-                                minLength: 1
-                                pattern: ^https://
+                                minLength: 9
+                                pattern: ^https://[^/?#\s]+(/[^\s?#]*)?$
                                 type: string
                             required:
                               - audiences
@@ -510,6 +522,8 @@ spec:
                             x-kubernetes-validations:
                               - message: audienceMatchPolicy must be MatchAny when more than one audience is set
                                 rule: size(self.audiences) <= 1 || (has(self.audienceMatchPolicy) && self.audienceMatchPolicy == 'MatchAny')
+                              - message: discoveryURL must differ from url
+                                rule: '!has(self.discoveryURL) || !(self.discoveryURL == self.url || self.discoveryURL == self.url + ''/'' || self.discoveryURL + ''/'' == self.url)'
                           userValidationRules:
                             description: |-
                               UserValidationRules are applied to the final user info before
@@ -544,7 +558,9 @@ spec:
                   type: object
                   x-kubernetes-validations:
                     - message: issuer URLs must be unique across jwt authenticators
-                      rule: self.jwt.all(a, self.jwt.exists(b, b != a && b.issuer.url == a.issuer.url) == false)
+                      rule: self.jwt.all(a, self.jwt.exists_one(b, b.issuer.url == a.issuer.url))
+                    - message: issuer discoveryURLs must be unique across jwt authenticators
+                      rule: self.jwt.all(a, !has(a.issuer.discoveryURL) || self.jwt.exists_one(b, has(b.issuer.discoveryURL) && b.issuer.discoveryURL == a.issuer.discoveryURL))
                 aws:
                   description: AWS cluster configuration.
                   properties:

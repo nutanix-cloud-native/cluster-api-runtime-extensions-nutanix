@@ -4,25 +4,41 @@
 package authentication
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	apiserver "k8s.io/apiserver/pkg/apis/apiserver"
-	"k8s.io/apiserver/pkg/apis/apiserver/install"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
-	"k8s.io/apiserver/pkg/apis/apiserver/validation"
-	authenticationcel "k8s.io/apiserver/pkg/authentication/cel"
 	"sigs.k8s.io/yaml"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 )
 
-//go:fix inline
-func strPtr(s string) *string { return new(s) }
+func testCAPEM(t *testing.T) string {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "test-oidc-ca"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	require.NoError(t, err)
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}))
+}
 
 func mustRender(t *testing.T, auth *v1alpha1.Authentication) (apiserverv1.AuthenticationConfiguration, string) {
 	t.Helper()
@@ -34,6 +50,8 @@ func mustRender(t *testing.T, auth *v1alpha1.Authentication) (apiserverv1.Authen
 }
 
 func TestRenderAuthenticationConfig(t *testing.T) {
+	caPEM := testCAPEM(t)
+
 	tests := []struct {
 		name   string
 		input  *v1alpha1.Authentication
@@ -46,7 +64,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -66,7 +84,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 						},
 					},
 				},
@@ -80,7 +98,8 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 				assert.Empty(t, cfg.JWT[0].Issuer.CertificateAuthority)
 				assert.Empty(t, string(cfg.JWT[0].Issuer.AudienceMatchPolicy))
 				assert.Equal(t, "email", cfg.JWT[0].ClaimMappings.Username.Claim)
-				assert.Nil(t, cfg.JWT[0].ClaimMappings.Username.Prefix)
+				require.NotNil(t, cfg.JWT[0].ClaimMappings.Username.Prefix)
+				assert.Empty(t, *cfg.JWT[0].ClaimMappings.Username.Prefix)
 				assert.Empty(t, cfg.JWT[0].ClaimMappings.Username.Expression)
 			},
 		},
@@ -95,7 +114,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 							Audiences:    []string{"k8s"},
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -121,7 +140,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 							Audiences:    []string{"k8s"},
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -139,21 +158,17 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 						Issuer: v1alpha1.Issuer{
 							URL:                  "https://issuer.example.com",
 							Audiences:            []string{"k8s"},
-							CertificateAuthority: "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
+							CertificateAuthority: caPEM,
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
 			},
 			verify: func(t *testing.T, cfg apiserverv1.AuthenticationConfiguration, _ string) {
 				t.Helper()
-				assert.Equal(
-					t,
-					"-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
-					cfg.JWT[0].Issuer.CertificateAuthority,
-				)
+				assert.Equal(t, caPEM, cfg.JWT[0].Issuer.CertificateAuthority)
 			},
 		},
 		{
@@ -167,7 +182,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 							AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -184,7 +199,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -200,11 +215,12 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 				JWT: []v1alpha1.JWTAuthenticator{
 					{
 						Issuer: v1alpha1.Issuer{
-							URL:       "https://issuer.example.com",
-							Audiences: []string{"c", "a", "b"},
+							URL:                 "https://issuer.example.com",
+							Audiences:           []string{"c", "a", "b"},
+							AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -221,7 +237,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 						ClaimValidationRules: []v1alpha1.ClaimValidationRule{
 							{Claim: "hd", RequiredValue: "example.com"},
@@ -244,7 +260,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 						ClaimValidationRules: []v1alpha1.ClaimValidationRule{
 							{Expression: "claims.exp - claims.nbf <= 86400", Message: "token lifetime too long"},
@@ -267,7 +283,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 						ClaimValidationRules: []v1alpha1.ClaimValidationRule{
 							{Claim: "hd", RequiredValue: "example.com"},
@@ -290,7 +306,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 						UserValidationRules: []v1alpha1.UserValidationRule{
 							{Expression: "!user.username.startsWith('system:')", Message: "system: prefix reserved"},
@@ -348,6 +364,9 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 				JWT: []v1alpha1.JWTAuthenticator{
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+						ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+							{Expression: "claims.email_verified == true", Message: "email must be verified"},
+						},
 						ClaimMappings: v1alpha1.ClaimMappings{
 							Username: v1alpha1.PrefixedClaimOrExpression{Expression: `claims.email + ":ext"`},
 						},
@@ -367,7 +386,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 							Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups", Prefix: new("")},
 						},
 					},
@@ -387,7 +406,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 							Groups:   &v1alpha1.PrefixedClaimOrExpression{Expression: `claims.groups.split(",")`},
 						},
 					},
@@ -405,7 +424,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 							UID:      &v1alpha1.ClaimOrExpression{Claim: "sub"},
 						},
 					},
@@ -423,7 +442,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 							UID:      &v1alpha1.ClaimOrExpression{Expression: `claims.sub`},
 						},
 					},
@@ -441,7 +460,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					{
 						Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 							Extra: []v1alpha1.ExtraMapping{
 								{Key: "example.org/foo", ValueExpression: "'bar'"},
 								{Key: "example.org/admin", ValueExpression: `claims.is_admin ? "true" : ""`},
@@ -466,7 +485,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 						Issuer: v1alpha1.Issuer{
 							URL:                  "https://issuer.example.com",
 							DiscoveryURL:         "https://discovery.example.com/.well-known/openid-configuration",
-							CertificateAuthority: "pem-bundle",
+							CertificateAuthority: caPEM,
 							Audiences:            []string{"aud1", "aud2"},
 							AudienceMatchPolicy:  v1alpha1.AudienceMatchPolicyMatchAny,
 						},
@@ -499,7 +518,7 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 					"https://discovery.example.com/.well-known/openid-configuration",
 					*j.Issuer.DiscoveryURL,
 				)
-				assert.Equal(t, "pem-bundle", j.Issuer.CertificateAuthority)
+				assert.Equal(t, caPEM, j.Issuer.CertificateAuthority)
 				assert.Equal(t, []string{"aud1", "aud2"}, j.Issuer.Audiences)
 				assert.Equal(t, apiserverv1.AudienceMatchPolicyType("MatchAny"), j.Issuer.AudienceMatchPolicy)
 				require.Len(t, j.ClaimValidationRules, 2)
@@ -523,16 +542,17 @@ func TestRenderAuthenticationConfig(t *testing.T) {
 							Audiences: []string{"aud-a"},
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
 						},
 					},
 					{
 						Issuer: v1alpha1.Issuer{
-							URL:       "https://issuer-b.example.com",
-							Audiences: []string{"aud-b-1", "aud-b-2"},
+							URL:                 "https://issuer-b.example.com",
+							Audiences:           []string{"aud-b-1", "aud-b-2"},
+							AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
 						},
 						ClaimMappings: v1alpha1.ClaimMappings{
-							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub"},
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
 						},
 					},
 				},
@@ -561,58 +581,225 @@ func TestStringPtrOrNil(t *testing.T) {
 	assert.Equal(t, "x", *stringPtrOrNil("x"))
 }
 
-func TestRenderedAuthenticationConfigAPIServerValidation(t *testing.T) {
+func TestRenderAuthenticationConfigInvalid(t *testing.T) {
 	t.Parallel()
 
-	valid := &v1alpha1.Authentication{
-		JWT: []v1alpha1.JWTAuthenticator{{
-			Issuer: v1alpha1.Issuer{
-				URL:                 "https://issuer.example.com",
-				Audiences:           []string{"e2e-aud"},
-				AudienceMatchPolicy: v1alpha1.AudienceMatchPolicyMatchAny,
-			},
-			ClaimMappings: v1alpha1.ClaimMappings{
-				Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email", Prefix: new("")},
-				Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups", Prefix: new("")},
-				Extra: []v1alpha1.ExtraMapping{{
-					Key:             "example.org/foo",
-					ValueExpression: "claims.foo",
+	tests := []struct {
+		name        string
+		input       *v1alpha1.Authentication
+		errContains string
+	}{
+		{
+			name: "missing prefix when username claim is set",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
+					},
 				}},
 			},
-			ClaimValidationRules: []v1alpha1.ClaimValidationRule{
-				{Claim: "hd", RequiredValue: "example.com"},
+			errContains: "prefix is required when claim is set",
+		},
+		{
+			name: "invalid CEL syntax in claimValidationRules",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+					ClaimValidationRules: []v1alpha1.ClaimValidationRule{
+						{Expression: "claims.exp - (("},
+					},
+				}},
 			},
-			UserValidationRules: []v1alpha1.UserValidationRule{
-				{Expression: "!user.username.startsWith('system:')", Message: "system: prefix reserved"},
+			errContains: "Syntax error",
+		},
+		{
+			name: "non-boolean CEL expression in userValidationRules",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+					UserValidationRules: []v1alpha1.UserValidationRule{
+						{Expression: "user.username"},
+					},
+				}},
 			},
-		}},
+			errContains: "must evaluate to bool",
+		},
+		{
+			name: "claims.email in username expression without claims.email_verified",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Expression: `claims.email + ":ext"`},
+					},
+				}},
+			},
+			errContains: "claims.email_verified must be used",
+		},
+		{
+			name: "reserved kubernetes.io extra key",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						Extra: []v1alpha1.ExtraMapping{
+							{Key: "kubernetes.io/foo", ValueExpression: "'bar'"},
+						},
+					},
+				}},
+			},
+			errContains: "reserved for Kubernetes use",
+		},
+		{
+			name: "duplicate extra keys",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						Extra: []v1alpha1.ExtraMapping{
+							{Key: "example.org/foo", ValueExpression: "'a'"},
+							{Key: "example.org/foo", ValueExpression: "'b'"},
+						},
+					},
+				}},
+			},
+			errContains: "Duplicate value",
+		},
+		{
+			name: "malformed PEM in certificateAuthority",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{
+						URL:                  "https://issuer.example.com",
+						Audiences:            []string{"k8s"},
+						CertificateAuthority: "not-a-valid-pem",
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+				}},
+			},
+			errContains: "certificateAuthority",
+		},
+		{
+			name: "multiple audiences without MatchAny",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com",
+						Audiences: []string{"aud1", "aud2"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+				}},
+			},
+			errContains: "audienceMatchPolicy",
+		},
+		{
+			name: "discoveryURL equal to issuer URL",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer.example.com",
+						DiscoveryURL: "https://issuer.example.com/",
+						Audiences:    []string{"k8s"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+				}},
+			},
+			errContains: "discoveryURL must be different from URL",
+		},
+		{
+			name: "issuer URL with query string",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://issuer.example.com?foo=bar",
+						Audiences: []string{"k8s"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+				}},
+			},
+			errContains: "query",
+		},
+		{
+			name: "duplicate discoveryURLs across issuers",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{
+					{
+						Issuer: v1alpha1.Issuer{
+							URL:          "https://issuer-a.example.com",
+							DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+							Audiences:    []string{"k8s"},
+						},
+						ClaimMappings: v1alpha1.ClaimMappings{
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						},
+					},
+					{
+						Issuer: v1alpha1.Issuer{
+							URL:          "https://issuer-b.example.com",
+							DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+							Audiences:    []string{"k8s"},
+						},
+						ClaimMappings: v1alpha1.ClaimMappings{
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						},
+					},
+				},
+			},
+			errContains: "Duplicate value",
+		},
 	}
-	_, raw := mustRender(t, valid)
-	require.Empty(t, apiServerAuthnErrors(t, raw))
 
-	missingPrefix := &v1alpha1.Authentication{
-		JWT: []v1alpha1.JWTAuthenticator{{
-			Issuer: v1alpha1.Issuer{URL: "https://issuer.example.com", Audiences: []string{"k8s"}},
-			ClaimMappings: v1alpha1.ClaimMappings{
-				Username: v1alpha1.PrefixedClaimOrExpression{Claim: "email"},
-				Groups:   &v1alpha1.PrefixedClaimOrExpression{Claim: "groups"},
-			},
-		}},
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := renderAuthenticationConfig(tt.input)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.errContains)
+		})
 	}
-	_, raw = mustRender(t, missingPrefix)
-	errs := apiServerAuthnErrors(t, raw)
-	require.NotEmpty(t, errs)
-	assert.Contains(t, errs.ToAggregate().Error(), "prefix is required when claim is set")
 }
 
-func apiServerAuthnErrors(t *testing.T, raw string) field.ErrorList {
-	t.Helper()
-	scheme := runtime.NewScheme()
-	install.Install(scheme)
-	codecs := serializer.NewCodecFactory(scheme, serializer.EnableStrict)
-	obj, err := runtime.Decode(codecs.UniversalDecoder(), []byte(raw))
-	require.NoError(t, err)
-	cfg, ok := obj.(*apiserver.AuthenticationConfiguration)
-	require.Truef(t, ok, "decoded %T", obj)
-	return validation.ValidateAuthenticationConfiguration(authenticationcel.NewDefaultCompiler(), cfg, nil)
+func TestSanitizeAuthenticationForLog(t *testing.T) {
+	t.Parallel()
+
+	caPEM := testCAPEM(t)
+	orig := &v1alpha1.Authentication{
+		JWT: []v1alpha1.JWTAuthenticator{
+			{
+				Issuer: v1alpha1.Issuer{
+					URL:                  "https://issuer-a.example.com",
+					CertificateAuthority: caPEM,
+					Audiences:            []string{"k8s"},
+				},
+			},
+			{
+				Issuer: v1alpha1.Issuer{
+					URL:       "https://issuer-b.example.com",
+					Audiences: []string{"k8s"},
+				},
+			},
+		},
+	}
+
+	sanitized := sanitizeAuthenticationForLog(orig)
+	assert.Equal(t, "<omitted>", sanitized.JWT[0].Issuer.CertificateAuthority)
+	assert.Empty(t, sanitized.JWT[1].Issuer.CertificateAuthority)
+	assert.Equal(t, caPEM, orig.JWT[0].Issuer.CertificateAuthority, "original variable must not be mutated")
 }
