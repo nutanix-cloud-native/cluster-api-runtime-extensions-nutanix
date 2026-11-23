@@ -487,6 +487,11 @@ prismEndPoint: endpoint
 			return "", fmt.Errorf("failed to create temp file: %w", err)
 		}
 
+		// Mirrors the input the CCM handler renders this template with, so the
+		// template cannot gain a field that this tool fails to execute. Only the
+		// image references are read out, so zero values are enough: a nil
+		// ServiceLoadBalancerAutoIPAM renders the static-mode branch, which pulls
+		// the same image.
 		templateInput := struct {
 			PrismCentralHost                  string
 			PrismCentralPort                  uint16
@@ -494,6 +499,15 @@ prismEndPoint: endpoint
 			PrismCentralAdditionalTrustBundle string
 			IPsToIgnore                       []string
 			ControlPlaneEndpoint              *clusterv1beta2.APIEndpoint
+			// Mirrored structurally rather than importing the API module, which
+			// this tools module does not depend on. It stays nil, and a template
+			// `with` on nil never evaluates the fields inside it.
+			ServiceLoadBalancerAutoIPAM *struct {
+				Subnet  string
+				Cluster *string
+			}
+			MetalLBNamespace string
+			ClusterUID       string
 		}{
 			PrismCentralHost:     "prism-central.example.com",
 			PrismCentralPort:     9440,

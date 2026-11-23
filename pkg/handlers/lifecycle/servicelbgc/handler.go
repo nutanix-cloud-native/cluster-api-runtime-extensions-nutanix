@@ -46,7 +46,11 @@ func New(client ctrlclient.Client) *ServiceLoadBalancerGC {
 	return &ServiceLoadBalancerGC{
 		client:              client,
 		clusterClientGetter: remote.NewClusterClient,
-		releaserGetter: func(ctx context.Context, namespace string, endpoint *carenv1.NutanixPrismCentralEndpointSpec) (reservationReleaser, error) {
+		releaserGetter: func(
+			ctx context.Context,
+			namespace string,
+			endpoint *carenv1.NutanixPrismCentralEndpointSpec,
+		) (reservationReleaser, error) {
 			return newReservationReleaser(ctx, client, namespace, endpoint)
 		},
 	}

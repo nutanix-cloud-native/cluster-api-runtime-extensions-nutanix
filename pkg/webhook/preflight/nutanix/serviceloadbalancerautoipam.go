@@ -297,13 +297,11 @@ func subnetMatchesCluster(subnet *netv4.Subnet, clusterExtID string) bool {
 	return slices.Contains(subnet.ClusterReferenceList, clusterExtID)
 }
 
-// isUnmanagedSubnetError reports whether Prism refused because the subnet has
-// no IP address pool. Measured on PC 7.6 GA.
 // prismErrorSummaryMax keeps a summarised Prism error to one readable line.
 const prismErrorSummaryMax = 200
 
-// prismCodeLine matches the one sentence a Prism v4 error leads with, e.g.
-// "NETWORKING-10056: Application error ... unmanaged subnets."
+// prismCodeLine matches the one sentence a Prism v4 error leads with, which
+// starts with a code such as NETWORKING-10056 and runs to the first newline.
 var prismCodeLine = regexp.MustCompile(`[A-Z]+-[0-9]+:[^\n\r"]{0,` + strconv.Itoa(prismErrorSummaryMax) + `}`)
 
 // prismErrorSummary is the part of a Prism error worth putting in front of an
@@ -326,6 +324,8 @@ func prismErrorSummary(err error) string {
 	return text
 }
 
+// isUnmanagedSubnetError reports whether Prism refused because the subnet has
+// no IP address pool. Measured on PC 7.6 GA.
 func isUnmanagedSubnetError(err error) bool {
 	if err == nil {
 		return false
