@@ -346,7 +346,8 @@ func assertNotPrismCentral(address string, clusterConfig *apivariables.ClusterCo
 	if prismCentralIP.String() == address {
 		return fmt.Errorf(
 			"%w: the reserved address %s is the Prism Central address; exclude it from the subnet's IP pool",
-			ErrAddressReservationFailed, address)
+			ErrAddressReservationFailed, address,
+		)
 	}
 	return nil
 }

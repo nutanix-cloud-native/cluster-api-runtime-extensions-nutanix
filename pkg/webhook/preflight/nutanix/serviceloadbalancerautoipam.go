@@ -100,7 +100,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) Run(ctx context.Context) preflight.Ch
 		subnetExtID = resolved
 	}
 
-	if err := c.nclient.ListReservedIpsBySubnetId(ctx, subnetExtID, ptr.To(reservedIPsProbeLimit)); err != nil {
+	if err := c.nclient.ListReservedIpsBySubnetId(ctx, subnetExtID, new(reservedIPsProbeLimit)); err != nil {
 		result.Allowed = false
 		switch {
 		case isUnmanagedSubnetError(err):
@@ -211,7 +211,7 @@ func (c *serviceLoadBalancerAutoIPAMCheck) listSubnetsByName(
 ) ([]netv4.Subnet, error) {
 	if isASCIIName(name) {
 		filter := fmt.Sprintf("name eq '%s'", strings.ReplaceAll(name, "'", "''"))
-		if subnets, err := c.subnetList(ctx, ptr.To(filter)); err == nil {
+		if subnets, err := c.subnetList(ctx, new(filter)); err == nil {
 			return subnets, nil
 		}
 	}
