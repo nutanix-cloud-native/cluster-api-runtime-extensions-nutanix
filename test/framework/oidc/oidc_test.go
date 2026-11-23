@@ -302,7 +302,9 @@ func TestClusterAndControlPlanePredicates(t *testing.T) {
 	t.Parallel()
 
 	settled := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Generation: 2},
 		Status: clusterv1.ClusterStatus{
+			ObservedGeneration: 2,
 			Conditions: []metav1.Condition{
 				{Type: clusterv1.ClusterAvailableCondition, Status: metav1.ConditionTrue},
 				{Type: clusterv1.ClusterControlPlaneMachinesUpToDateCondition, Status: metav1.ConditionTrue},
@@ -311,6 +313,14 @@ func TestClusterAndControlPlanePredicates(t *testing.T) {
 		},
 	}
 	assert.True(t, ClusterControlPlaneSettled(settled))
+
+	staleGen := settled.DeepCopy()
+	staleGen.Status.ObservedGeneration = 1
+	assert.False(t, ClusterControlPlaneSettled(staleGen))
+
+	staleCondGen := settled.DeepCopy()
+	staleCondGen.Status.Conditions[1].ObservedGeneration = 1
+	assert.False(t, ClusterControlPlaneSettled(staleCondGen))
 
 	rolling := settled.DeepCopy()
 	rolling.Status.Conditions[2].Status = metav1.ConditionTrue
@@ -349,6 +359,11 @@ func TestClusterAndControlPlanePredicates(t *testing.T) {
 	lagging := kcpHA.DeepCopy()
 	lagging.Status.ReadyReplicas = &one
 	assert.False(t, AuthenticationConfigCurrent(lagging))
+
+	nilUpToDate := kcpHA.DeepCopy()
+	nilUpToDate.Status.UpToDateReplicas = nil
+	assert.False(t, KubeadmControlPlaneAtReplicas(nilUpToDate, 3))
+	assert.False(t, AuthenticationConfigCurrent(nilUpToDate))
 
 	noFile := kcpHA.DeepCopy()
 	noFile.Spec.KubeadmConfigSpec.Files = nil

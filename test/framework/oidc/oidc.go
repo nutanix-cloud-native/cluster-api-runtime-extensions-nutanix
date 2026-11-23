@@ -554,16 +554,29 @@ func EnableAuthenticationInClusterTemplate(
 	return buf.Bytes(), nil
 }
 
-// ClusterControlPlaneSettled reports whether a v1beta2 Cluster has finished reconciling its
-// control plane without an active rollout.
+// ClusterControlPlaneSettled reports whether a v1beta2 Cluster has observed its current generation
+// and finished reconciling its control plane without an active rollout.
 func ClusterControlPlaneSettled(c *clusterv1.Cluster) bool {
+	if c.Generation > 0 && c.Status.ObservedGeneration != c.Generation {
+		return false
+	}
 	conds := c.Status.Conditions
+	for _, condType := range []string{
+		clusterv1.ClusterAvailableCondition,
+		clusterv1.ClusterControlPlaneMachinesUpToDateCondition,
+		clusterv1.ClusterRollingOutCondition,
+	} {
+		if cond := apimeta.FindStatusCondition(conds, condType); cond != nil &&
+			c.Generation > 0 && cond.ObservedGeneration > 0 && cond.ObservedGeneration != c.Generation {
+			return false
+		}
+	}
 	return apimeta.IsStatusConditionTrue(conds, clusterv1.ClusterAvailableCondition) &&
 		apimeta.IsStatusConditionTrue(conds, clusterv1.ClusterControlPlaneMachinesUpToDateCondition) &&
 		!apimeta.IsStatusConditionTrue(conds, clusterv1.ClusterRollingOutCondition)
 }
 
-// KubeadmControlPlaneAtReplicas reports whether spec, observed, and ready replica counts equal want.
+// KubeadmControlPlaneAtReplicas reports whether spec, observed, ready, and up-to-date replica counts equal want.
 func KubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want int32) bool {
 	if kcp.Spec.Replicas == nil || *kcp.Spec.Replicas != want {
 		return false
@@ -574,7 +587,7 @@ func KubeadmControlPlaneAtReplicas(kcp *controlplanev1.KubeadmControlPlane, want
 	if kcp.Status.ReadyReplicas == nil || *kcp.Status.ReadyReplicas != want {
 		return false
 	}
-	if kcp.Status.UpToDateReplicas != nil && *kcp.Status.UpToDateReplicas != want {
+	if kcp.Status.UpToDateReplicas == nil || *kcp.Status.UpToDateReplicas != want {
 		return false
 	}
 	return true

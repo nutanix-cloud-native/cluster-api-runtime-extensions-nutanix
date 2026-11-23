@@ -6,6 +6,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -395,195 +396,25 @@ var _ = Describe("Quick start", func() {
 													}
 
 													if flavor == "topology-cilium-helm-addon" {
-														By(
-															"Validating structured authentication with pre-generated CA and static Service ClusterIP",
-														)
-														Expect(mockOIDCBundle).ToNot(BeNil())
-														Expect(
-															oidc.VerifyServiceIPInCluster(
-																mockOIDCBundle.ClusterIP,
-																workloadCluster,
-															),
-														).To(Succeed())
-
-														bootstrapClient := proxy.GetClient()
-														Eventually(func() bool {
-															c := &clusterv1.Cluster{}
-															if err := bootstrapClient.Get(
-																ctx,
-																client.ObjectKey{
-																	Namespace: namespace,
-																	Name:      clusterName,
-																},
-																c,
-															); err != nil {
-																Logf("failed to get Cluster: %v", err)
-																return false
-															}
-															if !oidc.ClusterControlPlaneSettled(c) {
-																Logf(
-																	"Cluster control plane not settled, conditions: %v",
-																	c.Status.Conditions,
-																)
-																return false
-															}
-															kcpList := &controlplanev1.KubeadmControlPlaneList{}
-															if err := bootstrapClient.List(
-																ctx,
-																kcpList,
-																client.InNamespace(namespace),
-																client.MatchingLabels{
-																	clusterv1.ClusterNameLabel: clusterName,
-																},
-															); err != nil {
-																Logf("failed to list KubeadmControlPlanes: %v", err)
-																return false
-															}
-															for i := range kcpList.Items {
-																kcp := &kcpList.Items[i]
-																if oidc.AuthenticationConfigCurrent(kcp) {
-																	return true
-																}
-																Logf(
-																	"KCP %s generation %d observed %d auth file %t replicas %d ready %d",
-																	kcp.Name,
-																	kcp.Generation,
-																	kcp.Status.ObservedGeneration,
-																	oidc.KubeadmControlPlaneHasFile(
-																		kcp,
-																		authentication.AuthenticationConfigPath,
-																	),
-																	ptr.Deref(kcp.Status.Replicas, 0),
-																	ptr.Deref(kcp.Status.ReadyReplicas, 0),
-																)
-															}
-															return false
-														}, testE2EConfig.GetIntervals(flavor, "wait-control-plane")...).Should(
-															BeTrue(),
-															"KubeadmControlPlane did not settle with authentication config",
-														)
-
-														By(
-															fmt.Sprintf(
-																"Deploying mock OIDC at %s",
-																mockOIDCBundle.IssuerURL,
-															),
-														)
-														Expect(
-															mockOIDCBundle.Deploy(
-																ctx,
-																workloadClient,
-																oidc.DefaultNamespace,
-															),
-														).To(Succeed())
-
-														Eventually(func() bool {
-															dep := &appsv1.Deployment{}
-															if err := workloadClient.Get(
-																ctx,
-																client.ObjectKey{
-																	Namespace: oidc.DefaultNamespace,
-																	Name:      oidc.ServiceName,
-																},
-																dep,
-															); err != nil {
-																Logf("failed to get mock-oidc deployment: %v", err)
-																return false
-															}
-															for _, c := range dep.Status.Conditions {
-																if c.Type == appsv1.DeploymentAvailable &&
-																	c.Status == corev1.ConditionTrue {
-																	return true
-																}
-															}
-															Logf(
-																"mock-oidc deployment not yet available: generation %d observed %d replicas %d/%d/%d conditions %v",
-																dep.Generation,
-																dep.Status.ObservedGeneration,
-																dep.Status.Replicas,
-																dep.Status.ReadyReplicas,
-																dep.Status.AvailableReplicas,
-																dep.Status.Conditions,
-															)
-															return false
-														}, testE2EConfig.GetIntervals(flavor, "wait-deployment")...).Should(
-															BeTrue(),
-															"mock OIDC deployment not available",
-														)
-
-														By(
-															"Verifying admin kubeconfig still works with authentication enabled",
-														)
-														pods := &corev1.PodList{}
-														Expect(
-															workloadClient.List(
-																ctx,
-																pods,
-																client.InNamespace("kube-system"),
-															),
-														).To(Succeed())
-
-														By(
-															"Validating valid JWT maps username, groups, and extra claims",
-														)
-														validToken, err := mockOIDCBundle.MintJWT(map[string]any{
-															"email":  "test@example.com",
-															"groups": []string{"e2e-group"},
-															"hd":     "example.com",
-															"foo":    "bar",
-															"aud":    "e2e-aud",
-															"sub":    "123",
-														})
-														Expect(err).ToNot(HaveOccurred())
-														wantUser := &oidc.ExpectedUserInfo{
-															Username: "test@example.com",
-															Groups:   []string{"e2e-group"},
-															Extra: map[string][]string{
-																"example.org/foo": {"bar"},
+														ensureWorkloadClusterAuthentication(
+															ctx,
+															ensureWorkloadClusterAuthenticationInput{
+																BootstrapProxy:  proxy,
+																WorkloadProxy:   workloadProxy,
+																WorkloadCluster: workloadCluster,
+																Namespace:       namespace,
+																ClusterName:     clusterName,
+																Bundle:          mockOIDCBundle,
+																ControlPlaneIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-control-plane",
+																),
+																DeploymentIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-deployment",
+																),
 															},
-														}
-														restCfg := workloadProxy.GetRESTConfig()
-														Eventually(func() error {
-															return oidc.ValidateTokenAuth(
-																ctx,
-																restCfg,
-																validToken,
-																wantUser,
-															)
-														}, 2*time.Minute, 5*time.Second).Should(Succeed())
-
-														By("Validating invalid JWTs are rejected")
-														invalidCases := []map[string]any{
-															{
-																"email":  "test@example.com",
-																"groups": []string{"e2e-group"},
-																"hd":     "wrong.com",
-																"aud":    "e2e-aud",
-															},
-															{
-																"email": "test@example.com",
-																"hd":    "example.com",
-																"aud":   "wrong-aud",
-															},
-															{
-																"email": "test@example.com",
-																"hd":    "example.com",
-																"aud":   "e2e-aud",
-																"exp":   time.Now().Add(-time.Hour).Unix(),
-															},
-															{
-																"email": "system:evil@example.com",
-																"hd":    "example.com",
-																"aud":   "e2e-aud",
-															},
-														}
-														for _, claims := range invalidCases {
-															token, err := mockOIDCBundle.MintJWT(claims)
-															Expect(err).ToNot(HaveOccurred())
-															Expect(
-																oidc.ValidateTokenAuth(ctx, restCfg, token, nil),
-															).To(Succeed())
-														}
+														)
 													}
 												},
 											}
@@ -663,4 +494,169 @@ func enableMockOIDCInFlavorTemplate(
 	}
 	Fail(fmt.Sprintf("flavor %q not found for provider %q", flavor, lowercaseProvider))
 	return nil
+}
+
+type ensureWorkloadClusterAuthenticationInput struct {
+	BootstrapProxy        capiframework.ClusterProxy
+	WorkloadProxy         capiframework.ClusterProxy
+	WorkloadCluster       *clusterv1.Cluster
+	Namespace             string
+	ClusterName           string
+	Bundle                *oidc.Bundle
+	ControlPlaneIntervals []any
+	DeploymentIntervals   []any
+}
+
+func ensureWorkloadClusterAuthentication(
+	ctx context.Context,
+	input ensureWorkloadClusterAuthenticationInput,
+) {
+	By("Validating structured authentication with pre-generated CA and static Service ClusterIP")
+	Expect(input.Bundle).ToNot(BeNil())
+	Expect(oidc.VerifyServiceIPInCluster(input.Bundle.ClusterIP, input.WorkloadCluster)).To(Succeed())
+
+	bootstrapClient := input.BootstrapProxy.GetClient()
+	Eventually(func() bool {
+		c := &clusterv1.Cluster{}
+		if err := bootstrapClient.Get(
+			ctx,
+			client.ObjectKey{Namespace: input.Namespace, Name: input.ClusterName},
+			c,
+		); err != nil {
+			Logf("failed to get Cluster: %v", err)
+			return false
+		}
+		if !oidc.ClusterControlPlaneSettled(c) {
+			Logf(
+				"Cluster control plane not settled (generation %d observed %d), conditions: %v",
+				c.Generation,
+				c.Status.ObservedGeneration,
+				c.Status.Conditions,
+			)
+			return false
+		}
+		kcpList := &controlplanev1.KubeadmControlPlaneList{}
+		if err := bootstrapClient.List(
+			ctx,
+			kcpList,
+			client.InNamespace(input.Namespace),
+			client.MatchingLabels{clusterv1.ClusterNameLabel: input.ClusterName},
+		); err != nil {
+			Logf("failed to list KubeadmControlPlanes: %v", err)
+			return false
+		}
+		for i := range kcpList.Items {
+			kcp := &kcpList.Items[i]
+			if oidc.AuthenticationConfigCurrent(kcp) {
+				return true
+			}
+			Logf(
+				"KCP %s generation %d observed %d auth file %t replicas %d ready %d upToDate %d",
+				kcp.Name,
+				kcp.Generation,
+				kcp.Status.ObservedGeneration,
+				oidc.KubeadmControlPlaneHasFile(kcp, authentication.AuthenticationConfigPath),
+				ptr.Deref(kcp.Status.Replicas, 0),
+				ptr.Deref(kcp.Status.ReadyReplicas, 0),
+				ptr.Deref(kcp.Status.UpToDateReplicas, 0),
+			)
+		}
+		return false
+	}, input.ControlPlaneIntervals...).Should(
+		BeTrue(),
+		"KubeadmControlPlane did not settle with authentication config",
+	)
+
+	workloadClient := input.WorkloadProxy.GetClient()
+	By(fmt.Sprintf("Deploying mock OIDC at %s", input.Bundle.IssuerURL))
+	Expect(input.Bundle.Deploy(ctx, workloadClient, oidc.DefaultNamespace)).To(Succeed())
+
+	Eventually(func() bool {
+		dep := &appsv1.Deployment{}
+		if err := workloadClient.Get(
+			ctx,
+			client.ObjectKey{Namespace: oidc.DefaultNamespace, Name: oidc.ServiceName},
+			dep,
+		); err != nil {
+			Logf("failed to get mock-oidc deployment: %v", err)
+			return false
+		}
+		if dep.Status.ObservedGeneration >= dep.Generation {
+			for _, c := range dep.Status.Conditions {
+				if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue {
+					return true
+				}
+			}
+		}
+		Logf(
+			"mock-oidc deployment not yet available: generation %d observed %d replicas %d/%d/%d conditions %v",
+			dep.Generation,
+			dep.Status.ObservedGeneration,
+			dep.Status.Replicas,
+			dep.Status.ReadyReplicas,
+			dep.Status.AvailableReplicas,
+			dep.Status.Conditions,
+		)
+		return false
+	}, input.DeploymentIntervals...).Should(
+		BeTrue(),
+		"mock OIDC deployment not available",
+	)
+
+	By("Verifying admin kubeconfig still works with authentication enabled")
+	pods := &corev1.PodList{}
+	Expect(workloadClient.List(ctx, pods, client.InNamespace("kube-system"))).To(Succeed())
+
+	By("Validating valid JWT maps username, groups, and extra claims")
+	validToken, err := input.Bundle.MintJWT(map[string]any{
+		"email":  "test@example.com",
+		"groups": []string{"e2e-group"},
+		"hd":     "example.com",
+		"foo":    "bar",
+		"aud":    "e2e-aud",
+		"sub":    "123",
+	})
+	Expect(err).ToNot(HaveOccurred())
+	wantUser := &oidc.ExpectedUserInfo{
+		Username: "test@example.com",
+		Groups:   []string{"e2e-group"},
+		Extra: map[string][]string{
+			"example.org/foo": {"bar"},
+		},
+	}
+	restCfg := input.WorkloadProxy.GetRESTConfig()
+	Eventually(func() error {
+		return oidc.ValidateTokenAuth(ctx, restCfg, validToken, wantUser)
+	}, 2*time.Minute, 5*time.Second).Should(Succeed())
+
+	By("Validating invalid JWTs are rejected")
+	invalidCases := []map[string]any{
+		{
+			"email":  "test@example.com",
+			"groups": []string{"e2e-group"},
+			"hd":     "wrong.com",
+			"aud":    "e2e-aud",
+		},
+		{
+			"email": "test@example.com",
+			"hd":    "example.com",
+			"aud":   "wrong-aud",
+		},
+		{
+			"email": "test@example.com",
+			"hd":    "example.com",
+			"aud":   "e2e-aud",
+			"exp":   time.Now().Add(-time.Hour).Unix(),
+		},
+		{
+			"email": "system:evil@example.com",
+			"hd":    "example.com",
+			"aud":   "e2e-aud",
+		},
+	}
+	for _, claims := range invalidCases {
+		token, err := input.Bundle.MintJWT(claims)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(oidc.ValidateTokenAuth(ctx, restCfg, token, nil)).To(Succeed())
+	}
 }
