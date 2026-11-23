@@ -209,6 +209,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
+				serviceLoadBalancerAutoIPAMChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
 				controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},

@@ -12,7 +12,6 @@ import (
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/webhook/preflight"
@@ -37,13 +36,13 @@ func clustersResponse(t *testing.T, clusters []clustermgmtv4.Cluster) *clustermg
 }
 
 func namedCluster(name, extID string) clustermgmtv4.Cluster {
-	return clustermgmtv4.Cluster{Name: ptr.To(name), ExtId: ptr.To(extID)}
+	return clustermgmtv4.Cluster{Name: new(name), ExtId: new(extID)}
 }
 
 func namedSubnet(name, extID, clusterRef string) netv4.Subnet {
-	s := netv4.Subnet{Name: ptr.To(name), ExtId: ptr.To(extID)}
+	s := netv4.Subnet{Name: new(name), ExtId: new(extID)}
 	if clusterRef != "" {
-		s.ClusterReference = ptr.To(clusterRef)
+		s.ClusterReference = new(clusterRef)
 	}
 	return s
 }
@@ -348,7 +347,7 @@ func TestAutoIPAMCheckEmptySubnet(t *testing.T) {
 func TestNewServiceLoadBalancerAutoIPAMChecks(t *testing.T) {
 	t.Parallel()
 
-	autoIPAM := &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: autoIPAMSubnetUUID, Cluster: ptr.To("pe-a")}
+	autoIPAM := &carenv1.ServiceLoadBalancerAutoIPAM{Subnet: autoIPAMSubnetUUID, Cluster: new("pe-a")}
 
 	tests := []struct {
 		name      string

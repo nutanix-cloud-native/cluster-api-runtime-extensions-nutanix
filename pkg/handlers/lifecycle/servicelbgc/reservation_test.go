@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -328,7 +327,8 @@ func TestAutoIPAMReservationSubnets(t *testing.T) {
 	t.Run("the Service subnet is reported with the endpoint", func(t *testing.T) {
 		t.Parallel()
 		subnets, endpoint, err := autoIPAMReservationSubnets(
-			autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1")))
+			autoIPAMCluster(t, clusterAUID, "vlan170", new("pe-1")),
+		)
 		require.NoError(t, err)
 		assert.Equal(t, []reservationSubnet{{Subnet: "vlan170", PrismElementCluster: "pe-1"}}, subnets)
 		require.NotNil(t, endpoint)
@@ -338,7 +338,8 @@ func TestAutoIPAMReservationSubnets(t *testing.T) {
 	t.Run("a subnet UUID needs no Prism Element cluster", func(t *testing.T) {
 		t.Parallel()
 		subnets, _, err := autoIPAMReservationSubnets(
-			autoIPAMCluster(t, clusterAUID, "subnet-uuid", nil))
+			autoIPAMCluster(t, clusterAUID, "subnet-uuid", nil),
+		)
 		require.NoError(t, err)
 		assert.Equal(t, []reservationSubnet{{Subnet: "subnet-uuid"}}, subnets)
 	})
@@ -388,7 +389,7 @@ func TestAutoIPAMReservationSubnets(t *testing.T) {
 					VirtualIPSpec: &carenv1.ControlPlaneVirtualIPSpec{
 						Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
 							IPReservation: &carenv1.ControlPlaneIPReservation{
-								Subnet: "vlan999", Cluster: ptr.To("pe-9"),
+								Subnet: "vlan999", Cluster: new("pe-9"),
 							},
 						},
 					},
@@ -403,7 +404,7 @@ func TestAutoIPAMReservationSubnets(t *testing.T) {
 
 	t.Run("both sources on different subnets are both swept", func(t *testing.T) {
 		t.Parallel()
-		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", new("pe-1"))
 		spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 		require.NoError(t, err)
 		spec.Nutanix.ControlPlaneEndpoint.VirtualIPSpec = &carenv1.ControlPlaneVirtualIPSpec{
@@ -422,13 +423,13 @@ func TestAutoIPAMReservationSubnets(t *testing.T) {
 
 	t.Run("one subnet used by both sources is swept once", func(t *testing.T) {
 		t.Parallel()
-		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+		cluster := autoIPAMCluster(t, clusterAUID, "vlan170", new("pe-1"))
 		spec, err := apivariables.UnmarshalClusterConfigVariable(cluster.Spec.Topology.Variables)
 		require.NoError(t, err)
 		spec.Nutanix.ControlPlaneEndpoint.VirtualIPSpec = &carenv1.ControlPlaneVirtualIPSpec{
 			Configuration: &carenv1.ControlPlaneVirtualIPConfiguration{
 				IPReservation: &carenv1.ControlPlaneIPReservation{
-					Subnet: "vlan170", Cluster: ptr.To("pe-1"),
+					Subnet: "vlan170", Cluster: new("pe-1"),
 				},
 			},
 		}
@@ -520,7 +521,7 @@ func TestBeforeClusterDeleteSweepsWhenControlPlaneIsUnreachable(t *testing.T) {
 
 			// No ControlPlaneInitialized condition: the control plane is unreachable,
 			// so shouldDeleteServicesWithLoadBalancer is false.
-			cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+			cluster := autoIPAMCluster(t, clusterAUID, "vlan170", new("pe-1"))
 			cluster.Annotations = tt.annotations
 			cluster.Status.Phase = string(clusterv1.ClusterPhaseProvisioned)
 
@@ -704,7 +705,8 @@ func TestUnreachableSweepSkipsStaticClusters(t *testing.T) {
 		},
 	}
 	require.NoError(t, handler.sweepReservations(
-		context.Background(), testClusterWithUID(clusterAUID), logr.Discard()))
+		context.Background(), testClusterWithUID(clusterAUID), logr.Discard(),
+	))
 	assert.False(t, called, "a cluster with no autoIPAM contacted Prism Central")
 }
 
@@ -730,7 +732,7 @@ func TestControlPlaneClaimContexts(t *testing.T) {
 			},
 		}
 	}
-	cluster := autoIPAMCluster(t, clusterAUID, "vlan170", ptr.To("pe-1"))
+	cluster := autoIPAMCluster(t, clusterAUID, "vlan170", new("pe-1"))
 
 	t.Run("returns the UID of this cluster's claim", func(t *testing.T) {
 		t.Parallel()

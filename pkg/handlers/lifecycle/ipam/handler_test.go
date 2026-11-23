@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ipamv1 "sigs.k8s.io/cluster-api/api/ipam/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -171,7 +170,7 @@ func TestBeforeClusterCreateFirstPassCreatesAndRetries(t *testing.T) {
 
 	cluster := testCluster(t, "", &carenv1.ControlPlaneIPReservation{
 		Subnet:  "vlan170",
-		Cluster: ptr.To("pe-1"),
+		Cluster: new("pe-1"),
 	})
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(cluster).Build()
 

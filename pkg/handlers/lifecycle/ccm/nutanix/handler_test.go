@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -100,7 +99,7 @@ extraEnv:
 	expectedWithAutoIPAM = `prismCentralEndPoint: prism-central.nutanix.com
 prismCentralPort: 9440
 prismCentralInsecure: true
-ignoredNodeIPs: [ "1.2.3.4" ]
+ignoredNodeIPs: ["1.2.3.4"]
 
 # The Service LoadBalancer controller runs only in automatic mode, where the CCM
 # reserves each Service address on Prism Central. In static mode MetalLB owns
@@ -335,7 +334,7 @@ func Test_templateValues(t *testing.T) {
 			// NutanixIPPool identifies a subnet.
 			name: "With ServiceLoadBalancer autoIPAM subnet name and cluster",
 			clusterConfig: autoIPAMClusterConfig(
-				serviceLoadBalancerAutoIPAM("vlan170-dhcp", ptr.To("pe-cluster-1")),
+				serviceLoadBalancerAutoIPAM("vlan170-dhcp", new("pe-cluster-1")),
 			),
 			in:       valuesTemplate,
 			expected: expectedWithAutoIPAMSubnetName,
@@ -404,7 +403,7 @@ func Test_templateValuesReservedControlPlaneEndpoint(t *testing.T) {
 		"KUBERNETES_SERVICE_HOST must carry the reserved address")
 	assert.NotContains(t, values, `value: ""`,
 		"an empty env value defeats the CCM's in-cluster config fallback")
-	assert.Contains(t, values, fmt.Sprintf("ignoredNodeIPs: [ %q ]", reserved),
+	assert.Contains(t, values, fmt.Sprintf("ignoredNodeIPs: [%q]", reserved),
 		"the reserved API server address must not be published as a node address")
 }
 
