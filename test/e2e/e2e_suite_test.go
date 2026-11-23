@@ -154,7 +154,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		"bootstrap",
 		kubeconfigPath,
 		initScheme(),
-		capie2eframework.WithMachineLogCollector(capie2eframework.DockerLogCollector{}),
+		capie2eframework.WithMachineLogCollector(newClusterLogCollector(skipLogCollection)),
 	)
 })
 
