@@ -8,11 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -30,6 +32,12 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 )
+
+// CAAPH marks the MetalLB HelmChartProxy Ready=True once helm install creates the chart manifests,
+// which can happen minutes before worker nodes, CNI, and the metallb-controller validation webhook
+// become Ready. Cap workqueue backoff so transient webhook errors never stall reconciliation in
+// multi-minute exponential backoff (up to 16m40s with the default controller rate limiter).
+const defaultMaxRetryDelay = 10 * time.Second
 
 type RemoteClientGetter func(
 	ctx context.Context,
@@ -58,8 +66,22 @@ func (r *Reconciler) SetupWithManager(
 			handler.EnqueueRequestsFromMapFunc(helmChartProxyToCluster),
 			builder.WithPredicates(predicate.NewPredicateFuncs(isMetalLBHelmChartProxy)),
 		).
-		WithOptions(*options).
+		WithOptions(controllerOptions(options)).
 		Complete(r)
+}
+
+func controllerOptions(options *controller.Options) controller.Options {
+	var opts controller.Options
+	if options != nil {
+		opts = *options
+	}
+	if opts.RateLimiter == nil {
+		opts.RateLimiter = workqueue.NewTypedWithMaxWaitRateLimiter(
+			workqueue.DefaultTypedControllerRateLimiter[reconcile.Request](),
+			defaultMaxRetryDelay,
+		)
+	}
+	return opts
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

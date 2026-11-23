@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -139,6 +140,37 @@ func TestReconciler_SetupWithManager_NilManager(t *testing.T) {
 	r := &Reconciler{}
 	err := r.SetupWithManager(nil, &controller.Options{MaxConcurrentReconciles: 1})
 	require.Error(t, err)
+}
+
+func TestControllerOptions_CapsRetryBackoff(t *testing.T) {
+	t.Parallel()
+
+	opts := controllerOptions(&controller.Options{MaxConcurrentReconciles: 4})
+	assert.Equal(t, 4, opts.MaxConcurrentReconciles)
+	require.NotNil(t, opts.RateLimiter)
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: "crs-cluster"},
+	}
+	var lastDelay time.Duration
+	for range 25 {
+		lastDelay = opts.RateLimiter.When(req)
+		assert.LessOrEqual(t, lastDelay, defaultMaxRetryDelay)
+	}
+	assert.Equal(t, defaultMaxRetryDelay, lastDelay)
+
+	opts.RateLimiter.Forget(req)
+	assert.Less(t, opts.RateLimiter.When(req), defaultMaxRetryDelay)
+
+	customLimiter := workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](
+		time.Millisecond,
+		2*time.Second,
+	)
+	preserved := controllerOptions(&controller.Options{RateLimiter: customLimiter})
+	assert.Same(t, customLimiter, preserved.RateLimiter)
+
+	nilOpts := controllerOptions(nil)
+	assert.NotNil(t, nilOpts.RateLimiter)
 }
 
 func TestIsMetalLBHelmChartProxy(t *testing.T) {

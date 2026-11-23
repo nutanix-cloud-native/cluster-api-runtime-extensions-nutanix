@@ -30,3 +30,4 @@
 - [x] **T3**: Implement `pkg/controllers/metallbconfig` (`doc.go`, `flags.go`, `controller.go`) and wire it into `cmd/main.go`.
 - [x] **T4**: Clean up stale sequential-hook comment in `pkg/handlers/lifecycle/handlers.go`, add compile-time `BeforeClusterUpgrade` interface assertion in `pkg/handlers/lifecycle/serviceloadbalancer/handler.go`, and update `docs/content/addons/serviceloadbalancer.md`.
 - [x] **T5**: Run `make go-generate`, `make test`, `make lint`, and `make pre-commit` checks.
+- [x] **T6**: Cap `metallb-config` controller workqueue retry delay at `10s` (with unit test coverage) so transient `metallb-controller` webhook unavailability while worker nodes / CRS CNI start never triggers multi-minute backoff.
