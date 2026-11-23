@@ -5,6 +5,7 @@ package cilium
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,16 @@ import (
 
 	carenv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 )
+
+func TestDefaultWaitTimeoutFitsWithinLifecycleHookTimeout(t *testing.T) {
+	t.Parallel()
+
+	hookTimeout := time.Duration(server.LifecycleHookTimeoutSeconds) * time.Second
+	assert.Less(t, defaultWaitTimeout, hookTimeout)
+	assert.Equal(t, 20*time.Second, defaultWaitTimeout)
+}
 
 func Test_templateValues(t *testing.T) {
 	tests := []struct {

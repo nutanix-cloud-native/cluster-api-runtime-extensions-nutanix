@@ -333,6 +333,13 @@ func (a *helmAddonApplier) Delete(
 	return nil
 }
 
+// Keep default waiter timeout strictly below Cluster API's 30s lifecycle hook deadline so
+// waitToBeReady returns a structured error response before the HTTP client cancels the call.
+var (
+	defaultWaitInterval = 2 * time.Second
+	defaultWaitTimeout  = 20 * time.Second
+)
+
 func waitToBeReady(
 	ctx context.Context,
 	client ctrlclient.Client,
@@ -349,8 +356,8 @@ func waitToBeReady(
 				}
 				return apimeta.IsStatusConditionTrue(obj.GetConditions(), clusterv1.ReadyCondition), nil
 			},
-			Interval: 5 * time.Second,
-			Timeout:  30 * time.Second,
+			Interval: defaultWaitInterval,
+			Timeout:  defaultWaitTimeout,
 		},
 	); err != nil {
 		return fmt.Errorf(

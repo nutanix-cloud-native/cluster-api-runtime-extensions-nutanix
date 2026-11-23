@@ -456,10 +456,12 @@ const (
 	kubeProxyNamespace = "kube-system"
 )
 
+const defaultWaitTimeout = 20 * time.Second
+
 // Use vars to override in integration tests.
 var (
 	waitInterval = 1 * time.Second
-	waitTimeout  = 30 * time.Second
+	waitTimeout  = defaultWaitTimeout
 )
 
 func waitForCiliumConfigMapToBeUpdatedWithKubeProxyReplacement(ctx context.Context, c ctrlclient.Client) error {

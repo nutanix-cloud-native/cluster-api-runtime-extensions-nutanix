@@ -4,8 +4,10 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/pflag"
 	runtimecatalog "sigs.k8s.io/cluster-api/api/runtime/catalog"
@@ -16,6 +18,17 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
+)
+
+const (
+	// LifecycleHookTimeoutSeconds is advertised to Cluster API via Discovery for lifecycle hooks.
+	// Cluster API permits at most 30s and defaults nil to 10s.
+	LifecycleHookTimeoutSeconds int32 = 30
+
+	// DefaultLifecycleHookHandlerTimeout bounds lifecycle handler execution on the server side
+	// so CAREN can return a structured ResponseStatusFailure before Cluster API's 30s HTTP
+	// client deadline cancels the request stream.
+	DefaultLifecycleHookHandlerTimeout = 25 * time.Second
 )
 
 type ServerOptions struct {
@@ -59,6 +72,14 @@ func NewWebhookServer(opts *ServerOptions) (webhook.Server, error) {
 // NewWebhookServer. Path registration and listening happen in the server's Start,
 // which the manager invokes.
 func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
+	return addHandlersWithLifecycleTimeout(s, DefaultLifecycleHookHandlerTimeout, hooks...)
+}
+
+func addHandlersWithLifecycleTimeout(
+	s webhook.Server,
+	handlerTimeout time.Duration,
+	hooks ...handlers.Named,
+) error {
 	rs, ok := s.(*runtimeserver.Server)
 	if !ok {
 		return fmt.Errorf("webhook server is %T, want *runtimeserver.Server", s)
@@ -67,9 +88,10 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 	for _, h := range hooks {
 		if t, ok := h.(lifecycle.BeforeClusterCreate); ok {
 			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.BeforeClusterCreate,
-				Name:        strings.ToLower(h.Name()) + "-bcc",
-				HandlerFunc: t.BeforeClusterCreate,
+				Hook:           runtimehooksv1.BeforeClusterCreate,
+				Name:           strings.ToLower(h.Name()) + "-bcc",
+				TimeoutSeconds: new(LifecycleHookTimeoutSeconds),
+				HandlerFunc:    withTimeout(handlerTimeout, t.BeforeClusterCreate),
 			}); err != nil {
 				return err
 			}
@@ -77,9 +99,10 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 
 		if t, ok := h.(lifecycle.AfterControlPlaneInitialized); ok {
 			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.AfterControlPlaneInitialized,
-				Name:        strings.ToLower(h.Name()) + "-acpi",
-				HandlerFunc: t.AfterControlPlaneInitialized,
+				Hook:           runtimehooksv1.AfterControlPlaneInitialized,
+				Name:           strings.ToLower(h.Name()) + "-acpi",
+				TimeoutSeconds: new(LifecycleHookTimeoutSeconds),
+				HandlerFunc:    withTimeout(handlerTimeout, t.AfterControlPlaneInitialized),
 			}); err != nil {
 				return err
 			}
@@ -87,9 +110,10 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 
 		if t, ok := h.(lifecycle.BeforeClusterUpgrade); ok {
 			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.BeforeClusterUpgrade,
-				Name:        strings.ToLower(h.Name()) + "-bcu",
-				HandlerFunc: t.BeforeClusterUpgrade,
+				Hook:           runtimehooksv1.BeforeClusterUpgrade,
+				Name:           strings.ToLower(h.Name()) + "-bcu",
+				TimeoutSeconds: new(LifecycleHookTimeoutSeconds),
+				HandlerFunc:    withTimeout(handlerTimeout, t.BeforeClusterUpgrade),
 			}); err != nil {
 				return err
 			}
@@ -97,9 +121,10 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 
 		if t, ok := h.(lifecycle.AfterControlPlaneUpgrade); ok {
 			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.AfterControlPlaneUpgrade,
-				Name:        h.Name() + "-acpu",
-				HandlerFunc: t.AfterControlPlaneUpgrade,
+				Hook:           runtimehooksv1.AfterControlPlaneUpgrade,
+				Name:           h.Name() + "-acpu",
+				TimeoutSeconds: new(LifecycleHookTimeoutSeconds),
+				HandlerFunc:    withTimeout(handlerTimeout, t.AfterControlPlaneUpgrade),
 			}); err != nil {
 				return err
 			}
@@ -107,9 +132,10 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 
 		if t, ok := h.(lifecycle.BeforeClusterDelete); ok {
 			if err := rs.AddExtensionHandler(runtimeserver.ExtensionHandler{
-				Hook:        runtimehooksv1.BeforeClusterDelete,
-				Name:        strings.ToLower(h.Name()) + "-bcd",
-				HandlerFunc: t.BeforeClusterDelete,
+				Hook:           runtimehooksv1.BeforeClusterDelete,
+				Name:           strings.ToLower(h.Name()) + "-bcd",
+				TimeoutSeconds: new(LifecycleHookTimeoutSeconds),
+				HandlerFunc:    withTimeout(handlerTimeout, t.BeforeClusterDelete),
 			}); err != nil {
 				return err
 			}
@@ -147,4 +173,19 @@ func AddHandlers(s webhook.Server, hooks ...handlers.Named) error {
 	}
 
 	return nil
+}
+
+func withTimeout[Req runtimehooksv1.RequestObject, Resp runtimehooksv1.ResponseObject](
+	timeout time.Duration,
+	fn func(context.Context, Req, Resp),
+) func(context.Context, Req, Resp) {
+	if timeout <= 0 {
+		return fn
+	}
+
+	return func(ctx context.Context, req Req, resp Resp) {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		fn(ctx, req, resp)
+	}
 }
