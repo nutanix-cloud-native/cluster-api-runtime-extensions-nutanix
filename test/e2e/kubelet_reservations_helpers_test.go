@@ -7,16 +7,26 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -320,4 +330,320 @@ func nestedString(t *testing.T, obj map[string]interface{}, fields ...string) st
 	require.NoError(t, err)
 	require.True(t, found, "expected string at %v", fields)
 	return s
+}
+
+func TestGenerateClusterName(t *testing.T) {
+	dockerName := generateClusterName("quick-start-", "docker")
+	assert.True(t, strings.HasPrefix(dockerName, "quick-start-"))
+	assert.Len(t, dockerName, 64-23)
+
+	nutanixName := generateClusterName("quick-start-", "nutanix")
+	assert.True(t, strings.HasPrefix(nutanixName, "quick-start-"))
+	assert.Len(t, nutanixName, 63)
+}
+
+func TestProbeTCPHostInUse(t *testing.T) {
+	t.Run("detects open TCP port", func(t *testing.T) {
+		var lc net.ListenConfig
+		ln, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = ln.Close() })
+
+		_, openPort, err := net.SplitHostPort(ln.Addr().String())
+		require.NoError(t, err)
+
+		var dialer net.Dialer
+		inUse, reason := probeTCPHostInUse(
+			t.Context(),
+			dialer.DialContext,
+			"127.0.0.1",
+			[]string{openPort},
+		)
+		assert.True(t, inUse)
+		assert.Contains(t, reason, "connected")
+	})
+
+	t.Run("detects closed TCP port via ECONNREFUSED", func(t *testing.T) {
+		var lc net.ListenConfig
+		ln, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		_, closedPort, err := net.SplitHostPort(ln.Addr().String())
+		require.NoError(t, err)
+		require.NoError(t, ln.Close())
+
+		var dialer net.Dialer
+		inUse, reason := probeTCPHostInUse(
+			t.Context(),
+			dialer.DialContext,
+			"127.0.0.1",
+			[]string{closedPort},
+		)
+		assert.True(t, inUse)
+		assert.Contains(t, reason, "connection refused")
+	})
+
+	t.Run("treats EHOSTUNREACH and timeout as unused", func(t *testing.T) {
+		dial := func(_ context.Context, _, address string) (net.Conn, error) {
+			if strings.HasSuffix(address, ":6443") {
+				return nil, syscall.EHOSTUNREACH
+			}
+			return nil, context.DeadlineExceeded
+		}
+
+		inUse, reason := probeTCPHostInUse(
+			t.Context(),
+			dial,
+			"10.23.133.210",
+			[]string{"6443", "80"},
+		)
+		assert.False(t, inUse)
+		assert.Empty(t, reason)
+	})
+}
+
+func TestReserveUnusedIP(t *testing.T) {
+	t.Run("returns first IP when unused", func(t *testing.T) {
+		unreserved := false
+		ip, unreserve, err := reserveUnusedIP(
+			t.Context(),
+			5,
+			func(context.Context) (string, func() error, error) {
+				return "10.23.133.210", func() error {
+					unreserved = true
+					return nil
+				}, nil
+			},
+			func(context.Context, string) (bool, string) {
+				return false, ""
+			},
+			func(string, ...interface{}) {},
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "10.23.133.210", ip)
+		assert.False(t, unreserved)
+		require.NoError(t, unreserve())
+		assert.True(t, unreserved)
+	})
+
+	t.Run("quarantines collided IPs and returns next unused IP", func(t *testing.T) {
+		ips := []string{"10.23.133.202", "10.23.133.203", "10.23.133.204"}
+		unreserved := map[string]bool{}
+		idx := 0
+		var logs []string
+
+		ip, unreserve, err := reserveUnusedIP(
+			t.Context(),
+			5,
+			func(context.Context) (string, func() error, error) {
+				candidate := ips[idx]
+				idx++
+				return candidate, func() error {
+					unreserved[candidate] = true
+					return nil
+				}, nil
+			},
+			func(_ context.Context, candidate string) (bool, string) {
+				if candidate == "10.23.133.204" {
+					return false, ""
+				}
+				return true, "tcp " + candidate + ":6443 connected"
+			},
+			func(format string, args ...interface{}) {
+				logs = append(logs, fmt.Sprintf(format, args...))
+			},
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "10.23.133.204", ip)
+		assert.Len(t, logs, 2)
+		assert.Contains(t, logs[0], "10.23.133.202")
+		assert.Contains(t, logs[1], "10.23.133.203")
+
+		// Unreserving the selected IP must leave the collided IPs quarantined.
+		require.NoError(t, unreserve())
+		assert.False(t, unreserved["10.23.133.202"], "collided IP must remain quarantined")
+		assert.False(t, unreserved["10.23.133.203"], "collided IP must remain quarantined")
+		assert.True(t, unreserved["10.23.133.204"])
+	})
+
+	t.Run("fails after exhausting maxAttempts while keeping collided IPs quarantined", func(t *testing.T) {
+		unreservedCount := 0
+		_, _, err := reserveUnusedIP(
+			t.Context(),
+			3,
+			func(context.Context) (string, func() error, error) {
+				return "10.23.133.202", func() error {
+					unreservedCount++
+					return nil
+				}, nil
+			},
+			func(context.Context, string) (bool, string) {
+				return true, "tcp 10.23.133.202:6443 connected"
+			},
+			func(string, ...interface{}) {},
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "after 3 attempts")
+		assert.Contains(t, err.Error(), "10.23.133.202")
+		assert.Zero(t, unreservedCount)
+	})
+
+	t.Run("propagates reserve error immediately", func(t *testing.T) {
+		probeCalled := false
+		_, _, err := reserveUnusedIP(
+			t.Context(),
+			3,
+			func(context.Context) (string, func() error, error) {
+				return "", nil, errors.New("prism api unavailable")
+			},
+			func(context.Context, string) (bool, string) {
+				probeCalled = true
+				return false, ""
+			},
+			func(string, ...interface{}) {},
+		)
+		require.ErrorContains(t, err, "prism api unavailable")
+		assert.False(t, probeCalled)
+	})
+}
+
+func TestUnreserveIPAfterClusterDeleted(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, clusterv1.AddToScheme(scheme))
+
+	otherCluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "quick-start-other",
+			Name:      "quick-start-other-cluster",
+		},
+	}
+	targetCluster := &clusterv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "quick-start-abc",
+			Name:      "quick-start-target-cluster",
+		},
+	}
+
+	t.Run("unreserves IP when target Cluster has been deleted", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(otherCluster).Build()
+		unreserved := false
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.210",
+			func() error {
+				unreserved = true
+				return nil
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(string, ...interface{}) {},
+		)
+		require.NoError(t, err)
+		assert.True(t, unreserved)
+	})
+
+	t.Run("keeps IP reserved when target Cluster still exists after timed-out deletion", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(otherCluster, targetCluster).Build()
+		unreserved := false
+		var logs []string
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.202",
+			func() error {
+				unreserved = true
+				return nil
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(format string, args ...interface{}) {
+				logs = append(logs, fmt.Sprintf(format, args...))
+			},
+		)
+		require.NoError(t, err)
+		assert.False(t, unreserved)
+		require.Len(t, logs, 1)
+		assert.Contains(t, logs[0], "Cluster quick-start-abc/quick-start-target-cluster still exists")
+	})
+
+	t.Run("keeps IP reserved when skipCleanup is enabled", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		unreserved := false
+		var logs []string
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.202",
+			func() error {
+				unreserved = true
+				return nil
+			},
+			true,
+			"quick-start-target-cluster",
+			c,
+			func(format string, args ...interface{}) {
+				logs = append(logs, fmt.Sprintf(format, args...))
+			},
+		)
+		require.NoError(t, err)
+		assert.False(t, unreserved)
+		require.Len(t, logs, 1)
+		assert.Contains(t, logs[0], "skipCleanup is enabled")
+	})
+
+	t.Run("keeps IP reserved when listing Clusters fails", func(t *testing.T) {
+		c := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithInterceptorFuncs(interceptor.Funcs{
+				List: func(context.Context, client.WithWatch, client.ObjectList, ...client.ListOption) error {
+					return errors.New("apiserver unreachable")
+				},
+			}).
+			Build()
+		unreserved := false
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.202",
+			func() error {
+				unreserved = true
+				return nil
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(string, ...interface{}) {},
+		)
+		require.NoError(t, err)
+		assert.False(t, unreserved)
+	})
+
+	t.Run("keeps IP reserved when client is nil or clusterName is empty", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		unreserved := false
+
+		require.NoError(t, unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.202",
+			func() error { unreserved = true; return nil },
+			false,
+			"quick-start-target-cluster",
+			nil,
+			func(string, ...interface{}) {},
+		))
+		assert.False(t, unreserved)
+
+		require.NoError(t, unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.202",
+			func() error { unreserved = true; return nil },
+			false,
+			"",
+			c,
+			func(string, ...interface{}) {},
+		))
+		assert.False(t, unreserved)
+	})
 }
