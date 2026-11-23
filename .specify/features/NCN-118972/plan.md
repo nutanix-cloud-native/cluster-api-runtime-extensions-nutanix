@@ -9,9 +9,9 @@
 
 **Goal**: Allow operators to configure the Kubernetes API server's OIDC/JWT authentication by declaring `clusterConfig.authentication` on `KubeadmClusterConfigSpec`; a new generic mutation handler renders `/etc/kubernetes/authentication.yaml` (`apiserver.config.k8s.io/v1` `AuthenticationConfiguration` with `jwt` authenticators), mounts it, and sets `--authentication-config`. Opt-in/no-op when unset.
 
-**Architecture**: API types in `api/v1alpha1/` mirroring upstream `apiserver.config.k8s.io/v1` JWTAuthenticator shape (owned, not vendored via an import that would pull `k8s.io/kubernetes`). New mutation handler under `pkg/handlers/generic/mutation/kubeadm/authentication/` that follows the existing `admissionconfiguration.AddPlugin` pattern (Files + ExtraVolumes + ExtraArgs), registered in `pkg/handlers/generic/mutation/handlers.go` `MetaMutators()`. CEL markers + OpenAPI for early validation. Deterministic YAML via `sigs.k8s.io/yaml` marshaling of a local struct; `jwt` order preserved.
+**Architecture**: API types in `api/v1alpha1/` mirroring upstream `apiserver.config.k8s.io/v1` JWTAuthenticator shape. New mutation handler under `pkg/handlers/generic/mutation/kubeadm/authentication/` that renders `k8s.io/apiserver/pkg/apis/apiserver/v1.AuthenticationConfiguration`, validates it with `k8s.io/apiserver/pkg/apis/apiserver/validation.ValidateAuthenticationConfiguration`, and configures `Files` + `ExtraVolumes` + `ExtraArgs`, registered in `pkg/handlers/generic/mutation/handlers.go` `MetaMutators()`. CEL markers + OpenAPI + upstream apiserver validation for early rejection. Deterministic YAML via `sigs.k8s.io/yaml`; `jwt` order preserved.
 
-**Tech Stack**: Go; kubebuilder/controller-gen markers + CEL (`XValidation`); CAPI topology mutation (`common/pkg/capi/clustertopology/{handlers/mutation,patches,selectors}` + `variables`); `sigs.k8s.io/yaml`; `testify` for pure API tests, `Ginkgo/Gomega` for handler + e2e tests; mock OIDC (ephemeral RSA + `https` + self-signed CA via `issuer.certificateAuthority`); `make generate` for CRDs/deepcopy.
+**Tech Stack**: Go; kubebuilder/controller-gen markers + CEL (`XValidation` with `exists_one`); CAPI topology mutation (`common/pkg/capi/clustertopology/{handlers/mutation,patches,selectors}` + `variables`); `k8s.io/apiserver` (`v1` + `validation` + `authentication/cel`); `sigs.k8s.io/yaml`; `testify` for unit tests, `Ginkgo/Gomega` for handler + e2e tests; stdlib `crypto/rsa` + `net/netip` mock OIDC in untagged `test/framework/oidc` (zero new `go.mod` dependencies).
 
 ---
 
@@ -22,11 +22,11 @@
 | I. API-First | Pass | Types live in `api/v1alpha1/` only; no business logic in the API module. |
 | II. Handler-per-Provider | Pass | Handler lives in `generic` (provider-agnostic), no cross-provider imports; shared helper stays reusable. |
 | III. Library-First | Pass | No `cmd/` changes; wiring only in library handler registration. |
-| IV. Tests Required | Pass | API validation tests + handler `Mutate` Ginkgo suite (opt-in, multi-issuer, coexistence, no-op, legacy-flag conflict, removal) + provider-agnostic e2e with in-cluster mock OIDC token validation (part of normal e2e on any provider, not skipped). |
-| V. Code Style | Pass | Import aliases per repo; `make fmt`/`make lint` gating. |
-| VI. Dependency Management | Pass | No new direct deps; types are owned (not importing `k8s.io/kubernetes/staging/...` which is a depguard/lint concern). |
+| IV. Tests Required | Pass | API validation tests + handler `Mutate`/`Render` tests + untagged `test/framework/oidc` unit tests + provider-agnostic e2e with in-cluster mock OIDC token validation. |
+| V. Code Style | Pass | Import aliases per repo (`clusterv1` for `sigs.k8s.io/cluster-api/api/core/v1beta2`); `make fmt`/`make lint` gating. |
+| VI. Dependency Management | Pass | Zero new direct dependencies in `go.mod`; `k8s.io/apiserver` is already present in `go.mod` and JWT signing uses stdlib `crypto/rsa`. |
 | VII. Handler Version Safety | Pass | Opt-in: `GeneratePatches` output for inputs not setting `authentication` must be byte-identical; no handler version bump needed (verify via the "omitted variable" test case in existing suite). |
-| VIII. Handler Documentation | Pass | New doc `docs/content/customization/kubeadm/authentication.md` + index update in same PR. |
+| VIII. Handler Documentation | Pass | New doc `docs/content/customization/kubeadm/authentication.md` in same PR (Docsy auto-indexes child pages). |
 
 ## File Structure
 
@@ -52,13 +52,15 @@ pkg/handlers/generic/mutation/kubeadm/
 pkg/handlers/generic/mutation/handlers.go  # MODIFY: register new patch in MetaMutators()
 
 docs/content/customization/kubeadm/
-├── authentication.md                   # CREATE
-└── _index.md                           # MODIFY: link new page
+└── authentication.md                   # CREATE (Docsy auto-indexes child pages)
+
+test/framework/oidc/
+├── oidc.go                             # CREATE: untagged mock OIDC bundle/deploy, Service CIDR static IP, stdlib RS256 JWT mint, authn/KCP predicates
+└── oidc_test.go                        # CREATE: unit tests run under `make test`
 
 test/e2e/
-├── data/oidc-mock/deployment.yaml      # CREATE: mock OIDC Deployment/Service (https, 443) for token e2e
-├── helpers/oidc/mock.go                # CREATE: ephemeral RSA keypair, CA, JWKS/discovery handlers, JWT mint helper
-└── quick_start_test.go                 # MODIFY: extend PostMachinesProvisioned for first flavor per provider to deploy mock OIDC, patch authentication, and validate JWTs (provider-agnostic, reuses quick-start Cluster, no extra Cluster)
+├── config/caren.yaml                   # MODIFY: 20m cluster/control-plane/worker/node readiness intervals
+└── quick_start_test.go                 # MODIFY: inject boot-time authentication with pre-generated CA + static Service ClusterIP on `topology-cilium-helm-addon`, deploy mock OIDC in PostMachinesProvisioned, validate username/groups/extra + invalid JWTs
 
 hack/examples/...                        # NO CHANGE (feature is opt-in; examples.sync stays green)
 ```
@@ -67,10 +69,10 @@ hack/examples/...                        # NO CHANGE (feature is opt-in; example
 
 ## Key design facts (read before coding)
 
-- The upstream `AuthenticationConfiguration` Go type lives at `k8s.io/kubernetes/staging/src/k8s.io/apiserver/pkg/apis/apiserver/v1` — importing that pulls `k8s.io/kubernetes` and is blocked by intent. **Own** a minimal rendering struct in the handler (not exported) whose JSON tags match the upstream shape; marshal to YAML with `sigs.k8s.io/yaml`. The API types in `api/v1alpha1/` are the user-facing source of truth (OpenAPI + CEL) and the handler maps from CRD variable → render struct.
+- `k8s.io/apiserver` is already in root `go.mod` (`k8s.io/kubernetes` is what `depguard` blocks, not `k8s.io/apiserver`). Render via `k8s.io/apiserver/pkg/apis/apiserver/v1.AuthenticationConfiguration` and validate with `k8s.io/apiserver/pkg/apis/apiserver/validation.ValidateAuthenticationConfiguration` + `k8s.io/apiserver/pkg/authentication/cel.NewDefaultCompiler()` so invalid CEL expressions, reserved `k8s.io`/`kubernetes.io` extra keys, invalid URLs, or malformed CA PEMs fail during topology mutation rather than bricking `kube-apiserver`.
 - Control plane selector: `selectors.ControlPlane()` (as used by `podsecurityadmission`, `admissionconfiguration`) — this is a **control plane only** mutation (`KubeadmControlPlaneTemplate`); no worker template patch.
-- File helpers: `bootstrapv1.File{Path, Content, Permissions}` and `bootstrapv1.HostPathMount{Name, HostPath, MountPath, ReadOnly}` plus `bootstrapv1.Arg{Name, Value *string}` (per `pkg/handlers/generic/mutation/kubeadm/admissionconfiguration` and `encryptionatrest`). Well-known path: `/etc/kubernetes/authentication.yaml`, volume name `authentication-config`, ExtraArgs flag `authentication-config`.
-- CEL patterns in this repo: see `api/v1alpha1/kubelet_types.go` — markers like `// +kubebuilder:validation:XValidation:rule="...",message="..."` alongside field markers. `api/v1alpha1/pod_security_admission_types.go` and `api/v1alpha1/clusterconfig_types.go` for `KubeadmClusterConfigSpec` precedent.
+- File helpers: `bootstrapv1.File{Path, Content, Permissions}` and `bootstrapv1.HostPathMount{Name, HostPath, MountPath, ReadOnly}` plus `bootstrapv1.Arg{Name, Value *string}`. Expected path: `/etc/kubernetes/authentication.yaml`, volume name `authentication-config`, ExtraArgs flag `authentication-config`. Reject nil/conflicting `--authentication-config` args and conflicting `ExtraVolumes` names/paths.
+- CEL patterns in this repo: use `self.jwt.all(a, self.jwt.exists_one(b, b.issuer.url == a.issuer.url))` for uniqueness (handles identical duplicate entries with zero intermediate list allocation).
 - Determinism: `jwt` order is user intent (do not sort); `audiences` per entry is user intent (do not sort); `claimValidationRules` and `userValidationRules` preserve insertion order.
 - No `make examples.sync` change: the default ClusterClasses carry no authentication setting (opt-in). `git status` of `charts/` + `examples/` should be clean aside from the doc page.
 
@@ -183,45 +185,40 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
 
 ---
 
-### Task 4: Docs — customization page + index
+### Task 4: Docs — customization page
 
 **Files:**
 
 - Create: `docs/content/customization/kubeadm/authentication.md`
-- Modify: `docs/content/customization/kubeadm/_index.md` (or `docs/content/customization/_index.md` if the index lives one level up — verify on branch)
-- (If needed) update `docs/content/getting-started/...` cross-link
 
-- [ ] **Step 1: Write `authentication.md`** — include: what it does (OIDC/JWT via `AuthenticationConfiguration`), minimum Kubernetes version (1.29 beta, recommended 1.31+), mutual exclusivity note vs `--oidc-*`, configuration table per field group (Issuer, ClaimValidationRules, ClaimMappings.*), single-issuer example, multi-issuer example, CEL expression example, and the canonical YAML snippet. Use the same front-matter style as `pod-security-admission.md`.
+- [ ] **Step 1: Write `authentication.md`** — include: what it does (OIDC/JWT via `AuthenticationConfiguration`), minimum Kubernetes version (`>= 1.34`), mutual exclusivity note vs `--oidc-*`, single-issuer example, multi-issuer example, CEL expression example, and the matching rendered `AuthenticationConfiguration` YAML snippet. Use the same front-matter style as `pod-security-admission.md`.
 
-- [ ] **Step 2: Update index** — add link to `authentication.md` in the kubeadm customization index.
-
-- [ ] **Step 3: Preview** — `devbox run -- make preview-docs` (or `hugo server` per `AGENTS.md`) — page renders without warnings. Commit.
+- [ ] **Step 2: Preview** — `make preview-docs` (or `hugo` build) — page renders without warnings. Commit.
 
 ---
 
-### Task 5: Integration/e2e — in-cluster mock OIDC token validation (provider-agnostic, no external service)
+### Task 5: Integration/e2e — boot-time static `ClusterIP` mock OIDC token validation (provider-agnostic, no external service)
 
 **Files:**
 
-- Create: `test/e2e/data/oidc-mock/deployment.yaml` (Deployment + Service `mock-oidc.oidc-mock.svc.cluster.local:443`, https, mounts server cert from Secret)
-- Create: `test/e2e/helpers/oidc/mock.go` (generate RSA 2048 + self-signed CA, JWKS, discovery handler, `MintJWT(claims) string`)
-- Modify: `test/e2e/quick_start_test.go` (extend `PostMachinesProvisioned` for first `topology-cilium-helm-addon` flavor per provider to deploy mock OIDC, patch `clusterConfig.authentication`, wait `Cluster` re-Ready, and validate JWTs via `validateTokenAuth`; reuses quick-start Cluster, no extra provider label)
+- Create: `test/framework/oidc/{oidc.go,oidc_test.go}` (untagged: pre-generated RSA 2048 + self-signed CA + server cert with IP SAN, Service CIDR static IP selection, YAML template injection, JWKS/discovery ConfigMap + Service/Deployment apply, stdlib RS256 `MintJWT`, authn/KCP predicates, `SelfSubjectReview` UserInfo assertions)
+- Modify: `test/e2e/config/caren.yaml` (`20m` provisioning/readiness intervals)
+- Modify: `test/e2e/quick_start_test.go` (in `BeforeEach` for `topology-cilium-helm-addon`, resolve Service CIDR from template, pre-generate mock OIDC bundle for static `ClusterIP`, and inject `clusterConfig.authentication` into the Cluster template; in `PostMachinesProvisioned`, verify live Service CIDR, deploy mock OIDC on static `ClusterIP`, and validate `username`/`groups`/`extra` + invalid JWT rejection)
 
-- [ ] **Step 1: Mock helper** — `mock.go`: `SetupMockOIDC(t, workloadK8sClient)` creates `oidc-mock` ns, generates CA + server cert for `mock-oidc.oidc-mock.svc.cluster.local`, creates `Secret` with cert/key, deploys mock Deployment that serves `/.well-known/openid-configuration` (`{issuer,jwks_uri}`) and `/keys` (JWKS) over `https`; returns `issuerURL`, `discoveryURL`, `caPEM`, `privateKey`, `MintJWT`.
+- [ ] **Step 1: Untagged helper + unit tests** — `test/framework/oidc`: `NewBundle(clusterIP)` generates CA + server cert (IP SAN in `IPAddresses`, DNS names in `DNSNames`) + RSA signing key; `StaticServiceIPFromCIDR` picks offset `+12` inside Kubernetes's KEP-3070 static Service IP band; `EnableAuthenticationInClusterTemplate` resolves `${SERVICE_CIDR}` and injects `clusterConfig.authentication` at YAML node level.
 
-- [ ] **Step 2: Spec** — `quick_start_test.go` `PostMachinesProvisioned` extension (first `topology-cilium-helm-addon` flavor per provider): (a) workload Cluster already `Ready` via quick-start; (b) `SetupMockOIDC` in workload cluster; (c) patch `Cluster.spec.topology.variables` to set `clusterConfig.authentication` (`issuer.url=https://mock-oidc.oidc-mock.svc.cluster.local`, `discoveryURL=https://mock-oidc.oidc-mock.svc.cluster.local/.well-known/openid-configuration`, `audiences:["e2e-aud"]`, `audienceMatchPolicy:MatchAny`, `certificateAuthority:caPEM`, `claimMappings.username:{claim:email}`, `groups:{claim:groups}`, `extra:[{key:example.org/foo,valueExpression:claims.foo}]`, `claimValidationRules:[{claim:hd,requiredValue:example.com}]`, `userValidationRules:[{expression:!user.username.startsWith('system:')}]`); wait KCP rollout (`Files` contains `authentication.yaml` + `ExtraArgs:authentication-config` + `ExtraVolumes`) and `Cluster` re-Ready (API server hot-reloads, poll every 60s); (d) mint valid JWT (`email=test@example.com,groups=[e2e-group],hd=example.com,foo=bar,aud=e2e-aud`) → `validateTokenAuth` with Bearer token shows success; mint invalid JWTs (wrong `aud`, missing `hd`, expired, `system:` user) → `401`/`403`; (e) admin kubeconfig still works.
+- [ ] **Step 2: Spec** — `quick_start_test.go` `topology-cilium-helm-addon`: workload Cluster boots once with `clusterConfig.authentication` already rendered; `PostMachinesProvisioned` verifies live Service CIDR and `KubeadmControlPlane` authentication file, deploys `mock-oidc` with `Service.spec.clusterIP`, waits for `kube-apiserver` asynchronous OIDC discovery via `SelfSubjectReview` (checking `username`, `groups`, `extra`), and verifies invalid JWTs (`401`) and admin kubeconfig access.
 
-- [ ] **Step 3: Verify** — `devbox run -- make e2e-test E2E_LABEL='authentication' SKIP_BUILD=true` (or full `make e2e-test` on any provider — no `provider:` filter) — green. Commit.
+- [ ] **Step 3: Verify** — `make test` + `make lint` + `make pre-commit` green; e2e runs under `--focus="Quick start"` on any provider.
 
 ---
 
 ### Task 6: Final verification gate
 
-- [ ] `devbox run -- make generate` — clean (no diff beyond `api/` CRDs/deepcopy). `git status` shows no unintended `charts/`/`examples/` changes.
-- [ ] `devbox run -- make lint` and `devbox run -- make fmt` — clean.
-- [ ] `devbox run -- make test` (or at least `make test.root` + `go test ./api/v1alpha1` + `go test ./pkg/handlers/generic/mutation/kubeadm/authentication`) — green.
-- [ ] `devbox run -- make e2e-test E2E_LABEL='authentication'` — mock OIDC token validation green on any provider (part of normal suite, no `provider:` filter, not skipped).
-- [ ] Manual spec acceptance spot-checks (TDD cases above) still green; no version bump required for existing clusters.
+- [ ] `make go-generate` — clean (no diff beyond `api/` CRDs/deepcopy). `git status` shows no unintended `charts/`/`examples/` changes.
+- [ ] `make lint` and `make fmt` — clean.
+- [ ] `make test` — green across all Go modules (`root`, `api`, `common`, etc.).
+- [ ] `make pre-commit` — green.
 
 ---
 
@@ -229,10 +226,10 @@ Atomic, TDD-ordered. All commands through devbox (`devbox run -- ...`), executed
 
 | Risk | Mitigation |
 |---|---|
-| Importing `k8s.io/kubernetes` staging types pulls forbidden deps | Own the render types; mirror upstream JSON shape via local structs with identical tags. |
-| CEL `XValidation` for "exactly one of claim/expression" is tricky | Copy the pattern from `api/v1alpha1/kubelet_types.go`; add API-level integration test for rejection cases. |
-| Handler must coexist with `admissionconfiguration` handler | Use distinct well-known path/name/flag; tests cover additive composition. |
-| API server must reach in-cluster mock OIDC via SVC DNS | Mock runs as `https` Service `mock-oidc.oidc-mock.svc.cluster.local:443` inside workload cluster; CA passed via `issuer.certificateAuthority`; patch `Cluster` after mock Ready, wait for KCP rollout + 60s hot-reload. |
+| Invalid CEL, URL, PEM, or reserved extra key bricks `kube-apiserver` | Validate rendered config in handler via `ValidateAuthenticationConfiguration` + `authenticationcel.NewDefaultCompiler()` alongside CRD OpenAPI/CEL. |
+| CEL uniqueness check with `b != a` misses identical entries | Use `self.jwt.all(a, self.jwt.exists_one(b, b.issuer.url == a.issuer.url))` (and `exists_one` on `extra[].key`). |
+| Handler must coexist with `admissionconfiguration` handler | Use distinct path/volume/flag and reject conflicting volume names/paths or `--authentication-config` values. |
+| `hostNetwork` `kube-apiserver` cannot resolve CoreDNS, and day-2 KCP rollout is slow on Nutanix | Pre-generate CA + server cert for a static IP in the cluster's Service CIDR (`offset +12`, inside Kubernetes's static `ClusterIP` band) and configure `clusterConfig.authentication` at Cluster creation time; `kube-apiserver` polls OIDC discovery asynchronously every 10s until `mock-oidc` is `Available`. |
 
 ## Out of Scope (explicitly not in this plan)
 

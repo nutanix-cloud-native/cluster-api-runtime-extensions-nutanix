@@ -189,6 +189,9 @@ jwt:
       username:
         claim: email
         prefix: ""
+      groups:
+        claim: groups
+        prefix: ""
 ```
 
 For the multi-issuer and CEL examples the corresponding fields (`discoveryURL`,
