@@ -4,6 +4,7 @@
 package serviceaccountissuer
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
+	eksclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks/clusterconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
 )
 
@@ -57,6 +59,59 @@ var testDefs = []capitest.VariableTestDef{
 		}),
 	},
 	{
+		Name: "audiences at max items 50",
+		Vals: func() v1alpha1.DockerClusterConfigSpec {
+			auds := make([]string, 50)
+			for i := range auds {
+				auds[i] = fmt.Sprintf("aud-%d.example.com", i)
+			}
+			return dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+				Issuer:    "https://oidc.example.com",
+				Audiences: auds,
+			})
+		}(),
+	},
+	{
+		Name: "jwksURI with query string allowed",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:  "https://oidc.example.com",
+			JWKSURI: "https://oidc.example.com/discovery/v2.0/keys?appid=1234",
+		}),
+	},
+	{
+		Name: "maxTokenExpiration at 2^32s upper bound",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:             "https://oidc.example.com",
+			MaxTokenExpiration: &metav1.Duration{Duration: (1 << 32) * time.Second},
+		}),
+	},
+	{
+		Name: "coexists with non-overlapping authentication issuer",
+		Vals: v1alpha1.DockerClusterConfigSpec{
+			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+				Authentication: &v1alpha1.Authentication{
+					JWT: []v1alpha1.JWTAuthenticator{
+						{
+							Issuer: v1alpha1.Issuer{
+								URL:       "https://idp.example.com",
+								Audiences: []string{"k8s"},
+							},
+							ClaimMappings: v1alpha1.ClaimMappings{
+								Username: v1alpha1.PrefixedClaimOrExpression{
+									Claim:  "sub",
+									Prefix: new(""),
+								},
+							},
+						},
+					},
+				},
+				ServiceAccountIssuer: &v1alpha1.ServiceAccountIssuer{
+					Issuer: "https://sa-issuer.example.com",
+				},
+			},
+		},
+	},
+	{
 		Name: "issuer empty",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer: "",
@@ -79,6 +134,27 @@ var testDefs = []capitest.VariableTestDef{
 		Name: "issuer missing host",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer: "https://",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "issuer hostless port",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://:443",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "issuer with userinfo",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://user:pass@oidc.example.com",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "issuer invalid port",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://oidc.example.com:abc",
 		}),
 		ExpectError: true,
 	},
@@ -106,7 +182,7 @@ var testDefs = []capitest.VariableTestDef{
 	{
 		Name: "issuer too long",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
-			Issuer: "https://" + strings.Repeat("a", 2042),
+			Issuer: "https://" + strings.Repeat("a", 2041),
 		}),
 		ExpectError: true,
 	},
@@ -127,6 +203,30 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
+		Name: "audiences entry with comma",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:    "https://oidc.example.com",
+			Audiences: []string{"aud-a,aud-b"},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "audiences entry with double quote",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:    "https://oidc.example.com",
+			Audiences: []string{`aud"bad`},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "audiences entry with whitespace",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:    "https://oidc.example.com",
+			Audiences: []string{"aud bad"},
+		}),
+		ExpectError: true,
+	},
+	{
 		Name: "audiences duplicate",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer:    "https://oidc.example.com",
@@ -139,7 +239,7 @@ var testDefs = []capitest.VariableTestDef{
 		Vals: func() v1alpha1.DockerClusterConfigSpec {
 			auds := make([]string, 51)
 			for i := range auds {
-				auds[i] = "aud-" + string(rune('a'+i%26)) + strings.Repeat("x", 5)
+				auds[i] = fmt.Sprintf("aud-%d.example.com", i)
 			}
 			return dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 				Issuer:    "https://oidc.example.com",
@@ -165,10 +265,34 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
+		Name: "jwksURI hostless port",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:  "https://oidc.example.com",
+			JWKSURI: "https://:443/jwks",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "jwksURI with userinfo",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:  "https://oidc.example.com",
+			JWKSURI: "https://user@oidc.example.com/jwks",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "jwksURI with fragment",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:  "https://oidc.example.com",
+			JWKSURI: "https://oidc.example.com/jwks#frag",
+		}),
+		ExpectError: true,
+	},
+	{
 		Name: "jwksURI too long",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer:  "https://oidc.example.com",
-			JWKSURI: "https://" + strings.Repeat("a", 2042),
+			JWKSURI: "https://" + strings.Repeat("a", 2041),
 		}),
 		ExpectError: true,
 	},
@@ -189,11 +313,54 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
+		Name: "maxTokenExpiration below 1h minimum",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:             "https://oidc.example.com",
+			MaxTokenExpiration: &metav1.Duration{Duration: 59*time.Minute + 59*time.Second},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "maxTokenExpiration over 2^32s maximum",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:             "https://oidc.example.com",
+			MaxTokenExpiration: &metav1.Duration{Duration: ((1 << 32) + 1) * time.Second},
+		}),
+		ExpectError: true,
+	},
+	{
 		Name: "maxTokenExpiration invalid duration string",
 		Vals: map[string]any{
 			"serviceAccountIssuer": map[string]any{
 				"issuer":             "https://oidc.example.com",
 				"maxTokenExpiration": "not-a-duration",
+			},
+		},
+		ExpectError: true,
+	},
+	{
+		Name: "overlapping authentication and serviceAccountIssuer issuer URL rejected",
+		Vals: v1alpha1.DockerClusterConfigSpec{
+			KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
+				Authentication: &v1alpha1.Authentication{
+					JWT: []v1alpha1.JWTAuthenticator{
+						{
+							Issuer: v1alpha1.Issuer{
+								URL:       "https://same-issuer.example.com",
+								Audiences: []string{"k8s"},
+							},
+							ClaimMappings: v1alpha1.ClaimMappings{
+								Username: v1alpha1.PrefixedClaimOrExpression{
+									Claim:  "sub",
+									Prefix: new(""),
+								},
+							},
+						},
+					},
+				},
+				ServiceAccountIssuer: &v1alpha1.ServiceAccountIssuer{
+					Issuer: "https://same-issuer.example.com",
+				},
 			},
 		},
 		ExpectError: true,
@@ -297,5 +464,28 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 		true,
 		nutanixclusterconfig.NewVariable,
 		nutanixTestDefs...,
+	)
+}
+
+func TestVariableValidation_EKS(t *testing.T) {
+	capitest.ValidateDiscoverVariables(
+		t,
+		v1alpha1.ClusterConfigVariableName,
+		new(v1alpha1.EKSClusterConfig{}.VariableSchema()),
+		true,
+		eksclusterconfig.NewVariable,
+		capitest.VariableTestDef{
+			Name: "unset",
+			Vals: v1alpha1.EKSClusterConfigSpec{},
+		},
+		capitest.VariableTestDef{
+			Name: "serviceAccountIssuer rejected on EKS",
+			Vals: map[string]any{
+				"serviceAccountIssuer": map[string]any{
+					"issuer": "https://oidc.example.com",
+				},
+			},
+			ExpectError: true,
+		},
 	)
 }

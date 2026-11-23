@@ -258,6 +258,7 @@ func (s KubeadmClusterConfig) VariableSchema() clusterv1.VariableSchema { //noli
 }
 
 // KubeadmConfigSpec defines configuration that can be set when using kubeadm to bootstrap the cluster.
+// +kubebuilder:validation:XValidation:rule="!has(self.authentication) || !has(self.serviceAccountIssuer) || self.authentication.jwt.all(j, j.issuer.url != self.serviceAccountIssuer.issuer)",message="serviceAccountIssuer.issuer must not overlap with any authentication.jwt issuer.url"
 type KubeadmClusterConfigSpec struct {
 	// Sets the Kubernetes image repository used for the KubeadmControlPlane.
 	// +kubebuilder:validation:Optional
