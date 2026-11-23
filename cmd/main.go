@@ -37,6 +37,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/server"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/enforceclusterautoscalerlimits"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/failuredomainrollout"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/metallbconfig"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/controllers/namespacesync"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/feature"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
@@ -123,6 +124,7 @@ func main() {
 	namespacesyncOptions := namespacesync.Options{}
 	enforceClusterAutoscalerLimitsOptions := enforceclusterautoscalerlimits.Options{}
 	failureDomainRolloutOptions := failuredomainrollout.Options{}
+	metalLBConfigOptions := metallbconfig.Options{}
 
 	// Initialize and parse command line flags.
 	logs.AddFlags(pflag.CommandLine, logs.SkipLoggingConfigurationFlags())
@@ -136,6 +138,7 @@ func main() {
 	namespacesyncOptions.AddFlags(pflag.CommandLine)
 	enforceClusterAutoscalerLimitsOptions.AddFlags(pflag.CommandLine)
 	failureDomainRolloutOptions.AddFlags(pflag.CommandLine)
+	metalLBConfigOptions.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
@@ -279,6 +282,21 @@ func main() {
 			)
 			os.Exit(1)
 		}
+	}
+
+	if err := (&metallbconfig.Reconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(
+		mgr,
+		&controller.Options{MaxConcurrentReconciles: metalLBConfigOptions.Concurrency},
+	); err != nil {
+		setupLog.Error(
+			err,
+			"unable to create controller",
+			"controller",
+			"metallbconfig.Reconciler",
+		)
+		os.Exit(1)
 	}
 
 	mgr.GetWebhookServer().Register("/mutate-cluster", &webhook.Admission{

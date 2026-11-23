@@ -147,11 +147,6 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		servicelbgc.New(mgr.GetClient()),
 		coredns.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
-		// The order of the handlers in the list is important and are called consecutively.
-		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.
-		// However, the MetalLB provider also has a webhook that validates IPAddressPool requests.
-		// Because this webhook relies on CNI and CCM to already be installed on the remote cluster,
-		// we are placing this handler after the CNI and CCM handlers.
 		serviceloadbalancer.New(mgr.GetClient(), serviceLoadBalancerHandlers),
 	}
 

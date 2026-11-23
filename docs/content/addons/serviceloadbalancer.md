@@ -12,8 +12,13 @@ a Virtual IP, creating a machine that runs load balancer software, by delegating
 the underlying infrastructure, or a hardware load balancer.
 
 The Service Load Balancer can choose the Virtual IP from a pre-defined address range. You can use
-CAREN to configure one or more IPv4 ranges. For additional options, configure the Service Load
-Balancer yourself after it is deployed.
+CAREN to configure one or more IPv4 ranges. When `configuration.addressRanges` is specified for
+`MetalLB`, CAREN deploys the MetalLB Helm chart during cluster initialization and reconciles the
+`IPAddressPool` and `L2Advertisement` resources in `metallb-system` onto the workload cluster once
+the MetalLB Helm release becomes ready, keeping them in sync with the `Cluster` configuration. For
+additional options, configure the Service Load Balancer yourself after it is deployed (omit
+`configuration` on the `Cluster` if you manage `IPAddressPool` or `L2Advertisement` named `metallb`
+directly).
 
 CAREN currently supports the following Service Load Balancers:
 

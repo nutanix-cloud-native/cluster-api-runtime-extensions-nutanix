@@ -38,6 +38,7 @@ type ServiceLoadBalancerHandler struct {
 var (
 	_ commonhandlers.Named                   = &ServiceLoadBalancerHandler{}
 	_ lifecycle.AfterControlPlaneInitialized = &ServiceLoadBalancerHandler{}
+	_ lifecycle.BeforeClusterUpgrade         = &ServiceLoadBalancerHandler{}
 )
 
 func New(
