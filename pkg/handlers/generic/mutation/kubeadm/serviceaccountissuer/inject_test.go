@@ -446,6 +446,56 @@ var _ = Describe("Generate ServiceAccount issuer patches", func() {
 			},
 			ExpectedFailure: true,
 		},
+		{
+			Name:        "worker KubeadmConfigTemplate is ignored",
+			RequestItem: request.NewKubeadmConfigTemplateRequest("", "worker-bootstrap"),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.ServiceAccountIssuer{
+						Issuer: "https://oidc.example.com",
+					},
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
+		},
+		{
+			Name: "coexists with unrelated apiServer extraArgs such as authentication-config",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{
+					{Name: "authentication-config", Value: new("/etc/kubernetes/authentication.yaml")},
+				}).
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.ServiceAccountIssuer{
+						Issuer:    "https://oidc.example.com",
+						Audiences: []string{"sts.amazonaws.com", "k8s.example.com"},
+					},
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/1",
+					ValueMatcher: gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", ServiceAccountIssuerArg),
+						gomega.HaveKeyWithValue("value", "https://oidc.example.com"),
+					),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/2",
+					ValueMatcher: gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", APIAudiencesArg),
+						gomega.HaveKeyWithValue("value", "k8s.example.com,sts.amazonaws.com"),
+					),
+				},
+			},
+		},
 	}
 
 	for testIdx := range testDefs {

@@ -1208,7 +1208,7 @@ spec:
                     audiences:
                       description: |-
                         Audiences is an optional list of audiences tokens are bound to.
-                        When set, rendered as comma-joined --api-audiences in declared order.
+                        When set, rendered as comma-joined --api-audiences sorted alphabetically.
                         When absent, --api-audiences is not set (API server defaults to issuer URL).
                       items:
                         maxLength: 253
@@ -1220,20 +1220,20 @@ spec:
                     issuer:
                       description: |-
                         Issuer is the identifier asserted in ServiceAccount JWT iss claims.
-                        Must be an https:// URL. Triggers --service-account-issuer.
+                        Must be an https:// URL without query or fragment. Triggers --service-account-issuer.
                       format: uri
                       maxLength: 2048
-                      minLength: 1
-                      pattern: ^https://
+                      minLength: 9
+                      pattern: ^https://[^/?#\s]+(/[^\s?#]*)?$
                       type: string
                     jwksURI:
                       description: |-
                         JWKSURI overrides the JWKS URI advertised in the OIDC discovery document.
-                        When set, must be an https:// URL. Triggers --service-account-jwks-uri.
+                        When set, must be an https:// URL without query or fragment. Triggers --service-account-jwks-uri.
                       format: uri
                       maxLength: 2048
-                      minLength: 1
-                      pattern: ^https://
+                      minLength: 9
+                      pattern: ^https://[^/?#\s]+(/[^\s?#]*)?$
                       type: string
                     maxTokenExpiration:
                       description: |-

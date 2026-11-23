@@ -2,6 +2,11 @@
 title = "Service Account Issuer"
 +++
 
+<!---
+Copyright 2026 Nutanix. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+--->
+
 This customization allows configuration of the Kubernetes API server's ServiceAccount
 token issuer for workload identity. When specified, CAREN configures the API server
 with `--service-account-issuer`, and optionally `--api-audiences`,

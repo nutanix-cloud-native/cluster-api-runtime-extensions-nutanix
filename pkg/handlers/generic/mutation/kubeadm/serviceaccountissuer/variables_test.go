@@ -76,6 +76,27 @@ var testDefs = []capitest.VariableTestDef{
 		ExpectError: true,
 	},
 	{
+		Name: "issuer missing host",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "issuer with query string",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://oidc.example.com?foo=bar",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "issuer with fragment",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer: "https://oidc.example.com#frag",
+		}),
+		ExpectError: true,
+	},
+	{
 		Name: "issuer bare string",
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer: "oidc.example.com",
@@ -132,6 +153,14 @@ var testDefs = []capitest.VariableTestDef{
 		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
 			Issuer:  "https://oidc.example.com",
 			JWKSURI: "http://oidc.example.com/jwks",
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "jwksURI missing host",
+		Vals: dockerClusterConfigWithServiceAccountIssuer(&v1alpha1.ServiceAccountIssuer{
+			Issuer:  "https://oidc.example.com",
+			JWKSURI: "https://",
 		}),
 		ExpectError: true,
 	},

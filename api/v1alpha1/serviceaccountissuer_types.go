@@ -13,16 +13,16 @@ import (
 // --service-account-max-token-expiration.
 type ServiceAccountIssuer struct {
 	// Issuer is the identifier asserted in ServiceAccount JWT iss claims.
-	// Must be an https:// URL. Triggers --service-account-issuer.
+	// Must be an https:// URL without query or fragment. Triggers --service-account-issuer.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Format=uri
-	// +kubebuilder:validation:Pattern=`^https://`
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^https://[^/?#\s]+(/[^\s?#]*)?$`
+	// +kubebuilder:validation:MinLength=9
 	// +kubebuilder:validation:MaxLength=2048
 	Issuer string `json:"issuer"`
 
 	// Audiences is an optional list of audiences tokens are bound to.
-	// When set, rendered as comma-joined --api-audiences in declared order.
+	// When set, rendered as comma-joined --api-audiences sorted alphabetically.
 	// When absent, --api-audiences is not set (API server defaults to issuer URL).
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=50
@@ -32,11 +32,11 @@ type ServiceAccountIssuer struct {
 	Audiences []string `json:"audiences,omitempty"`
 
 	// JWKSURI overrides the JWKS URI advertised in the OIDC discovery document.
-	// When set, must be an https:// URL. Triggers --service-account-jwks-uri.
+	// When set, must be an https:// URL without query or fragment. Triggers --service-account-jwks-uri.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=uri
-	// +kubebuilder:validation:Pattern=`^https://`
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^https://[^/?#\s]+(/[^\s?#]*)?$`
+	// +kubebuilder:validation:MinLength=9
 	// +kubebuilder:validation:MaxLength=2048
 	JWKSURI string `json:"jwksURI,omitempty"`
 
