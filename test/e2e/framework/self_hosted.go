@@ -330,75 +330,138 @@ func SelfHostedSpec(ctx context.Context, inputGetter func() SelfHostedSpecInput)
 	})
 
 	AfterEach(func() {
-		if selfHostedNamespace != nil {
-			// Dump all Cluster API related resources to artifacts before pivoting back.
-			dumpAllResources(
-				ctx,
-				selfHostedClusterProxy,
-				input.ClusterctlConfigPath,
-				input.ArtifactFolder,
-				namespace,
-				clusterResources.Cluster,
-			)
-		}
-		if selfHostedCluster != nil {
-			By("Ensure API servers are stable before doing move")
-			// Nb. This check was introduced to prevent doing move back to bootstrap in an aggressive way and thus avoid
-			// flakes. More specifically, we were observing the test failing to get objects from the API server during move,
-			// so we are now testing the API servers are stable before starting move.
-			Consistently(func() error {
-				kubeSystem := &corev1.Namespace{}
-				return input.BootstrapClusterProxy.GetClient().
-					Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
-			}, "5s", "100ms").Should(BeNil(), "Failed to assert bootstrap API server stability")
-			Consistently(func() error {
-				kubeSystem := &corev1.Namespace{}
-				return selfHostedClusterProxy.GetClient().
-					Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
-			}, "5s", "100ms").Should(BeNil(), "Failed to assert self-hosted API server stability")
-
-			By("Moving the cluster back to bootstrap")
-			clusterctl.Move(ctx, clusterctl.MoveInput{
-				LogFolder: filepath.Join(
-					input.ArtifactFolder,
-					"clusters",
-					clusterResources.Cluster.Name,
-				),
-				ClusterctlConfigPath: input.ClusterctlConfigPath,
-				FromKubeconfigPath:   selfHostedClusterProxy.GetKubeconfigPath(),
-				ToKubeconfigPath:     input.BootstrapClusterProxy.GetKubeconfigPath(),
-				Namespace:            selfHostedNamespace.Name,
-			})
-
-			By("Waiting for the cluster to be reconciled after moving back to bootstrap")
-			clusterResources.Cluster = capie2eframework.DiscoveryAndWaitForCluster(
-				ctx,
-				capie2eframework.DiscoveryAndWaitForClusterInput{
-					Getter:    input.BootstrapClusterProxy.GetClient(),
-					Namespace: namespace.Name,
-					Name:      clusterResources.Cluster.Name,
-				},
-				input.E2EConfig.GetIntervals(specName, "wait-cluster")...,
-			)
-		}
-		if selfHostedCancelWatches != nil {
-			selfHostedCancelWatches()
-		}
-
-		// Dumps all the resources in the spec namespace, then cleanups the cluster object and the spec namespace itself.
-		dumpSpecResourcesAndCleanup(
+		CleanupSelfHostedSpec(
 			ctx,
 			specName,
-			input.BootstrapClusterProxy,
+			&input,
+			namespace,
+			cancelWatches,
+			clusterResources,
+			selfHostedClusterProxy,
+			selfHostedNamespace,
+			selfHostedCancelWatches,
+			selfHostedCluster,
+		)
+	})
+}
+
+// CleanupSelfHostedSpec pivots any self-hosted cluster back to bootstrap, dumps resources, and cleans up the spec
+// namespace.
+func CleanupSelfHostedSpec(
+	ctx context.Context,
+	specName string,
+	input *SelfHostedSpecInput,
+	namespace *corev1.Namespace,
+	cancelWatches context.CancelFunc,
+	clusterResources *clusterctl.ApplyClusterTemplateAndWaitResult,
+	selfHostedClusterProxy capie2eframework.ClusterProxy,
+	selfHostedNamespace *corev1.Namespace,
+	selfHostedCancelWatches context.CancelFunc,
+	selfHostedCluster *clusterv1.Cluster,
+) {
+	if selfHostedCancelWatches != nil {
+		defer selfHostedCancelWatches()
+	}
+	if input == nil {
+		if cancelWatches != nil {
+			cancelWatches()
+		}
+		return
+	}
+
+	cluster := clusterFromResult(clusterResources)
+
+	if selfHostedNamespace != nil {
+		// Dump all Cluster API related resources to artifacts before pivoting back.
+		dumpAllResources(
+			ctx,
+			selfHostedClusterProxy,
 			input.ClusterctlConfigPath,
 			input.ArtifactFolder,
 			namespace,
-			cancelWatches,
-			clusterResources.Cluster,
-			input.E2EConfig.GetIntervals,
-			input.SkipCleanup,
+			cluster,
 		)
-	})
+	}
+	if selfHostedCluster != nil &&
+		cluster != nil &&
+		selfHostedNamespace != nil &&
+		namespace != nil &&
+		input.BootstrapClusterProxy != nil &&
+		selfHostedClusterProxy != nil &&
+		input.E2EConfig != nil {
+		specByf("Ensure API servers are stable before doing move")
+		// Nb. This check was introduced to prevent doing move back to bootstrap in an aggressive way and thus avoid
+		// flakes. More specifically, we were observing the test failing to get objects from the API server during move,
+		// so we are now testing the API servers are stable before starting move.
+		Consistently(func() error {
+			kubeSystem := &corev1.Namespace{}
+			return input.BootstrapClusterProxy.GetClient().
+				Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
+		}, "5s", "100ms").Should(BeNil(), "Failed to assert bootstrap API server stability")
+		Consistently(func() error {
+			kubeSystem := &corev1.Namespace{}
+			return selfHostedClusterProxy.GetClient().
+				Get(ctx, client.ObjectKey{Name: metav1.NamespaceSystem}, kubeSystem)
+		}, "5s", "100ms").Should(BeNil(), "Failed to assert self-hosted API server stability")
+
+		specByf("Moving the cluster back to bootstrap")
+		clusterctl.Move(ctx, clusterctl.MoveInput{
+			LogFolder: filepath.Join(
+				input.ArtifactFolder,
+				"clusters",
+				cluster.Name,
+			),
+			ClusterctlConfigPath: input.ClusterctlConfigPath,
+			FromKubeconfigPath:   selfHostedClusterProxy.GetKubeconfigPath(),
+			ToKubeconfigPath:     input.BootstrapClusterProxy.GetKubeconfigPath(),
+			Namespace:            selfHostedNamespace.Name,
+		})
+
+		specByf("Waiting for the cluster to be reconciled after moving back to bootstrap")
+		cluster = capie2eframework.DiscoveryAndWaitForCluster(
+			ctx,
+			capie2eframework.DiscoveryAndWaitForClusterInput{
+				Getter:    input.BootstrapClusterProxy.GetClient(),
+				Namespace: namespace.Name,
+				Name:      cluster.Name,
+			},
+			input.E2EConfig.GetIntervals(specName, "wait-cluster")...,
+		)
+		clusterResources.Cluster = cluster
+	}
+	if selfHostedCancelWatches != nil {
+		selfHostedCancelWatches()
+	}
+
+	// Dumps all the resources in the spec namespace, then cleanups the cluster object and the spec namespace itself.
+	dumpSpecResourcesAndCleanup(
+		ctx,
+		specName,
+		input.BootstrapClusterProxy,
+		input.ClusterctlConfigPath,
+		input.ArtifactFolder,
+		namespace,
+		cancelWatches,
+		cluster,
+		intervalsGetterFromConfig(input.E2EConfig),
+		input.SkipCleanup,
+	)
+}
+
+func clusterFromResult(result *clusterctl.ApplyClusterTemplateAndWaitResult) *clusterv1.Cluster {
+	if result == nil {
+		return nil
+	}
+	return result.Cluster
+}
+
+func intervalsGetterFromConfig(
+	cfg *clusterctl.E2EConfig,
+) func(spec, key string) []interface{} {
+	if cfg == nil {
+		return nil
+	}
+	return cfg.GetIntervals
 }
 
 func hasProvider(ctx context.Context, c client.Client, providerName string) bool {
@@ -432,6 +495,12 @@ func setupSpecNamespace(
 	return namespace, cancelWatches
 }
 
+func specByf(format string, a ...any) {
+	if CurrentSpecReport().LeafNodeType != 0 {
+		capie2e.Byf(format, a...)
+	}
+}
+
 // dumpAllResources dumps all the resources in the spec namespace and the workload cluster.
 func dumpAllResources(
 	ctx context.Context,
@@ -441,17 +510,23 @@ func dumpAllResources(
 	namespace *corev1.Namespace,
 	cluster *clusterv1.Cluster,
 ) {
-	capie2e.Byf("Dumping logs from the %q workload cluster", cluster.Name)
+	if clusterProxy == nil || namespace == nil {
+		return
+	}
 
-	// Dump all the logs from the workload cluster.
-	clusterProxy.CollectWorkloadClusterLogs(
-		ctx,
-		cluster.Namespace,
-		cluster.Name,
-		filepath.Join(artifactFolder, "clusters", cluster.Name),
-	)
+	if cluster != nil {
+		specByf("Dumping logs from the %q workload cluster", cluster.Name)
 
-	capie2e.Byf("Dumping all the Cluster API resources in the %q namespace", namespace.Name)
+		// Dump all the logs from the workload cluster.
+		clusterProxy.CollectWorkloadClusterLogs(
+			ctx,
+			cluster.Namespace,
+			cluster.Name,
+			filepath.Join(artifactFolder, "clusters", cluster.Name),
+		)
+	}
+
+	specByf("Dumping all the Cluster API resources in the %q namespace", namespace.Name)
 
 	// Dump all Cluster API related resources to artifacts.
 	capie2eframework.DumpAllResources(ctx, capie2eframework.DumpAllResourcesInput{
@@ -463,29 +538,31 @@ func dumpAllResources(
 	})
 
 	// If the cluster still exists, dump pods and nodes of the workload cluster.
-	if err := clusterProxy.GetClient().Get(
-		ctx, client.ObjectKeyFromObject(cluster), &clusterv1.Cluster{},
-	); err == nil {
-		capie2e.Byf("Dumping Pods and Nodes of Cluster %s", klog.KObj(cluster))
-		capie2eframework.DumpResourcesForCluster(ctx, capie2eframework.DumpResourcesForClusterInput{
-			Lister: clusterProxy.GetWorkloadCluster(ctx, cluster.Namespace, cluster.Name).
-				GetClient(),
-			LogPath: filepath.Join(artifactFolder, "clusters", cluster.Name, "resources"),
-			Resources: []capie2eframework.DumpNamespaceAndGVK{
-				{
-					GVK: schema.GroupVersionKind{
-						Version: corev1.SchemeGroupVersion.Version,
-						Kind:    "Pod",
+	if cluster != nil {
+		if err := clusterProxy.GetClient().Get(
+			ctx, client.ObjectKeyFromObject(cluster), &clusterv1.Cluster{},
+		); err == nil {
+			specByf("Dumping Pods and Nodes of Cluster %s", klog.KObj(cluster))
+			capie2eframework.DumpResourcesForCluster(ctx, capie2eframework.DumpResourcesForClusterInput{
+				Lister: clusterProxy.GetWorkloadCluster(ctx, cluster.Namespace, cluster.Name).
+					GetClient(),
+				LogPath: filepath.Join(artifactFolder, "clusters", cluster.Name, "resources"),
+				Resources: []capie2eframework.DumpNamespaceAndGVK{
+					{
+						GVK: schema.GroupVersionKind{
+							Version: corev1.SchemeGroupVersion.Version,
+							Kind:    "Pod",
+						},
+					},
+					{
+						GVK: schema.GroupVersionKind{
+							Version: corev1.SchemeGroupVersion.Version,
+							Kind:    "Node",
+						},
 					},
 				},
-				{
-					GVK: schema.GroupVersionKind{
-						Version: corev1.SchemeGroupVersion.Version,
-						Kind:    "Node",
-					},
-				},
-			},
-		})
+			})
+		}
 	}
 }
 
@@ -502,29 +579,40 @@ func dumpSpecResourcesAndCleanup(
 	intervalsGetter func(spec, key string) []interface{},
 	skipCleanup bool,
 ) {
+	if cancelWatches != nil {
+		defer cancelWatches()
+	}
+	if clusterProxy == nil || namespace == nil {
+		return
+	}
+
 	// Dump all the resources in the spec namespace and the workload cluster.
 	dumpAllResources(ctx, clusterProxy, clusterctlConfigPath, artifactFolder, namespace, cluster)
 
 	if !skipCleanup {
-		capie2e.Byf("Deleting cluster %s", klog.KObj(cluster))
-		// While https://github.com/kubernetes-sigs/cluster-api/issues/2955 is addressed in future iterations, there is a
-		// chance that cluster variable is not set even if the cluster exists, so we are calling DeleteAllClustersAndWait
-		// instead of DeleteClusterAndWait
-		capie2eframework.DeleteAllClustersAndWait(
-			ctx,
-			capie2eframework.DeleteAllClustersAndWaitInput{
-				ClusterProxy:         clusterProxy,
-				ClusterctlConfigPath: clusterctlConfigPath,
-				Namespace:            namespace.Name,
-			},
-			intervalsGetter(specName, "wait-delete-cluster")...,
-		)
+		if cluster != nil {
+			specByf("Deleting cluster %s", klog.KObj(cluster))
+		}
+		if intervalsGetter != nil {
+			// While https://github.com/kubernetes-sigs/cluster-api/issues/2955 is addressed in future iterations, there is a
+			// chance that cluster variable is not set even if the cluster exists, so we are calling DeleteAllClustersAndWait
+			// instead of DeleteClusterAndWait
+			capie2eframework.DeleteAllClustersAndWait(
+				ctx,
+				capie2eframework.DeleteAllClustersAndWaitInput{
+					ClusterProxy:         clusterProxy,
+					ClusterctlConfigPath: clusterctlConfigPath,
+					Namespace:            namespace.Name,
+					ArtifactFolder:       artifactFolder,
+				},
+				intervalsGetter(specName, "wait-delete-cluster")...,
+			)
+		}
 
-		capie2e.Byf("Deleting namespace used for hosting the %q test spec", specName)
+		specByf("Deleting namespace used for hosting the %q test spec", specName)
 		capie2eframework.DeleteNamespace(ctx, capie2eframework.DeleteNamespaceInput{
 			Deleter: clusterProxy.GetClient(),
 			Name:    namespace.Name,
 		})
 	}
-	cancelWatches()
 }
