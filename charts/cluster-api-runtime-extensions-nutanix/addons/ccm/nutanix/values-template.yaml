@@ -31,13 +31,17 @@ loadBalancer:
 # The Secret containing the credentials will be created by the handler.
 createSecret: false
 secretName: nutanix-ccm-credentials
-{{- /* Guarded on the host, not the endpoint: an endpoint with only a
-reservation would render KUBERNETES_SERVICE_HOST="", which stops the CCM
-falling back to the in-cluster config and leaves it crash-looping. */}}
-{{- with .ControlPlaneEndpoint.Host }}
+{{- /* Guarded on the host as well as the endpoint: the endpoint is a struct
+and so always truthy, and one holding only a reservation would render
+KUBERNETES_SERVICE_HOST="", which stops the CCM falling back to the in-cluster
+config and leaves it crash-looping. The outer guard keeps a nil endpoint from
+being dereferenced. */}}
+{{- with .ControlPlaneEndpoint }}
+{{- with .Host }}
 extraEnv:
   - name: KUBERNETES_SERVICE_HOST
     value: "{{ trimPrefix . "https://" }}"
   - name: KUBERNETES_SERVICE_PORT
     value: "{{ $.ControlPlaneEndpoint.Port }}"
+{{- end }}
 {{- end }}
