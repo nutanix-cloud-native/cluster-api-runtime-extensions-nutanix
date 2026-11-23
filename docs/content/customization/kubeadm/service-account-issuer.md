@@ -21,17 +21,23 @@ This feature is available for **kubeadm-based providers only** (AWS, Docker, Nut
 EKS is excluded because it does not expose API server flags through `ManagedControlPlane`.
 
 The API server serves OIDC discovery at `/.well-known/openid-configuration` and JWKS at
-`openid/v1/jwks` based on the configured issuer. Tokens are issued with the configured
+`/openid/v1/jwks` based on the configured issuer. Tokens are issued with the configured
 `iss` claim.
+
+## Kubernetes version requirement
+
+Available on all Kubernetes versions supported by CAREN for kubeadm-based clusters
+(bound ServiceAccount token volumes and ServiceAccount issuer OIDC discovery have been GA
+since Kubernetes 1.21).
 
 ## Configuration
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `issuer` | `string` | - | Required. Identifier asserted in ServiceAccount JWT `iss` claims. Must be an `https://` URL, max 2048 characters. Triggers `--service-account-issuer`. |
-| `audiences` | `[]string` | `[]` | Optional. List of audiences tokens are bound to, max 50 entries, each 1-253 characters, unique. When set, rendered as comma-joined `--api-audiences` sorted alphabetically. When absent, the API server defaults to the issuer URL. |
-| `jwksURI` | `string` | `""` | Optional. Override for the JWKS URI advertised in the discovery document, max 2048 characters. Must be an `https://` URL when set. Triggers `--service-account-jwks-uri`. |
-| `maxTokenExpiration` | `duration` | `""` | Optional. Maximum lifetime for ServiceAccount tokens as Go duration (e.g. `1h`, `24h`). When set, triggers `--service-account-max-token-expiration`. When absent, API server default applies. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `issuer` | `string` (`https://`) | Yes | Identifier asserted in ServiceAccount JWT `iss` claims. Must be an `https://` URL (max 2048 characters) with a non-empty hostname and valid port, without userinfo, query parameters, or fragments. Must not match any `clusterConfig.authentication.jwt[].issuer.url`. Triggers `--service-account-issuer`. |
+| `audiences` | `[]string` | No | List of audiences tokens are bound to (max 50 unique entries, each 1–253 characters, without whitespace, commas, or double quotes). When set, rendered as comma-joined `--api-audiences` sorted alphabetically. When absent, `--api-audiences` is omitted and the API server defaults to `[issuer]`. |
+| `jwksURI` | `string` (`https://`) | No | Override for the `jwks_uri` advertised in `/.well-known/openid-configuration` (max 2048 characters). Must be an `https://` URL with a non-empty hostname and valid port, without userinfo or fragments (query parameters are allowed per OpenID Connect Discovery 1.0 Section 3). Triggers `--service-account-jwks-uri`. |
+| `maxTokenExpiration` | `duration` | No | Maximum lifetime for ServiceAccount tokens as a Go duration between `1h` and `1193046h28m16s` (`2^32` seconds), e.g. `2h` or `24h` (`kube-apiserver` rejects values below `1h` and logs a startup warning at `<= 3607s`). Triggers `--service-account-max-token-expiration`. Note that `kube-apiserver` enables `--service-account-extend-token-expiration=true` by default, which extends default admission-injected Pod projected tokens (`3607s`) up to 1 year unless a Pod's `serviceAccountToken` volume projection sets `expirationSeconds` explicitly. |
 
 ## Examples
 
@@ -67,6 +73,11 @@ spec:
 
 ### Issuer with audiences for cross-service validation
 
+When overriding `audiences`, include the cluster's Kubernetes API audience
+(for example `https://kubernetes.default.svc.cluster.local`) alongside external
+relying-party audiences if workloads also authenticate against the Kubernetes API
+using that audience:
+
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -81,10 +92,12 @@ spec:
             issuer: https://oidc.example.com
             audiences:
               - sts.amazonaws.com
-              - k8s.example.com
+              - https://kubernetes.default.svc.cluster.local
 ```
 
-This renders `api-audiences` as `k8s.example.com,sts.amazonaws.com` (sorted alphabetically regardless of input order).
+This renders `api-audiences` as
+`https://kubernetes.default.svc.cluster.local,sts.amazonaws.com` (sorted
+alphabetically regardless of input order).
 
 ### Issuer with custom JWKS URI
 
@@ -117,17 +130,44 @@ spec:
         value:
           serviceAccountIssuer:
             issuer: https://oidc.example.com
-            maxTokenExpiration: 1h
+            maxTokenExpiration: 2h
 ```
 
 ## Notes
 
-- **Rollout:** Changing the issuer triggers a control-plane rollout because the API server flags
-  change. Tokens issued before the change remain valid until expiry.
-- **Conflict:** If `service-account-issuer`, `api-audiences`, `service-account-jwks-uri`, or
-  `service-account-max-token-expiration` are already set directly via `apiServer.extraArgs`, the
-  handler returns an error directing you to remove the direct `extraArgs` and use
+- **Rollout and token rotation:** Changing `serviceAccountIssuer` updates
+  `KubeadmControlPlane` and triggers a rolling replacement of control-plane machines.
+  Because CAREN sets a single `--service-account-issuer`, changing `issuer` (or
+  removing an entry from `audiences`) causes updated API servers to immediately
+  reject existing ServiceAccount tokens carrying the previous `iss` or removed `aud`
+  with `401 Unauthorized` until kubelet refreshes projected volume tokens (at ~80%
+  of token lifetime) or Pods are restarted. Plan Pod restarts when rotating `issuer`
+  or narrowing `audiences` on running clusters.
+- **Conflict and idempotency:** Existing `apiServer.extraArgs` entries that already
+  match the desired values are preserved idempotently. If `service-account-issuer`,
+  `api-audiences`, `service-account-jwks-uri`, or `service-account-max-token-expiration`
+  are already set directly via `apiServer.extraArgs` with a different or `nil` value
+  (or when the corresponding optional field is unset), the handler returns an error
+  directing you to remove the direct `extraArgs` and use
   `clusterConfig.serviceAccountIssuer` instead.
 - **Composition:** This feature composes additively with `podSecurityAdmission`,
-  `encryptionAtRest`, and `authentication` (`AuthenticationConfiguration`). They use different
-  flags/files and do not conflict.
+  `encryptionAtRest`, and `authentication` (`AuthenticationConfiguration`). When
+  used together with `clusterConfig.authentication`, `serviceAccountIssuer.issuer`
+  must not equal any `authentication.jwt[].issuer.url` because `kube-apiserver`
+  forbids external JWT authenticators from overlapping the ServiceAccount issuer.
+
+## Removing ServiceAccount issuer configuration
+
+When `serviceAccountIssuer` is unset or omitted, the handler emits no patches
+against the `ClusterClass` `KubeadmControlPlaneTemplate`. Clusters that never set
+`serviceAccountIssuer` are unaffected, while removing `serviceAccountIssuer` from a
+cluster that previously enabled it reconciles `KubeadmControlPlane` back to the
+unpatched `ClusterClass` template — removing the managed ServiceAccount issuer flags
+and rolling control-plane machines back to kubeadm's default issuer. As with
+rotating `issuer`, Pods holding tokens minted with the removed custom `iss` will need
+projected token refresh or restart once control-plane nodes roll.
+
+## See also
+
+- [Kubernetes ServiceAccount token volume projection](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#serviceaccount-token-volume-projection)
+- [Configure ServiceAccount issuer discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery)

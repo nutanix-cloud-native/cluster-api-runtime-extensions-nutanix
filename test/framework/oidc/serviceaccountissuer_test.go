@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -30,6 +31,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/client-go/rest"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
@@ -346,6 +348,29 @@ func TestVerifyOIDCDiscoveryAndJWKS(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "system:serviceaccount:default:ec", claims["sub"])
+
+		// Sign SHA-384 with the P-256 key, zero-padded to 96 bytes, claiming alg=ES384.
+		// VerifyServiceAccountJWT must reject the curve/alg mismatch (ES384 requires P-384).
+		mismatchHeader, err := json.Marshal(map[string]string{
+			"alg": "ES384",
+			"kid": "ec-1",
+			"typ": "JWT",
+		})
+		require.NoError(t, err)
+		mismatchInput := base64.RawURLEncoding.EncodeToString(mismatchHeader) + "." +
+			base64.RawURLEncoding.EncodeToString(payloadJSON)
+		digest384 := sha512.Sum384([]byte(mismatchInput))
+		r384, s384, err := ecdsa.Sign(rand.Reader, ecKey, digest384[:])
+		require.NoError(t, err)
+		paddedSig := make([]byte, 96)
+		r384.FillBytes(paddedSig[:48])
+		s384.FillBytes(paddedSig[48:])
+		mismatchedToken := mismatchInput + "." + base64.RawURLEncoding.EncodeToString(paddedSig)
+
+		_, err = VerifyServiceAccountJWT(mismatchedToken, map[string]crypto.PublicKey{
+			"ec-1": parsedPub,
+		})
+		require.ErrorContains(t, err, "curve")
 	})
 }
 
@@ -415,7 +440,7 @@ func newFakeServiceAccountAPIServer(t *testing.T, opts fakeAPIServerOptions) *ht
 			if len(auds) == 0 {
 				auds = opts.apiAudiences
 			}
-			sub := "system:serviceaccount:" + ServiceAccountIssuerE2ENamespace + ":" + ServiceAccountIssuerE2EName
+			sub := serviceaccount.MakeUsername(ServiceAccountIssuerE2ENamespace, ServiceAccountIssuerE2EName)
 			bundle := &Bundle{IssuerURL: opts.issuer, PrivateKey: signingKey}
 			tok, err := bundle.MintJWT(map[string]any{
 				"iss": opts.issuer,
@@ -476,11 +501,10 @@ func newFakeServiceAccountAPIServer(t *testing.T, opts fakeAPIServerOptions) *ht
 				Status: authenticationv1.SelfSubjectReviewStatus{
 					UserInfo: authenticationv1.UserInfo{
 						Username: sub,
-						Groups: []string{
-							"system:serviceaccounts",
-							"system:serviceaccounts:" + ServiceAccountIssuerE2ENamespace,
+						Groups: append(
+							serviceaccount.MakeGroupNames(ServiceAccountIssuerE2ENamespace),
 							"system:authenticated",
-						},
+						),
 					},
 				},
 			})
@@ -530,6 +554,21 @@ func TestVerifyWorkloadServiceAccountIssuer(t *testing.T) {
 			t,
 			VerifyWorkloadServiceAccountIssuer(t.Context(), fakeRESTConfig(srv.URL), sai),
 			"issuer",
+		)
+	})
+
+	t.Run("fails when second configured audience is rejected by API server", func(t *testing.T) {
+		t.Parallel()
+		srv := newFakeServiceAccountAPIServer(t, fakeAPIServerOptions{
+			issuer:        DefaultServiceAccountIssuerURL,
+			jwksURI:       DefaultServiceAccountJWKSURI,
+			apiAudiences:  []string{sai.Audiences[0]},
+			maxExpiration: DefaultServiceAccountMaxTokenExpiration,
+		})
+		require.ErrorContains(
+			t,
+			VerifyWorkloadServiceAccountIssuer(t.Context(), fakeRESTConfig(srv.URL), sai),
+			sai.Audiences[1],
 		)
 	})
 

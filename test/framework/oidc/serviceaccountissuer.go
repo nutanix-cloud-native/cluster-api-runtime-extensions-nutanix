@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
@@ -339,39 +340,40 @@ func VerifyWorkloadServiceAccountIssuer(
 		)
 	}()
 
-	configuredAud := sai.Issuer
-	if len(sai.Audiences) > 0 {
-		configuredAud = sai.Audiences[0]
+	configuredAuds := sai.Audiences
+	if len(configuredAuds) == 0 {
+		configuredAuds = []string{sai.Issuer}
 	}
-	expectedSub := fmt.Sprintf(
-		"system:serviceaccount:%s:%s",
+	expectedSub := serviceaccount.MakeUsername(
 		ServiceAccountIssuerE2ENamespace,
 		ServiceAccountIssuerE2EName,
 	)
-
-	validTok, validClaims, err := mintAndVerifySAToken(
-		ctx,
-		clientset,
-		keys,
-		[]string{configuredAud},
-		600,
-	)
-	if err != nil {
-		return fmt.Errorf("minting ServiceAccount token for configured audience %q: %w", configuredAud, err)
-	}
-	if err := verifyTokenClaims(validClaims, sai.Issuer, expectedSub, configuredAud); err != nil {
-		return err
-	}
-
 	wantSAUser := &ExpectedUserInfo{
 		Username: expectedSub,
-		Groups: []string{
-			"system:serviceaccounts",
-			"system:serviceaccounts:" + ServiceAccountIssuerE2ENamespace,
-		},
+		Groups:   serviceaccount.MakeGroupNames(ServiceAccountIssuerE2ENamespace),
 	}
-	if err := ValidateTokenAuth(ctx, restCfg, validTok, wantSAUser); err != nil {
-		return fmt.Errorf("authenticating ServiceAccount token with configured audience %q: %w", configuredAud, err)
+
+	for _, configuredAud := range configuredAuds {
+		validTok, validClaims, err := mintAndVerifySAToken(
+			ctx,
+			clientset,
+			keys,
+			[]string{configuredAud},
+			600,
+		)
+		if err != nil {
+			return fmt.Errorf("minting ServiceAccount token for configured audience %q: %w", configuredAud, err)
+		}
+		if err := verifyTokenClaims(validClaims, sai.Issuer, expectedSub, configuredAud); err != nil {
+			return err
+		}
+		if err := ValidateTokenAuth(ctx, restCfg, validTok, wantSAUser); err != nil {
+			return fmt.Errorf(
+				"authenticating ServiceAccount token with configured audience %q: %w",
+				configuredAud,
+				err,
+			)
+		}
 	}
 
 	unconfiguredTok, unconfiguredClaims, err := mintAndVerifySAToken(
@@ -407,7 +409,7 @@ func VerifyWorkloadServiceAccountIssuer(
 			ctx,
 			clientset,
 			keys,
-			[]string{configuredAud},
+			[]string{configuredAuds[0]},
 			requestedSec,
 		)
 		if err != nil {
@@ -488,14 +490,11 @@ func verifyTokenClaims(claims map[string]any, wantIssuer, wantSub, wantAudience 
 }
 
 func int64Claim(claims map[string]any, key string) (int64, error) {
-	switch v := claims[key].(type) {
-	case float64:
-		return int64(v), nil
-	case json.Number:
-		return v.Int64()
-	default:
+	v, ok := claims[key].(float64)
+	if !ok {
 		return 0, fmt.Errorf("claim %q missing or non-numeric (%T)", key, claims[key])
 	}
+	return int64(v), nil
 }
 
 func parseJWKPublicKey(entry *jwkEntry) (crypto.PublicKey, error) {
@@ -585,22 +584,34 @@ func verifyJWTSignature(
 			return fmt.Errorf("alg %s requires ECDSA public key, got %T", alg, pub)
 		}
 		var (
-			digest  []byte
-			keySize int
+			wantCurve elliptic.Curve
+			digest    []byte
+			keySize   int
 		)
 		switch alg {
 		case "ES256":
+			wantCurve = elliptic.P256()
 			sum := sha256.Sum256(signingInput)
 			digest = sum[:]
 			keySize = 32
 		case "ES384":
+			wantCurve = elliptic.P384()
 			sum := sha512.Sum384(signingInput)
 			digest = sum[:]
 			keySize = 48
 		case "ES512":
+			wantCurve = elliptic.P521()
 			sum := sha512.Sum512(signingInput)
 			digest = sum[:]
 			keySize = 66
+		}
+		if ecPub.Curve != wantCurve {
+			return fmt.Errorf(
+				"alg %s requires curve %s, got %s",
+				alg,
+				wantCurve.Params().Name,
+				ecPub.Curve.Params().Name,
+			)
 		}
 		if len(sigBytes) != 2*keySize {
 			return fmt.Errorf("alg %s expected %d-byte signature, got %d", alg, 2*keySize, len(sigBytes))
