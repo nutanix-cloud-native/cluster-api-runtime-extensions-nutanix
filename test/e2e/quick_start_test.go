@@ -128,6 +128,7 @@ var _ = Describe("Quick start", func() {
 											clusterLocalClusterctlConfigPath string
 											clusterName                      string
 											mockOIDCBundle                   *oidc.Bundle
+											saIssuerConfig                   *v1alpha1.ServiceAccountIssuer
 										)
 
 										BeforeEach(func() {
@@ -158,12 +159,19 @@ var _ = Describe("Quick start", func() {
 												Expect(os.RemoveAll(clusterLocalTempDir)).To(Succeed())
 											})
 
-											// Inject structured authentication at cluster creation time on one flavor
-											// per provider using a pre-generated CA and static Service ClusterIP derived
-											// from the template's Service CIDR, avoiding a post-provision control-plane rollout.
+											// Inject structured authentication and ServiceAccount issuer configuration
+											// at cluster creation time on one flavor per provider, avoiding a
+											// post-provision control-plane rollout and verifying additive composition.
 											mockOIDCBundle = nil
+											saIssuerConfig = nil
 											if flavor == "topology-cilium-helm-addon" {
 												mockOIDCBundle = enableMockOIDCInFlavorTemplate(
+													testE2EConfig,
+													lowercaseProvider,
+													flavor,
+													clusterLocalTempDir,
+												)
+												saIssuerConfig = enableServiceAccountIssuerInFlavorTemplate(
 													testE2EConfig,
 													lowercaseProvider,
 													flavor,
@@ -392,6 +400,20 @@ var _ = Describe("Quick start", func() {
 																DeploymentIntervals: testE2EConfig.GetIntervals(
 																	flavor,
 																	"wait-deployment",
+																),
+															},
+														)
+														ensureWorkloadClusterServiceAccountIssuer(
+															ctx,
+															ensureWorkloadClusterServiceAccountIssuerInput{
+																BootstrapProxy:       proxy,
+																WorkloadProxy:        workloadProxy,
+																Namespace:            namespace,
+																ClusterName:          clusterName,
+																ServiceAccountIssuer: saIssuerConfig,
+																ControlPlaneIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-control-plane",
 																),
 															},
 														)
@@ -639,4 +661,124 @@ func ensureWorkloadClusterAuthentication(
 		Expect(err).ToNot(HaveOccurred())
 		Expect(oidc.ValidateTokenAuth(ctx, restCfg, token, nil)).To(Succeed())
 	}
+}
+
+func enableServiceAccountIssuerInFlavorTemplate(
+	testE2EConfig *clusterctl.E2EConfig,
+	lowercaseProvider, flavor, tmpDir string,
+) *v1alpha1.ServiceAccountIssuer {
+	target := "cluster-template-" + flavor + ".yaml"
+	for i := range testE2EConfig.Providers {
+		p := &testE2EConfig.Providers[i]
+		if p.Name != lowercaseProvider {
+			continue
+		}
+		for j := range p.Versions {
+			v := &p.Versions[j]
+			for k := range v.Files {
+				f := &v.Files[k]
+				if f.TargetName != target {
+					continue
+				}
+				raw, err := os.ReadFile(f.SourcePath)
+				Expect(err).ToNot(HaveOccurred(), "failed to read template %q", f.SourcePath)
+
+				sai := oidc.DefaultE2EServiceAccountIssuer()
+				patched, err := oidc.EnableServiceAccountIssuerInClusterTemplate(raw, sai)
+				Expect(err).ToNot(HaveOccurred(), "injecting serviceAccountIssuer into %q", f.SourcePath)
+
+				dst := filepath.Join(tmpDir, target)
+				Expect(os.WriteFile(dst, patched, 0o600)).To(Succeed())
+				f.SourcePath = dst
+				Logf(
+					"Pre-configured serviceAccountIssuer %s in %s/%s",
+					sai.Issuer,
+					lowercaseProvider,
+					target,
+				)
+				return &sai
+			}
+		}
+	}
+	Fail(fmt.Sprintf("flavor %q not found for provider %q", flavor, lowercaseProvider))
+	return nil
+}
+
+type ensureWorkloadClusterServiceAccountIssuerInput struct {
+	BootstrapProxy        capiframework.ClusterProxy
+	WorkloadProxy         capiframework.ClusterProxy
+	Namespace             string
+	ClusterName           string
+	ServiceAccountIssuer  *v1alpha1.ServiceAccountIssuer
+	ControlPlaneIntervals []any
+}
+
+func ensureWorkloadClusterServiceAccountIssuer(
+	ctx context.Context,
+	input ensureWorkloadClusterServiceAccountIssuerInput,
+) {
+	By("Validating ServiceAccount issuer configuration without external services")
+	Expect(input.ServiceAccountIssuer).ToNot(BeNil())
+
+	bootstrapClient := input.BootstrapProxy.GetClient()
+	Eventually(func() bool {
+		c := &clusterv1.Cluster{}
+		if err := bootstrapClient.Get(
+			ctx,
+			client.ObjectKey{Namespace: input.Namespace, Name: input.ClusterName},
+			c,
+		); err != nil {
+			Logf("failed to get Cluster: %v", err)
+			return false
+		}
+		if !oidc.ClusterControlPlaneSettled(c) {
+			Logf(
+				"Cluster control plane not settled (generation %d observed %d), conditions: %v",
+				c.Generation,
+				c.Status.ObservedGeneration,
+				c.Status.Conditions,
+			)
+			return false
+		}
+		kcpList := &controlplanev1.KubeadmControlPlaneList{}
+		if err := bootstrapClient.List(
+			ctx,
+			kcpList,
+			client.InNamespace(input.Namespace),
+			client.MatchingLabels{clusterv1.ClusterNameLabel: input.ClusterName},
+		); err != nil {
+			Logf("failed to list KubeadmControlPlanes: %v", err)
+			return false
+		}
+		for i := range kcpList.Items {
+			kcp := &kcpList.Items[i]
+			if oidc.ServiceAccountIssuerConfigCurrent(kcp, *input.ServiceAccountIssuer) {
+				return true
+			}
+			Logf(
+				"KCP %s generation %d observed %d replicas %d ready %d upToDate %d extraArgs %v",
+				kcp.Name,
+				kcp.Generation,
+				kcp.Status.ObservedGeneration,
+				ptr.Deref(kcp.Status.Replicas, 0),
+				ptr.Deref(kcp.Status.ReadyReplicas, 0),
+				ptr.Deref(kcp.Status.UpToDateReplicas, 0),
+				kcp.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs,
+			)
+		}
+		return false
+	}, input.ControlPlaneIntervals...).Should(
+		BeTrue(),
+		"KubeadmControlPlane did not settle with ServiceAccount issuer extraArgs",
+	)
+
+	By("Verifying admin kubeconfig works with ServiceAccount issuer configured")
+	workloadClient := input.WorkloadProxy.GetClient()
+	Expect(workloadClient.List(ctx, &corev1.PodList{}, client.InNamespace("kube-system"))).To(Succeed())
+
+	By("Verifying OIDC discovery, JWKS token signatures, audience enforcement, and maxTokenExpiration")
+	restCfg := input.WorkloadProxy.GetRESTConfig()
+	Eventually(func() error {
+		return oidc.VerifyWorkloadServiceAccountIssuer(ctx, restCfg, *input.ServiceAccountIssuer)
+	}, 2*time.Minute, 5*time.Second).Should(Succeed())
 }

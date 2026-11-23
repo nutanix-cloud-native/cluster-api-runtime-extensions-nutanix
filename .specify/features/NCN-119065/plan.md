@@ -7,7 +7,7 @@
 
 **Branch**: `NCN-119065-service-account-issuer` | **Date**: 2026-11-10 | **Spec**: [spec.md](./spec.md) | **Jira**: [NCN-119065](https://jira.nutanix.com/browse/NCN-119065)
 
-**Goal**: Allow operators to configure the API server's ServiceAccount token issuer (workload identity) by declaring `clusterConfig.serviceAccountIssuer` on `KubeadmClusterConfigSpec`; a provider-agnostic mutation handler renders `service-account-issuer`, `api-audiences`, and `service-account-jwks-uri` as `KubeadmControlPlaneTemplate.spec.template.spec.kubeadmConfigSpec.clusterConfiguration.apiServer.extraArgs`. Opt-in / no-op when unset.
+**Goal**: Allow operators to configure the API server's ServiceAccount token issuer (workload identity) by declaring `clusterConfig.serviceAccountIssuer` on `KubeadmClusterConfigSpec`; a provider-agnostic mutation handler renders `service-account-issuer`, alphabetically sorted `api-audiences`, `service-account-jwks-uri`, and `service-account-max-token-expiration` as `KubeadmControlPlaneTemplate.spec.template.spec.kubeadmConfigSpec.clusterConfiguration.apiServer.extraArgs`. Opt-in / no-op when unset, with self-contained provider-agnostic e2e coverage in `test/framework/oidc` and `test/e2e/quick_start_test.go`.
 
 **Architecture**: Owned API type `ServiceAccountIssuer` in `api/v1alpha1/serviceaccountissuer_types.go` (pointer on `KubeadmClusterConfigSpec.serviceAccountIssuer`), new mutation handler `pkg/handlers/generic/mutation/kubeadm/serviceaccountissuer/` that follows the `extraapiservercertsans` / `podsecurityadmission` pattern (`patches.MutateIfApplicable` on `selectors.ControlPlane()` + `variables.Get`), registered in `pkg/handlers/generic/mutation/handlers.go:MetaMutators()` before `sortextraargs`, kubebuilder + CEL validation on the CRD, deterministic `extraArgs` via existing `sortextraargs` stage.
 
@@ -186,7 +186,16 @@ charts/ + examples/                       # GENERATED only via make go-generate 
 - [ ] Update `docs/content/customization/kubeadm/_index.md` (or `docs/content/customization/_index.md` — verify on branch) to link new page.
 - [ ] `make preview-docs` smoke — page renders without warnings.
 
-### Task 5: Final verification gate
+### Task 5: Integration/e2e — boot-time Cluster template injection & self-contained OIDC/JWKS token validation
+
+- [x] Extend untagged `test/framework/oidc` (`serviceaccountissuer.go`, `serviceaccountissuer_test.go`) with:
+  - `EnableServiceAccountIssuerInClusterTemplate` (sharing YAML node injection with `EnableAuthenticationInClusterTemplate` so both `authentication` and `serviceAccountIssuer` compose in `clusterConfig`)
+  - `KubeadmControlPlaneHasAPIServerArg`, `ExpectedServiceAccountIssuerExtraArgs`, and `ServiceAccountIssuerConfigCurrent` predicates
+  - `FetchOIDCDiscovery`, `VerifyOIDCDiscovery`, `FetchJWKSKeys`, `VerifyServiceAccountJWT` (stdlib RSA/ECDSA verification against `/openid/v1/jwks`), and `VerifyWorkloadServiceAccountIssuer` (`TokenRequest` minting, `iss`/`aud`/`sub` assertions, `SelfSubjectReview` acceptance for configured audience and HTTP `401` rejection for unconfigured audience, and `maxTokenExpiration` lifetime capping)
+  - Unit tests covering AWS/Docker/Nutanix Cluster templates, coexistence with `authentication`, KCP predicates, discovery/JWKS signature verification, audience enforcement, and `maxTokenExpiration` capping (plus envtest integration verification against a real `kube-apiserver`)
+- [x] Wire boot-time `EnableServiceAccountIssuerInClusterTemplate` and post-provision `ensureWorkloadClusterServiceAccountIssuer` into `test/e2e/quick_start_test.go` on `topology-cilium-helm-addon` across all providers.
+
+### Task 6: Final verification gate
 
 - [ ] `make go-generate` clean (no diff beyond `api/` CRDs/deepcopy); `git status` shows no unintended `charts/`/`examples/` changes or only expected CRD deepcopy.
 - [ ] `make fmt` + `make lint` + `make pre-commit` clean (license headers current year).
@@ -213,4 +222,3 @@ charts/ + examples/                       # GENERATED only via make go-generate 
 - `--service-account-key-file` / `--service-account-signing-key-file` / `--service-account-extend-token-expiration` tuning.
 - End-user OIDC/JWT authentication (`--oidc-*` / `AuthenticationConfiguration`) — separate feature NCN-118972.
 - EKS support (no API server flag access).
-- E2E against a real cluster (label-driven `test/e2e` later if desired).
