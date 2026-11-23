@@ -91,8 +91,8 @@ type ControlPlaneVirtualIPConfiguration struct {
 type ControlPlaneIPReservation struct {
 	// Subnet is the Nutanix subnet the API server address is reserved from, as
 	// either a UUID or the name of a subnet. The subnet must be IPAM-managed.
-	// When a name is used, cluster must identify the Prism Element cluster that
-	// resolves it.
+	// A name need only be unique on this Prism Central; set cluster when it is
+	// not.
 	// Immutable: the address is reserved once, and changing the subnet would
 	// orphan that reservation while the API server still answers on it.
 	// +kubebuilder:validation:Required
@@ -100,8 +100,9 @@ type ControlPlaneIPReservation struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
 	Subnet string `json:"subnet"`
 
-	// Cluster is the Prism Element cluster used to resolve a subnet name, as
-	// either a name or a UUID. Required only when subnet is a name.
+	// Cluster is the Prism Element cluster that disambiguates a subnet name, as
+	// either a name or a UUID. Needed only when the name is not unique on this
+	// Prism Central; a UUID subnet never needs it.
 	// Immutable, for the same reason as subnet.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
