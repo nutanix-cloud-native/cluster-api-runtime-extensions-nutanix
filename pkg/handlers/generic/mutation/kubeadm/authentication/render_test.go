@@ -736,6 +736,34 @@ func TestRenderAuthenticationConfigInvalid(t *testing.T) {
 			},
 			errContains: "query",
 		},
+		{
+			name: "duplicate discoveryURLs across issuers",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{
+					{
+						Issuer: v1alpha1.Issuer{
+							URL:          "https://issuer-a.example.com",
+							DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+							Audiences:    []string{"k8s"},
+						},
+						ClaimMappings: v1alpha1.ClaimMappings{
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						},
+					},
+					{
+						Issuer: v1alpha1.Issuer{
+							URL:          "https://issuer-b.example.com",
+							DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+							Audiences:    []string{"k8s"},
+						},
+						ClaimMappings: v1alpha1.ClaimMappings{
+							Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+						},
+					},
+				},
+			},
+			errContains: "Duplicate value",
+		},
 	}
 
 	for _, tt := range tests {
@@ -746,4 +774,32 @@ func TestRenderAuthenticationConfigInvalid(t *testing.T) {
 			assert.Contains(t, err.Error(), tt.errContains)
 		})
 	}
+}
+
+func TestSanitizeAuthenticationForLog(t *testing.T) {
+	t.Parallel()
+
+	caPEM := testCAPEM(t)
+	orig := &v1alpha1.Authentication{
+		JWT: []v1alpha1.JWTAuthenticator{
+			{
+				Issuer: v1alpha1.Issuer{
+					URL:                  "https://issuer-a.example.com",
+					CertificateAuthority: caPEM,
+					Audiences:            []string{"k8s"},
+				},
+			},
+			{
+				Issuer: v1alpha1.Issuer{
+					URL:       "https://issuer-b.example.com",
+					Audiences: []string{"k8s"},
+				},
+			},
+		},
+	}
+
+	sanitized := sanitizeAuthenticationForLog(orig)
+	assert.Equal(t, "<omitted>", sanitized.JWT[0].Issuer.CertificateAuthority)
+	assert.Empty(t, sanitized.JWT[1].Issuer.CertificateAuthority)
+	assert.Equal(t, caPEM, orig.JWT[0].Issuer.CertificateAuthority, "original variable must not be mutated")
 }

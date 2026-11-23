@@ -54,7 +54,7 @@ type JWTAuthenticator struct {
 
 // Issuer holds OIDC provider connection settings for one JWT authenticator.
 // +kubebuilder:validation:XValidation:rule="size(self.audiences) <= 1 || (has(self.audienceMatchPolicy) && self.audienceMatchPolicy == 'MatchAny')",message="audienceMatchPolicy must be MatchAny when more than one audience is set"
-// +kubebuilder:validation:XValidation:rule="!has(self.discoveryURL) || self.discoveryURL.trim() != self.url.trim()",message="discoveryURL must differ from url"
+// +kubebuilder:validation:XValidation:rule="!has(self.discoveryURL) || !(self.discoveryURL == self.url || self.discoveryURL == self.url + '/' || self.discoveryURL + '/' == self.url)",message="discoveryURL must differ from url"
 type Issuer struct {
 	// URL is the OIDC issuer URL (must be https:// without query or fragment).
 	// Must match the iss claim in presented JWTs.

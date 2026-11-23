@@ -22,10 +22,11 @@ unaffected.
 ## Kubernetes version requirement
 
 Requires **Kubernetes >= 1.34** (`apiserver.config.k8s.io/v1` went GA in 1.34;
-1.29–1.33 only served `v1beta1`, which CAREN does not emit). The API server will
-fail to parse the file on older versions. CAREN does not gate on
-`Cluster.spec.topology.version`; document the minimum and let the API server fail
-fast.
+1.29–1.33 only served `v1beta1`, which CAREN does not emit). When
+`clusterConfig.authentication` is set on a cluster whose control-plane
+Kubernetes version (`builtin.controlPlane.version`) is older than `1.34.0`, the
+topology mutation handler returns an error rather than rendering an
+`AuthenticationConfiguration` file that the API server cannot parse.
 
 ## Mutual exclusivity with `--oidc-*` flags
 

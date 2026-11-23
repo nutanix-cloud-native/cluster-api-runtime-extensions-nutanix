@@ -523,7 +523,7 @@ spec:
                               - message: audienceMatchPolicy must be MatchAny when more than one audience is set
                                 rule: size(self.audiences) <= 1 || (has(self.audienceMatchPolicy) && self.audienceMatchPolicy == 'MatchAny')
                               - message: discoveryURL must differ from url
-                                rule: '!has(self.discoveryURL) || self.discoveryURL.trim() != self.url.trim()'
+                                rule: '!has(self.discoveryURL) || !(self.discoveryURL == self.url || self.discoveryURL == self.url + ''/'' || self.discoveryURL + ''/'' == self.url)'
                           userValidationRules:
                             description: |-
                               UserValidationRules are applied to the final user info before

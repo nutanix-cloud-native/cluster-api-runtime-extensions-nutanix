@@ -173,6 +173,54 @@ var testDefs = []capitest.VariableTestDef{{
 	},
 	ExpectError: true,
 }, {
+	Name: "set with discoveryURL equal to issuer URL with trailing slash",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer.example.com",
+						DiscoveryURL: "https://issuer.example.com/",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
+	Name: "set with duplicate discoveryURLs",
+	Vals: v1alpha1.KubeadmClusterConfigSpec{
+		Authentication: &v1alpha1.Authentication{
+			JWT: []v1alpha1.JWTAuthenticator{
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer-a.example.com",
+						DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("email"),
+					},
+				},
+				{
+					Issuer: v1alpha1.Issuer{
+						URL:          "https://issuer-b.example.com",
+						DiscoveryURL: "https://discovery.example.com/.well-known/openid-configuration",
+						Audiences:    []string{"e2e-aud"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: usernameClaim("sub"),
+					},
+				},
+			},
+		},
+	},
+	ExpectError: true,
+}, {
 	Name: "set with empty audience string",
 	Vals: v1alpha1.KubeadmClusterConfigSpec{
 		Authentication: &v1alpha1.Authentication{

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/blang/semver/v4"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,12 +35,16 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
 )
 
-var apiserverValidator = sync.OnceValues(func() (runtime.Decoder, authenticationcel.Compiler) {
-	scheme := runtime.NewScheme()
-	apiserverinstall.Install(scheme)
-	codecs := serializer.NewCodecFactory(scheme, serializer.EnableStrict)
-	return codecs.UniversalDecoder(), authenticationcel.NewDefaultCompiler()
-})
+var (
+	versionGreaterOrEqualTo134Range = semver.MustParseRange(">=1.34.0-0")
+
+	apiserverValidator = sync.OnceValues(func() (runtime.Decoder, authenticationcel.Compiler) {
+		scheme := runtime.NewScheme()
+		apiserverinstall.Install(scheme)
+		codecs := serializer.NewCodecFactory(scheme, serializer.EnableStrict)
+		return codecs.UniversalDecoder(), authenticationcel.NewDefaultCompiler()
+	})
+)
 
 const (
 	// VariableName is the external patch variable name.
@@ -106,12 +111,27 @@ func (h *authPatchHandler) Mutate(
 	log = log.WithValues(
 		"variableName", h.variableName,
 		"variableFieldPath", h.variableFieldPath,
-		"variableValue", authVar,
+		"variableValue", sanitizeAuthenticationForLog(authVar),
 	)
 
 	return patches.MutateIfApplicable(
 		obj, vars, &holderRef, selectors.ControlPlane(), log,
 		func(obj *controlplanev1.KubeadmControlPlaneTemplate) error {
+			cpVersion, err := variables.Get[string](vars, runtimehooksv1.BuiltinsName, "controlPlane", "version")
+			if err != nil {
+				return fmt.Errorf("failed to get control plane Kubernetes version from builtin variable: %w", err)
+			}
+			kubernetesVersion, err := semver.ParseTolerant(cpVersion)
+			if err != nil {
+				return fmt.Errorf("failed to parse control plane Kubernetes version %q: %w", cpVersion, err)
+			}
+			if !versionGreaterOrEqualTo134Range(kubernetesVersion) {
+				return fmt.Errorf(
+					"authentication requires Kubernetes >= 1.34.0 (apiserver.config.k8s.io/v1), got %q",
+					cpVersion,
+				)
+			}
+
 			apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
 
 			// Mutually exclusive with legacy --oidc-* flags.
@@ -273,6 +293,21 @@ func stringPtrOrNil(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+const redactedCertificateAuthority = "<omitted>"
+
+func sanitizeAuthenticationForLog(auth *v1alpha1.Authentication) *v1alpha1.Authentication {
+	if auth == nil {
+		return nil
+	}
+	copied := auth.DeepCopy()
+	for i := range copied.JWT {
+		if copied.JWT[i].Issuer.CertificateAuthority != "" {
+			copied.JWT[i].Issuer.CertificateAuthority = redactedCertificateAuthority
+		}
+	}
+	return copied
 }
 
 func ensureFile(files []bootstrapv1.File, path, content string) []bootstrapv1.File {

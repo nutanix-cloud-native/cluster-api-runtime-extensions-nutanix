@@ -34,11 +34,15 @@ var _ = Describe("Generate Authentication patches", func() {
 	}
 
 	requestWithExtraVolumes := func(volumes ...bootstrapv1.HostPathMount) runtimehooksv1.GeneratePatchesRequestItem {
-		item := request.NewKubeadmControlPlaneTemplateRequestItem("")
+		item := (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			WithKubernetesVersion("v1.34.0").
+			NewRequest("")
 		cpTemplate := &controlplanev1.KubeadmControlPlaneTemplate{}
 		gomega.Expect(yaml.Unmarshal(item.Object.Raw, cpTemplate)).To(gomega.Succeed())
 		cpTemplate.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraVolumes = volumes
-		return request.NewRequestItem(cpTemplate, &item.HolderReference, item.UID)
+		rebuilt := request.NewRequestItem(cpTemplate, &item.HolderReference, item.UID)
+		rebuilt.Variables = item.Variables
+		return rebuilt
 	}
 
 	// helpers to build variables.
@@ -175,8 +179,10 @@ var _ = Describe("Generate Authentication patches", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
 		},
 		{
-			Name:        "single issuer renders file+volume+flag with correct YAML",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Name: "single issuer renders file+volume+flag with correct YAML",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -196,8 +202,10 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 		},
 		{
-			Name:        "two issuers preserves order",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Name: "two issuers preserves order",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.35.0").
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -228,8 +236,62 @@ var _ = Describe("Generate Authentication patches", func() {
 			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
 		},
 		{
+			Name:        "worker KubeadmConfigTemplate is ignored when authentication is set",
+			RequestItem: request.NewKubeadmConfigTemplateRequest("", "worker-bootstrap"),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{},
+		},
+		{
+			Name:        "missing control plane Kubernetes version returns error",
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "pre-1.34 control plane Kubernetes version returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.33.9").
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "non-semver control plane Kubernetes version returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("not-semver").
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
 			Name: "legacy oidc flag conflict returns error",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "oidc-issuer-url", Value: func() *string { s := "https://old.example.com"; return &s }()}}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "oidc-issuer-url", Value: func() *string { s := "https://old.example.com"; return &s }()}}).
 				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
@@ -242,7 +304,9 @@ var _ = Describe("Generate Authentication patches", func() {
 		},
 		{
 			Name: "existing authentication-config with different path conflicts",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: func() *string { s := "/other/path.yaml"; return &s }()}}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: func() *string { s := "/other/path.yaml"; return &s }()}}).
 				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
@@ -255,7 +319,9 @@ var _ = Describe("Generate Authentication patches", func() {
 		},
 		{
 			Name: "existing authentication-config with nil value conflicts",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: nil}}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: AuthenticationConfigArg, Value: nil}}).
 				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
@@ -303,8 +369,10 @@ var _ = Describe("Generate Authentication patches", func() {
 			ExpectedFailure: true,
 		},
 		{
-			Name:        "invalid CEL expression in authentication config returns error",
-			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			Name: "invalid CEL expression in authentication config returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
 				capitest.VariableWithValue(
 					v1alpha1.ClusterConfigVariableName,
@@ -329,7 +397,9 @@ var _ = Describe("Generate Authentication patches", func() {
 		},
 		{
 			Name: "coexistence with admissionconfiguration neither clobbers the other",
-			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).WithFiles(bootstrapv1.File{Path: "/etc/kubernetes/admission.yaml", Permissions: "0600", Content: "apiVersion: apiserver.config.k8s.io/v1\nkind: AdmissionConfiguration\nplugins:\n- name: PodSecurity\n  path: /etc/kubernetes/pod-security-admission.yaml\n"}).
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithFiles(bootstrapv1.File{Path: "/etc/kubernetes/admission.yaml", Permissions: "0600", Content: "apiVersion: apiserver.config.k8s.io/v1\nkind: AdmissionConfiguration\nplugins:\n- name: PodSecurity\n  path: /etc/kubernetes/pod-security-admission.yaml\n"}).
 				WithAPIServerExtraArgs([]bootstrapv1.Arg{{Name: "admission-control-config-file", Value: func() *string { s := "/etc/kubernetes/admission.yaml"; return &s }()}}).
 				NewRequest(""),
 			Vars: []runtimehooksv1.Variable{
