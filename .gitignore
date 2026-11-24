@@ -60,5 +60,7 @@ golangci-lint-kube-api-linter
 # Git worktrees
 .worktrees/
 
-# Cursor IDE - ignore local/user state, commit shared rules
-.cursor/mcp.json
+# Agent MCP configs - local/user state only
+.mcp.json
+.mcp.json.local
+.claude/settings.local.json

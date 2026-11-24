@@ -35,8 +35,10 @@
 #    - Creates default Claude file if no agent files exist
 #
 # Usage: ./update-agent-context.sh [agent_type]
-# Agent types: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|q|agy|bob|qodercli
+# Agent types: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|q|agy|bob|qodercli|generic
 # Leave empty to update all existing agent files
+# Note: canonical harness-agnostic config is AGENTS.md. Cursor-specific
+# .cursor/rules/ has been removed; cursor-agent is kept as an alias to generic.
 
 set -e
 
@@ -62,7 +64,6 @@ AGENT_TYPE="${1:-}"
 CLAUDE_FILE="$REPO_ROOT/CLAUDE.md"
 GEMINI_FILE="$REPO_ROOT/GEMINI.md"
 COPILOT_FILE="$REPO_ROOT/.github/agents/copilot-instructions.md"
-CURSOR_FILE="$REPO_ROOT/.cursor/rules/specify-rules.mdc"
 QWEN_FILE="$REPO_ROOT/QWEN.md"
 AGENTS_FILE="$REPO_ROOT/AGENTS.md"
 WINDSURF_FILE="$REPO_ROOT/.windsurf/rules/specify-rules.md"
@@ -613,7 +614,8 @@ update_specific_agent() {
     update_agent_file "$COPILOT_FILE" "GitHub Copilot"
     ;;
   cursor-agent)
-    update_agent_file "$CURSOR_FILE" "Cursor IDE"
+    log_info "cursor-agent is deprecated; using generic (AGENTS.md) instead"
+    update_agent_file "$AGENTS_FILE" "AGENTS.md (via cursor-agent alias)"
     ;;
   qwen)
     update_agent_file "$QWEN_FILE" "Qwen Code"
@@ -658,7 +660,7 @@ update_specific_agent() {
     update_agent_file "$BOB_FILE" "IBM Bob"
     ;;
   generic)
-    log_info "Generic agent: no predefined context file. Use the agent-specific update script for your agent."
+    update_agent_file "$AGENTS_FILE" "AGENTS.md (generic)"
     ;;
   *)
     log_error "Unknown agent type '$agent_type'"
@@ -684,11 +686,6 @@ update_all_existing_agents() {
 
   if [[ -f $COPILOT_FILE ]]; then
     update_agent_file "$COPILOT_FILE" "GitHub Copilot"
-    found_agent=true
-  fi
-
-  if [[ -f $CURSOR_FILE ]]; then
-    update_agent_file "$CURSOR_FILE" "Cursor IDE"
     found_agent=true
   fi
 
