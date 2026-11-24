@@ -23,13 +23,22 @@ var Checker = &nutanixChecker{
 	configurationCheckFactory:                  newConfigurationCheck,
 	credentialsCheckFactory:                    newCredentialsCheck,
 	prismCentralVersionCheckFactory:            newPrismCentralVersionCheck,
+	projectConsistencyCheckFactory:             newProjectConsistencyCheck,
 	failureDomainCheckFactory:                  newFailureDomainChecks,
 	vmImageChecksFactory:                       newVMImageChecks,
 	vmImageKubernetesVersionChecksFactory:      newVMImageKubernetesVersionChecks,
 	cidrValidationChecksFactory:                newCIDRValidationChecks,
 	storageContainerChecksFactory:              newStorageContainerChecks,
+	gpuChecksFactory:                           newGPUChecks,
+	vmProfileChecksFactory:                     newVMProfileChecks,
 	controlPlaneEndpointChecksFactory:          newControlPlaneEndpointChecks,
 	metroChecksFactory:                         newMetroChecks,
+	csiChecksFactory:                           newCSIChecks,
+	additionalCategoriesChecksFactory:          newAdditionalCategoriesChecks,
+	aosVersionChecksFactory:                    newAOSVersionChecks,
+	projectScopedAOSVersionChecksFactory:       newProjectScopedAOSVersionChecks,
+	metroAOSVersionChecksFactory:               newMetroAOSVersionChecks,
+	subnetChecksFactory:                        newSubnetChecks,
 	flowNetworkSecurityDSRToSNATCheckerFactory: newFlowNetworkSecurityDSRToSNATChecker,
 }
 
@@ -49,6 +58,11 @@ type nutanixChecker struct {
 	) preflight.Check
 
 	prismCentralVersionCheckFactory func(
+		ctx context.Context,
+		cd *checkDependencies,
+	) preflight.Check
+
+	projectConsistencyCheckFactory func(
 		ctx context.Context,
 		cd *checkDependencies,
 	) preflight.Check
@@ -73,11 +87,43 @@ type nutanixChecker struct {
 		cd *checkDependencies,
 	) []preflight.Check
 
+	gpuChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	vmProfileChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
 	controlPlaneEndpointChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 
 	metroChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	csiChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	additionalCategoriesChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	aosVersionChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	projectScopedAOSVersionChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	metroAOSVersionChecksFactory func(
+		cd *checkDependencies,
+	) []preflight.Check
+
+	subnetChecksFactory func(
 		cd *checkDependencies,
 	) []preflight.Check
 
@@ -120,10 +166,40 @@ func (n *nutanixChecker) Init(
 		n.configurationCheckFactory(cd),
 		n.credentialsCheckFactory(
 			ctx,
-			newClient,
+			NewNutanixPrismClient,
 			cd,
 		),
 		n.prismCentralVersionCheckFactory(ctx, cd),
+	}
+
+	projectConsistencyFactory := n.projectConsistencyCheckFactory
+	if projectConsistencyFactory == nil {
+		projectConsistencyFactory = newProjectConsistencyCheck
+	}
+	checks = append(checks, projectConsistencyFactory(ctx, cd))
+	additionalCategoriesFactory := n.additionalCategoriesChecksFactory
+	if additionalCategoriesFactory == nil {
+		additionalCategoriesFactory = newAdditionalCategoriesChecks
+	}
+	aosVersionFactory := n.aosVersionChecksFactory
+	if aosVersionFactory == nil {
+		aosVersionFactory = newAOSVersionChecks
+	}
+	projectScopedAOSVersionFactory := n.projectScopedAOSVersionChecksFactory
+	if projectScopedAOSVersionFactory == nil {
+		projectScopedAOSVersionFactory = newProjectScopedAOSVersionChecks
+	}
+	metroAOSVersionFactory := n.metroAOSVersionChecksFactory
+	if metroAOSVersionFactory == nil {
+		metroAOSVersionFactory = newMetroAOSVersionChecks
+	}
+	subnetFactory := n.subnetChecksFactory
+	if subnetFactory == nil {
+		subnetFactory = newSubnetChecks
+	}
+	gpuFactory := n.gpuChecksFactory
+	if gpuFactory == nil {
+		gpuFactory = newGPUChecks
 	}
 
 	checks = slices.Concat(
@@ -133,8 +209,16 @@ func (n *nutanixChecker) Init(
 		n.vmImageKubernetesVersionChecksFactory(cd),
 		n.cidrValidationChecksFactory(cd),
 		n.storageContainerChecksFactory(cd),
+		gpuFactory(cd),
+		n.vmProfileChecksFactory(cd),
 		n.controlPlaneEndpointChecksFactory(cd),
 		n.metroChecksFactory(cd),
+		n.csiChecksFactory(cd),
+		additionalCategoriesFactory(cd),
+		aosVersionFactory(cd),
+		projectScopedAOSVersionFactory(cd),
+		metroAOSVersionFactory(cd),
+		subnetFactory(cd),
 		n.flowNetworkSecurityDSRToSNATCheckerFactory(cd),
 	)
 

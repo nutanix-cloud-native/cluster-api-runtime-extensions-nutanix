@@ -397,6 +397,10 @@ func addonTemplateTestCases() map[string][]templateTestCase {
 				},
 			},
 		},
+		"csi/nutanix/values-template.yaml": {
+			{name: "default", data: map[string]any{"BareMetalMode": false}},
+			{name: "bare-metal", data: map[string]any{"BareMetalMode": true}},
+		},
 		"konnector-agent/values-template.yaml": {
 			{
 				name: "all-options",
@@ -410,6 +414,8 @@ func addonTemplateTestCases() map[string][]templateTestCase {
 					"AdditionalTrustBundleConfigMapName":   "trust-bundle-cm",
 					"ClusterName":                          "test-cluster",
 					"CategoryMappings":                     "Environment=Production,Department=Engineering",
+					"ProjectID":                            "03c19062-493d-4c41-89c3-728624313118",
+					"ProjectName":                          "test-project",
 					"PrismCredentialsSecretName":           "konnector-agent-creds",
 					"EnableKubeconfigUpload":               true,
 					"ControlPlaneEndpoint":                 "https://1.2.3.4:6443",
@@ -427,6 +433,8 @@ func addonTemplateTestCases() map[string][]templateTestCase {
 					"AdditionalTrustBundleConfigMapName":   "",
 					"ClusterName":                          "test-cluster",
 					"CategoryMappings":                     "",
+					"ProjectID":                            "",
+					"ProjectName":                          "",
 					"PrismCredentialsSecretName":           "konnector-agent-creds",
 					"EnableKubeconfigUpload":               false,
 					"ControlPlaneEndpoint":                 "",

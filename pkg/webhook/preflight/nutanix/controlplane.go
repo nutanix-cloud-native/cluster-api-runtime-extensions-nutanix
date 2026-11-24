@@ -84,9 +84,10 @@ func (c *controlPlaneEndpointCheck) Run(ctx context.Context) preflight.CheckResu
 			{
 				//nolint:lll // Message is long.
 				Message: fmt.Sprintf(
-					"The control plane endpoint %s established a TCP connection, before any control plane nodes have been created. The endpoint is in use, possibly by another cluster.",
+					"The control plane endpoint %q established a TCP connection, before any control plane nodes have been created. The endpoint is in use, possibly by another cluster.",
 					addr,
 				),
+				Field: "$.spec.controlPlaneEndpoint",
 			},
 		},
 	}

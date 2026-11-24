@@ -304,13 +304,13 @@ func upsertFeatureGate(seq *yaml.Node) {
 		if item.Kind != yaml.MappingNode {
 			continue
 		}
-		name := mappingValue(item, "name")
+		name := mappingValue(item, yamlKeyName)
 		if name == nil || name.Value != "feature-gates" {
 			continue
 		}
-		value := mappingValue(item, "value")
+		value := mappingValue(item, yamlKeyValue)
 		if value == nil {
-			setMappingValue(item, "value", &yaml.Node{
+			setMappingValue(item, yamlKeyValue, &yaml.Node{
 				Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: kubeletInUserNamespaceFeatureGate,
 			})
 			return
@@ -326,9 +326,9 @@ func upsertFeatureGate(seq *yaml.Node) {
 	seq.Content = append(seq.Content, &yaml.Node{
 		Kind: yaml.MappingNode,
 		Content: []*yaml.Node{
-			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "name"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: yamlKeyName},
 			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "feature-gates"},
-			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "value"},
+			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: yamlKeyValue},
 			{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: kubeletInUserNamespaceFeatureGate},
 		},
 	})
@@ -434,17 +434,17 @@ func enableReservationsInWorkerConfigVariables(seq *yaml.Node) {
 		if item.Kind != yaml.MappingNode {
 			continue
 		}
-		name := mappingValue(item, "name")
+		name := mappingValue(item, yamlKeyName)
 		if name == nil || name.Value != v1alpha1.WorkerConfigVariableName {
 			continue
 		}
 
-		value := mappingValue(item, "value")
+		value := mappingValue(item, yamlKeyValue)
 		if value == nil {
 			value = &yaml.Node{Kind: yaml.MappingNode}
 			item.Content = append(
 				item.Content,
-				&yaml.Node{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: "value"},
+				&yaml.Node{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: yamlKeyValue},
 				value,
 			)
 		}

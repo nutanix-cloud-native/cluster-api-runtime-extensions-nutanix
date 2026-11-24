@@ -321,6 +321,93 @@ func TestNewCredentialsCheck_ValidateCredentialsCertificateErrorWithTrustBundle(
 	assert.Contains(t, result.Causes[0].Field, "additionalTrustBundle")
 }
 
+func TestNewCredentialsCheck_APIKeyCredentials(t *testing.T) {
+	cd := validCheckDependencies()
+	secret := &corev1.Secret{}
+	err := cd.kclient.Get(
+		context.Background(),
+		types.NamespacedName{Namespace: "default", Name: "ntnx-creds"},
+		secret,
+	)
+	assert.NoError(t, err)
+	secret.Data["credentials"] = []byte(`[
+		{
+			"type": "api_key",
+			"data": {
+				"prismCentral": {
+					"apiKey": "test-api-key"
+				}
+			}
+		}
+	]`)
+	assert.NoError(t, cd.kclient.Update(context.Background(), secret))
+
+	var captured prismgoclient.Credentials
+	nclientFactory := func(c prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) {
+		captured = c
+		return &clientWrapper{
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}, nil
+	}
+
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.True(t, result.Allowed)
+	assert.Equal(t, "test-api-key", captured.APIKey)
+	assert.Empty(t, captured.Username)
+	assert.Empty(t, captured.Password)
+}
+
+func TestNewCredentialsCheck_BasicAuthPrecedenceOverAPIKey(t *testing.T) {
+	cd := validCheckDependencies()
+	secret := &corev1.Secret{}
+	err := cd.kclient.Get(
+		context.Background(),
+		types.NamespacedName{Namespace: "default", Name: "ntnx-creds"},
+		secret,
+	)
+	assert.NoError(t, err)
+	secret.Data["credentials"] = []byte(`[
+		{
+			"type": "api_key",
+			"data": {
+				"prismCentral": {
+					"apiKey": "test-api-key"
+				}
+			}
+		},
+		{
+			"type": "basic_auth",
+			"data": {
+				"prismCentral": {
+					"username": "basic-user",
+					"password": "basic-pass"
+				}
+			}
+		}
+	]`)
+	assert.NoError(t, cd.kclient.Update(context.Background(), secret))
+
+	var captured prismgoclient.Credentials
+	nclientFactory := func(c prismgoclient.Credentials, _ types.NamespacedName, _ string) (client, error) {
+		captured = c
+		return &clientWrapper{
+			ValidateCredentialsFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}, nil
+	}
+
+	check := newCredentialsCheck(context.Background(), nclientFactory, cd)
+	result := check.Run(context.Background())
+	assert.True(t, result.Allowed)
+	assert.Empty(t, captured.Username)
+	assert.Empty(t, captured.Password)
+	assert.Equal(t, "test-api-key", captured.APIKey)
+}
+
 func validCheckDependencies() *checkDependencies {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
