@@ -68,17 +68,8 @@ contains `--authentication-config` with a value other than
 defines a conflicting `authentication-config` volume or
 `/etc/kubernetes/authentication.yaml` mount.
 
-To migrate from flag-based OIDC, remove all `--oidc-*` entries from
-`KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` and express the
-same intent through `clusterConfig.authentication`:
-
-- **`prefix` is required when `claim` is set** on `claimMappings.username` or
-  `claimMappings.groups`. Set `prefix: ""` to disable prefixing; `prefix: "-"`
-  prepends a literal `"-"` (unlike legacy `--oidc-username-prefix="-"`, which
-  disabled prefixing).
-- **`--oidc-ca-file` becomes inline PEM** in `issuer.certificateAuthority`
-  rather than a host file path.
-- **Multiple audiences require `audienceMatchPolicy: MatchAny`** on `issuer`.
+See [Migrating from `KubeadmControlPlaneTemplate` authentication](#migrating-from-kubeadmcontrolplanetemplate-authentication)
+for the step-by-step migration procedure.
 
 ## Examples
 
@@ -238,6 +229,188 @@ kube-apiserver re-reads this file about once a minute. CAREN does not edit the
 file in place. Enabling or changing `authentication` updates the
 KubeadmControlPlane spec (the file and the `--authentication-config` argument),
 and Cluster API replaces control-plane machines for that change.
+
+## Migrating from `KubeadmControlPlaneTemplate` authentication
+
+Existing clusters that configured API server authentication directly in a
+`KubeadmControlPlaneTemplate` — either through legacy `--oidc-*` flags or
+through a hand-managed `AuthenticationConfiguration` file — can migrate to
+CAREN-managed `clusterConfig.authentication` in a single control-plane rollout
+without an intermediate unauthenticated state.
+
+### Field translation checklist
+
+When translating `--oidc-*` flags or a manual `AuthenticationConfiguration`
+into `clusterConfig.authentication`:
+
+- **`prefix` is required when `claim` is set** on `claimMappings.username` or
+  `claimMappings.groups`. Set `prefix: ""` to disable prefixing; `prefix: "-"`
+  prepends a literal `"-"` (unlike legacy `--oidc-username-prefix="-"`, which
+  disabled prefixing).
+- **`--oidc-ca-file` (or a file-mounted CA) becomes inline PEM** in
+  `issuer.certificateAuthority` rather than a host file path.
+- **Multiple audiences require `audienceMatchPolicy: MatchAny`** on `issuer`.
+- **`issuer.url` must not match `--service-account-issuer`** (or kubeadm's
+  default `https://kubernetes.default.svc.<serviceDomain>`).
+
+### Step-by-step migration
+
+Because `KubeadmControlPlaneTemplate.spec.template.spec` is immutable in
+Cluster API and CAREN's `/validate-cluster` webhook rejects
+`clusterConfig.authentication` while the referenced
+`KubeadmControlPlaneTemplate` still carries `--oidc-*` flags or conflicting
+`--authentication-config` / `extraVolumes` entries, follow this sequence:
+
+1. **Pause the target `Cluster`s** (`spec.paused: true`) so Cluster API does not
+   reconcile an intermediate `KubeadmControlPlane` without authentication while
+   you swap templates. If multiple `Cluster`s share the `ClusterClass`, pause
+   and migrate them together so none reconcile against the clean template before
+   their `clusterConfig.authentication` variable is set:
+
+   ```shell
+   kubectl patch cluster <CLUSTER_NAME> -n <NAMESPACE> --type=merge \
+     -p '{"spec":{"paused":true}}'
+   ```
+
+2. **Create a new `KubeadmControlPlaneTemplate`** (with a new `metadata.name`)
+   copied from the existing template, removing the manual authentication
+   entries:
+   - Remove all `oidc-*` or `authentication-config` entries from
+     `spec.template.spec.kubeadmConfigSpec.clusterConfiguration.apiServer.extraArgs`.
+   - Remove any manual authentication config or OIDC CA volume mount from
+     `spec.template.spec.kubeadmConfigSpec.clusterConfiguration.apiServer.extraVolumes`.
+   - Remove any manual authentication config or OIDC CA file entry from
+     `spec.template.spec.kubeadmConfigSpec.files`.
+
+3. **Update `ClusterClass.spec.controlPlane.templateRef.name`** to reference the
+   new `KubeadmControlPlaneTemplate` before updating the `Cluster`:
+
+   ```shell
+   kubectl patch clusterclass <CLUSTERCLASS_NAME> -n <CLASS_NAMESPACE> --type=merge \
+     -p '{"spec":{"controlPlane":{"templateRef":{"name":"<NEW_KCP_TEMPLATE_NAME>"}}}}'
+   ```
+
+4. **Set `clusterConfig.authentication` on each paused `Cluster`** under
+   `spec.topology.variables`. Because the `ClusterClass` now points at the clean
+   `KubeadmControlPlaneTemplate`, CAREN's validating webhook validates the new
+   `authentication` settings with no template conflicts.
+
+5. **Unpause each `Cluster`** (`spec.paused: false`):
+
+   ```shell
+   kubectl patch cluster <CLUSTER_NAME> -n <NAMESPACE> --type=merge \
+     -p '{"spec":{"paused":false}}'
+   ```
+
+   Cluster API reconciles `KubeadmControlPlane` directly from the previous spec
+   to the CAREN-managed `/etc/kubernetes/authentication.yaml` configuration and
+   performs a single rolling replacement of control-plane machines (or no
+   rollout at all if the previous manual setup already produced an identical
+   file, volume mount, and `--authentication-config` argument at
+   `/etc/kubernetes/authentication.yaml`).
+
+6. **Delete the retired `KubeadmControlPlaneTemplate`** once no `ClusterClass`
+   references it.
+
+## Updating issuer CA certificates
+
+### Planned CA rotation (declarative)
+
+`issuer.certificateAuthority` accepts a PEM bundle containing multiple
+certificates. For planned identity-provider CA rotations:
+
+1. Concatenate both the current and incoming CA certificates into
+   `clusterConfig.authentication.jwt[*].issuer.certificateAuthority` ahead of
+   rotating the identity provider's TLS certificate; Cluster API rolls
+   control-plane machines so `kube-apiserver` trusts both CAs.
+2. Switch the identity provider's TLS certificate to the new CA.
+3. Remove the retired CA from `issuer.certificateAuthority` during a subsequent
+   maintenance window.
+
+### Out-of-band CA update without an immediate control-plane rollout
+
+If an identity provider's CA must be updated urgently outside a maintenance
+window without immediately replacing control-plane machines, you must keep the
+management-cluster spec and the on-disk `/etc/kubernetes/authentication.yaml`
+aligned so neither overwrites the other:
+
+- Updating `clusterConfig.authentication` on an unpaused control plane triggers
+  an immediate `KubeadmControlPlane` machine rollout.
+- Updating `/etc/kubernetes/authentication.yaml` only on the control-plane hosts
+  while leaving `clusterConfig.authentication` unchanged leaves the management
+  cluster stale: any subsequent cluster lifecycle event (scale-out, Kubernetes
+  upgrade, or `MachineHealthCheck` replacement) will provision nodes with the
+  old CA and overwrite the out-of-band update on new machines.
+
+To apply the CA update immediately and defer the control-plane rollout without
+conflicts or unintended overwrites:
+
+1. **Pause `KubeadmControlPlane` reconciliation** by adding the Cluster API
+   `cluster.x-k8s.io/paused` annotation to the `KubeadmControlPlane` resource.
+   Cluster API's topology controller uses Server-Side Apply and preserves this
+   annotation while continuing to reconcile `KubeadmControlPlane.spec` and
+   keeping worker `MachineDeployment`s and addons active:
+
+   ```shell
+   KCP_NAME=$(kubectl get cluster <CLUSTER_NAME> -n <NAMESPACE> \
+     -o jsonpath='{.spec.controlPlaneRef.name}')
+   kubectl annotate kubeadmcontrolplane "${KCP_NAME}" -n <NAMESPACE> \
+     cluster.x-k8s.io/paused="" --overwrite
+   ```
+
+   > **Note:** While `cluster.x-k8s.io/paused` is set on `KubeadmControlPlane`,
+   > Cluster API will not scale, upgrade, or remediate control-plane machines.
+   > Remove the annotation during the next maintenance window.
+
+2. **Update `clusterConfig.authentication.jwt[*].issuer.certificateAuthority` on
+   the `Cluster`** first. CAREN validates the updated PEM bundle at admission
+   and patches `KubeadmControlPlane.spec.kubeadmConfigSpec.files` with the new
+   rendered `/etc/kubernetes/authentication.yaml`, while `KubeadmControlPlane`
+   holds off replacing existing control-plane machines.
+
+3. **Extract the CAREN-rendered file from `KubeadmControlPlane` and write it in
+   place on each control-plane node**. Extracting the rendered content from
+   `KubeadmControlPlane` guarantees that the host file is byte-for-byte
+   identical to CAREN's desired state and preserves all other authenticators and
+   rules:
+
+   ```shell
+   kubectl get kubeadmcontrolplane "${KCP_NAME}" -n <NAMESPACE> \
+     -o jsonpath='{.spec.kubeadmConfigSpec.files[?(@.path=="/etc/kubernetes/authentication.yaml")].content}' \
+     > authentication.yaml
+   ```
+
+   Copy `authentication.yaml` to each control-plane host and **overwrite
+   `/etc/kubernetes/authentication.yaml` in place** (keeping `0600`
+   permissions):
+
+   ```shell
+   sudo chmod 0600 /etc/kubernetes/authentication.yaml
+   sudo tee /etc/kubernetes/authentication.yaml < authentication.yaml >/dev/null
+   ```
+
+   > **Important:** Do **not** replace `/etc/kubernetes/authentication.yaml` via
+   > atomic rename (`mv`, `sed -i`, or editors that write a temporary file and
+   > rename). CAREN mounts `/etc/kubernetes/authentication.yaml` into the
+   > `kube-apiserver` static pod with `hostPath` `PathType: File` (a single-file
+   > bind mount). Renaming over the path creates a new host inode while the
+   > running `kube-apiserver` container remains bound to the old unlinked inode,
+   > preventing `kube-apiserver`'s ~1-minute automatic reload from seeing the
+   > updated CA until the pod restarts. Writing in place updates the mounted
+   > inode directly so `kube-apiserver` reloads the new CA within about a minute
+   > with no API server restart.
+
+4. **Unpause `KubeadmControlPlane` during the next maintenance window**:
+
+   ```shell
+   kubectl annotate kubeadmcontrolplane "${KCP_NAME}" -n <NAMESPACE> \
+     cluster.x-k8s.io/paused-
+   ```
+
+   Because `KubeadmControlPlane.spec.kubeadmConfigSpec.files` already contains
+   the identical updated `AuthenticationConfiguration`, unpausing rolls the
+   control-plane machines onto the same configuration without reverting or
+   overwriting the CA update.
 
 ## Removing authentication configuration
 
