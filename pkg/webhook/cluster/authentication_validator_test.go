@@ -50,12 +50,17 @@ var _ = Describe("AuthenticationValidator", func() {
 		}
 	}
 
-	buildCluster := func(version string, auth *v1alpha1.Authentication) *clusterv1.Cluster {
+	buildClusterWithSAIssuer := func(
+		version string,
+		auth *v1alpha1.Authentication,
+		sai *v1alpha1.ServiceAccountIssuer,
+	) *clusterv1.Cluster {
 		var clusterVars []clusterv1.ClusterVariable
-		if auth != nil {
+		if auth != nil || sai != nil {
 			raw, err := json.Marshal(&variables.ClusterConfigSpec{
 				KubeadmClusterConfigSpec: v1alpha1.KubeadmClusterConfigSpec{
-					Authentication: auth,
+					Authentication:       auth,
+					ServiceAccountIssuer: sai,
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -80,6 +85,10 @@ var _ = Describe("AuthenticationValidator", func() {
 				},
 			},
 		}
+	}
+
+	buildCluster := func(version string, auth *v1alpha1.Authentication) *clusterv1.Cluster {
+		return buildClusterWithSAIssuer(version, auth, nil)
 	}
 
 	buildClassAndTemplate := func(
@@ -242,6 +251,35 @@ var _ = Describe("AuthenticationValidator", func() {
 		resp := v.validate(context.Background(), createKubeletAdmissionRequest(cluster))
 		Expect(resp.Allowed).To(BeFalse())
 		Expect(resp.Result.Message).To(ContainSubstring("URL must not overlap with disallowed issuers"))
+	})
+
+	It("rejects issuer URL overlapping clusterConfig.serviceAccountIssuer.issuer", func() {
+		cluster := buildClusterWithSAIssuer(
+			"v1.35.0",
+			validAuth(),
+			&v1alpha1.ServiceAccountIssuer{Issuer: "https://issuer.example.com"},
+		)
+		client := fake.NewClientBuilder().WithScheme(scheme).Build()
+		v := NewAuthenticationValidator(client, decoder)
+
+		resp := v.validate(context.Background(), createKubeletAdmissionRequest(cluster))
+		Expect(resp.Allowed).To(BeFalse())
+		Expect(resp.Result.Message).To(ContainSubstring("URL must not overlap with disallowed issuers"))
+	})
+
+	It("allows default kubeadm issuer URL when clusterConfig.serviceAccountIssuer overrides issuer", func() {
+		auth := validAuth()
+		auth.JWT[0].Issuer.URL = "https://kubernetes.default.svc.cluster.local"
+		cluster := buildClusterWithSAIssuer(
+			"v1.35.0",
+			auth,
+			&v1alpha1.ServiceAccountIssuer{Issuer: "https://sa.example.com"},
+		)
+		client := fake.NewClientBuilder().WithScheme(scheme).Build()
+		v := NewAuthenticationValidator(client, decoder)
+
+		resp := v.validate(context.Background(), createKubeletAdmissionRequest(cluster))
+		Expect(resp.Allowed).To(BeTrue())
 	})
 
 	It("rejects Cluster when KubeadmControlPlaneTemplate sets legacy --oidc-* extraArgs", func() {

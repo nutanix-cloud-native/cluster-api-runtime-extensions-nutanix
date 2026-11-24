@@ -7,6 +7,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -141,7 +142,24 @@ func (h *authPatchHandler) Mutate(
 				return fmt.Errorf("failed to get cluster serviceDomain from builtin variable: %w", err)
 			}
 
-			disallowedIssuers, err := ValidateControlPlaneTemplate(obj, serviceDomain)
+			var sai *v1alpha1.ServiceAccountIssuer
+			if len(h.variableFieldPath) > 0 {
+				saiPath := append(
+					slices.Clone(h.variableFieldPath[:len(h.variableFieldPath)-1]),
+					"serviceAccountIssuer",
+				)
+				loadedSAI, saiErr := variables.Get[*v1alpha1.ServiceAccountIssuer](
+					vars,
+					h.variableName,
+					saiPath...,
+				)
+				if saiErr != nil && !variables.IsNotFoundError(saiErr) {
+					return saiErr
+				}
+				sai = loadedSAI
+			}
+
+			disallowedIssuers, err := ValidateControlPlaneTemplate(obj, sai, serviceDomain)
 			if err != nil {
 				return err
 			}
@@ -199,11 +217,24 @@ func DefaultServiceAccountIssuers(serviceDomain string) []string {
 	return []string{"https://kubernetes.default.svc." + domain}
 }
 
+// EffectiveServiceAccountIssuers returns clusterConfig.serviceAccountIssuer.issuer when set,
+// or kubeadm's default --service-account-issuer for serviceDomain otherwise.
+func EffectiveServiceAccountIssuers(
+	sai *v1alpha1.ServiceAccountIssuer,
+	serviceDomain string,
+) []string {
+	if sai != nil && sai.Issuer != "" {
+		return []string{sai.Issuer}
+	}
+	return DefaultServiceAccountIssuers(serviceDomain)
+}
+
 // ValidateControlPlaneTemplate checks a KubeadmControlPlaneTemplate for conflicting
 // --oidc-* flags, --authentication-config flags, and extraVolumes entries, and returns
 // the effective --service-account-issuer values that JWT issuer URLs must not overlap.
 func ValidateControlPlaneTemplate(
 	obj *controlplanev1.KubeadmControlPlaneTemplate,
+	sai *v1alpha1.ServiceAccountIssuer,
 	serviceDomain string,
 ) ([]string, error) {
 	apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
@@ -242,6 +273,9 @@ func ValidateControlPlaneTemplate(
 		return nil, err
 	}
 
+	if sai != nil && sai.Issuer != "" && !slices.Contains(serviceAccountIssuers, sai.Issuer) {
+		serviceAccountIssuers = append(serviceAccountIssuers, sai.Issuer)
+	}
 	if len(serviceAccountIssuers) == 0 {
 		serviceAccountIssuers = DefaultServiceAccountIssuers(serviceDomain)
 	}
