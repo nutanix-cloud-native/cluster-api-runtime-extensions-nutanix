@@ -12,12 +12,14 @@ import (
 
 	clustermgmtv4 "github.com/nutanix/ntnx-api-golang-clients/clustermgmt-go-client/v4/models/clustermgmt/v4/config"
 	netv4 "github.com/nutanix/ntnx-api-golang-clients/networking-go-client/v4/models/networking/v4/config"
+	prismmgmtv4 "github.com/nutanix/ntnx-api-golang-clients/prism-go-client/v4/models/prism/v4/management"
 	vmmv4 "github.com/nutanix/ntnx-api-golang-clients/vmm-go-client/v4/models/vmm/v4/content"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	prismgoclient "github.com/nutanix-cloud-native/prism-go-client"
 	"github.com/nutanix-cloud-native/prism-go-client/converged"
+	convergedv4 "github.com/nutanix-cloud-native/prism-go-client/converged/v4"
 	prismtypes "github.com/nutanix-cloud-native/prism-go-client/environment/types"
 	v3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 )
@@ -65,6 +67,18 @@ type client interface {
 		float64,
 		bool,
 		error,
+	)
+
+	// IsDisasterRecoveryDisabled reports whether the Nutanix Disaster Recovery
+	// product is in the DISABLED enablement state on the connected Prism Central.
+	// The returned found boolean is false when the Disaster Recovery product
+	// could not be found on Prism Central.
+	IsDisasterRecoveryDisabled(
+		ctx context.Context,
+	) (
+		disabled bool,
+		found bool,
+		err error,
 	)
 
 	GetImageById(
@@ -169,6 +183,12 @@ type clientWrapper struct {
 		remoteClusterUUID string,
 	) (
 		float64, bool, error,
+	)
+
+	IsDisasterRecoveryDisabledFunc func(
+		ctx context.Context,
+	) (
+		disabled, found bool, err error,
 	)
 
 	GetImageByIdFunc func(
@@ -362,6 +382,9 @@ func newClient(
 		) (float64, bool, error) {
 			return interClusterRTTMillis(ctx, cacheParams, sourceClusterUUID, remoteClusterUUID)
 		},
+		IsDisasterRecoveryDisabledFunc: func(ctx context.Context) (bool, bool, error) {
+			return isDisasterRecoveryDisabled(ctx, convergedc)
+		},
 		GetImageByIdFunc: func(
 			ctx context.Context,
 			uuid *string,
@@ -546,6 +569,64 @@ func (c *clientWrapper) GetInterClusterRTTMillis(
 	err error,
 ) {
 	return c.GetInterClusterRTTMillisFunc(ctx, sourceClusterUUID, remoteClusterUUID)
+}
+
+func (c *clientWrapper) IsDisasterRecoveryDisabled(
+	ctx context.Context,
+) (
+	disabled bool,
+	found bool,
+	err error,
+) {
+	return c.IsDisasterRecoveryDisabledFunc(ctx)
+}
+
+// isDisasterRecoveryDisabled reports whether the Nutanix Disaster Recovery
+// product is in the DISABLED enablement state on the connected Prism Central.
+// The returned found boolean is false when the Disaster Recovery product could
+// not be found.
+//
+// It resolves the Domain Manager (Prism Central) external ID, then delegates to
+// the converged client's IsProductDisabled helper, which performs the two-step
+// list-then-get lookup documented by the Prism management API.
+func isDisasterRecoveryDisabled(
+	ctx context.Context,
+	convergedc *convergedv4.Client,
+) (disabled, found bool, err error) {
+	domainManagers, err := convergedc.DomainManager.List(ctx)
+	if err != nil {
+		return false, false, fmt.Errorf("failed to list Prism Central domain managers: %w", err)
+	}
+
+	domainManagerExtID := ""
+	for i := range domainManagers {
+		if domainManagers[i].ExtId != nil && *domainManagers[i].ExtId != "" {
+			domainManagerExtID = *domainManagers[i].ExtId
+			break
+		}
+	}
+	// If the Domain Manager external ID cannot be determined, do not report a
+	// violation: we have no evidence of one.
+	if domainManagerExtID == "" {
+		return false, false, nil
+	}
+
+	// ListProducts/GetProduct/IsProductDisabled are only available on the
+	// concrete converged DomainManagerService, not on the DomainManager
+	// interface the converged Client exposes.
+	domainManagerService, ok := convergedc.DomainManager.(*convergedv4.DomainManagerService)
+	if !ok {
+		return false, false, fmt.Errorf(
+			"converged DomainManager service is of unexpected type %T",
+			convergedc.DomainManager,
+		)
+	}
+
+	return domainManagerService.IsProductDisabled(
+		ctx,
+		domainManagerExtID,
+		prismmgmtv4.PRODUCTNAME_NUTANIX_DISASTER_RECOVERY,
+	)
 }
 
 // interClusterRTTMillis returns the network round-trip time, in milliseconds,
