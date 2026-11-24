@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
@@ -66,12 +67,34 @@ const (
 	// from an earlier timed-out cluster teardown still advertising kube-vip or MetalLB).
 	nutanixIPReserveMaxAttempts = 5
 
+	// nutanixIPReserveTimeout bounds the overall Eventually loop across reservation + probe attempts.
+	nutanixIPReserveTimeout = 5 * time.Minute
+
+	// nutanixIPReservePollInterval is the delay between consecutive reservation attempts when a
+	// newly reserved IP is already responding on the subnet.
+	nutanixIPReservePollInterval = 50 * time.Millisecond
+
 	// nutanixIPProbeTimeout allows ARP resolution and a TCP SYN retry on the local Nutanix VLAN
 	// while keeping unused-IP checks fast during BeforeEach.
 	nutanixIPProbeTimeout = 3 * time.Second
 
 	// nutanixClusterCheckTimeout bounds the management-cluster Cluster lookup during DeferCleanup.
 	nutanixClusterCheckTimeout = 15 * time.Second
+)
+
+var (
+	nutanixClusterListBackoff = wait.Backoff{
+		Duration: 200 * time.Millisecond,
+		Factor:   2.0,
+		Jitter:   0.1,
+		Steps:    5,
+	}
+	nutanixIPUnreserveBackoff = wait.Backoff{
+		Duration: 200 * time.Millisecond,
+		Factor:   2.0,
+		Jitter:   0.1,
+		Steps:    4,
+	}
 )
 
 // nutanixIPProbePorts are the ports every Nutanix e2e test reaches directly from the runner
@@ -226,31 +249,51 @@ func reserveUnusedIP(
 		return "", nil, fmt.Errorf("maxAttempts must be at least 1, got %d", maxAttempts)
 	}
 
-	var lastIP, lastReason string
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		ip, unreserveFn, reserveErr := reserve(ctx)
+	var (
+		selectedIP        string
+		selectedUnreserve func() error
+		attempt           int
+		failureErr        error
+	)
+	g := NewGomega(func(message string, _ ...int) {
+		if failureErr == nil {
+			failureErr = errors.New(message)
+		}
+	})
+	g.Eventually(func(attemptCtx context.Context) error {
+		attempt++
+		ip, unreserveFn, reserveErr := reserve(attemptCtx)
 		if reserveErr != nil {
-			return "", nil, reserveErr
+			failureErr = reserveErr
+			return StopTrying("failed to reserve IP").Wrap(reserveErr)
 		}
 
-		inUse, reason := probe(ctx, ip)
+		inUse, reason := probe(attemptCtx, ip)
 		if !inUse {
-			return ip, unreserveFn, nil
+			selectedIP = ip
+			selectedUnreserve = unreserveFn
+			return nil
 		}
 
-		lastIP = ip
-		lastReason = reason
 		logf(
 			"Reserved IP %s is already reachable on the network (%s); "+
 				"keeping reservation quarantined and retrying (attempt %d/%d)",
 			ip, reason, attempt, maxAttempts,
 		)
-	}
+		if attempt >= maxAttempts {
+			failureErr = fmt.Errorf(
+				"failed to reserve an unused IP after %d attempts: last reserved IP %s is already in use (%s)",
+				maxAttempts, ip, reason,
+			)
+			return StopTrying(failureErr.Error())
+		}
+		return fmt.Errorf("reserved IP %s is already in use (%s)", ip, reason)
+	}).WithContext(ctx).WithTimeout(nutanixIPReserveTimeout).WithPolling(nutanixIPReservePollInterval).Should(Succeed())
 
-	return "", nil, fmt.Errorf(
-		"failed to reserve an unused IP after %d attempts: last reserved IP %s is already in use (%s)",
-		maxAttempts, lastIP, lastReason,
-	)
+	if failureErr != nil {
+		return "", nil, failureErr
+	}
+	return selectedIP, selectedUnreserve, nil
 }
 
 // shouldUnreserveClusterIP reports whether it is safe to release a workload cluster's reserved IP
@@ -275,8 +318,23 @@ func shouldUnreserveClusterIP(
 	}
 
 	clusterList := &clusterv1.ClusterList{}
-	if err := k8sReader.List(ctx, clusterList); err != nil {
-		return false, fmt.Sprintf("failed to list Clusters on management cluster: %v", err)
+	var lastErr error
+	if err := wait.ExponentialBackoffWithContext(
+		ctx,
+		nutanixClusterListBackoff,
+		func(listCtx context.Context) (bool, error) {
+			clusterList.Items = nil
+			if listErr := k8sReader.List(listCtx, clusterList); listErr != nil {
+				lastErr = listErr
+				return false, nil
+			}
+			return true, nil
+		},
+	); err != nil {
+		if lastErr == nil {
+			lastErr = err
+		}
+		return false, fmt.Sprintf("failed to list Clusters on management cluster: %v", lastErr)
 	}
 
 	for i := range clusterList.Items {
@@ -311,7 +369,33 @@ func unreserveIPAfterClusterDeleted(
 		return nil
 	}
 
-	return unreserve()
+	var (
+		attempt int
+		lastErr error
+	)
+	if err := wait.ExponentialBackoffWithContext(
+		ctx,
+		nutanixIPUnreserveBackoff,
+		func(context.Context) (bool, error) {
+			attempt++
+			if unreserveErr := unreserve(); unreserveErr != nil {
+				lastErr = unreserveErr
+				logf(
+					"Failed to unreserve Nutanix IP %s (attempt %d/%d): %v",
+					ip, attempt, nutanixIPUnreserveBackoff.Steps, unreserveErr,
+				)
+				return false, nil
+			}
+			return true, nil
+		},
+	); err != nil {
+		if lastErr != nil {
+			return lastErr
+		}
+		return err
+	}
+
+	return nil
 }
 
 // isolateProviderVersions deep-copies the named provider's Versions and their Files slices on a

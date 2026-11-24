@@ -593,11 +593,13 @@ func TestUnreserveIPAfterClusterDeleted(t *testing.T) {
 		assert.Contains(t, logs[0], "skipCleanup is enabled")
 	})
 
-	t.Run("keeps IP reserved when listing Clusters fails", func(t *testing.T) {
+	t.Run("keeps IP reserved when listing Clusters persistently fails", func(t *testing.T) {
+		listAttempts := 0
 		c := fake.NewClientBuilder().
 			WithScheme(scheme).
 			WithInterceptorFuncs(interceptor.Funcs{
 				List: func(context.Context, client.WithWatch, client.ObjectList, ...client.ListOption) error {
+					listAttempts++
 					return errors.New("apiserver unreachable")
 				},
 			}).
@@ -618,6 +620,89 @@ func TestUnreserveIPAfterClusterDeleted(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.False(t, unreserved)
+		assert.Greater(t, listAttempts, 1, "should retry listing Clusters before giving up")
+	})
+
+	t.Run("retries transient Cluster list errors and unreserves once listing succeeds", func(t *testing.T) {
+		listAttempts := 0
+		c := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithObjects(otherCluster).
+			WithInterceptorFuncs(interceptor.Funcs{
+				List: func(
+					ctx context.Context,
+					cl client.WithWatch,
+					list client.ObjectList,
+					opts ...client.ListOption,
+				) error {
+					listAttempts++
+					if listAttempts < 3 {
+						return errors.New("transient apiserver error")
+					}
+					return cl.List(ctx, list, opts...)
+				},
+			}).
+			Build()
+		unreserved := false
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.210",
+			func() error {
+				unreserved = true
+				return nil
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(string, ...interface{}) {},
+		)
+		require.NoError(t, err)
+		assert.Equal(t, 3, listAttempts)
+		assert.True(t, unreserved)
+	})
+
+	t.Run("retries transient unreserve errors and succeeds", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(otherCluster).Build()
+		unreserveAttempts := 0
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.210",
+			func() error {
+				unreserveAttempts++
+				if unreserveAttempts < 3 {
+					return errors.New("transient prism central error")
+				}
+				return nil
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(string, ...interface{}) {},
+		)
+		require.NoError(t, err)
+		assert.Equal(t, 3, unreserveAttempts)
+	})
+
+	t.Run("returns last unreserve error after exhausting retries", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(otherCluster).Build()
+		unreserveAttempts := 0
+
+		err := unreserveIPAfterClusterDeleted(
+			t.Context(),
+			"10.23.133.210",
+			func() error {
+				unreserveAttempts++
+				return errors.New("prism central unavailable")
+			},
+			false,
+			"quick-start-target-cluster",
+			c,
+			func(string, ...interface{}) {},
+		)
+		require.ErrorContains(t, err, "prism central unavailable")
+		assert.Greater(t, unreserveAttempts, 1, "should retry unreserve before returning error")
 	})
 
 	t.Run("keeps IP reserved when client is nil or clusterName is empty", func(t *testing.T) {
