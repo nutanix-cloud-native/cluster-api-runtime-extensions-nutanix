@@ -45,6 +45,28 @@ var _ = Describe("Generate Authentication patches", func() {
 		return rebuilt
 	}
 
+	requestWithServiceDomain := func(serviceDomain string) runtimehooksv1.GeneratePatchesRequestItem {
+		item := (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+			WithKubernetesVersion("v1.34.0").
+			NewRequest("")
+		item.Variables = []runtimehooksv1.Variable{
+			capitest.VariableWithValue(
+				runtimehooksv1.BuiltinsName,
+				map[string]any{
+					"controlPlane": map[string]any{
+						"version": "v1.34.0",
+					},
+					"cluster": map[string]any{
+						"network": map[string]any{
+							"serviceDomain": serviceDomain,
+						},
+					},
+				},
+			),
+		}
+		return item
+	}
+
 	// helpers to build variables.
 	singleIssuerAuth := func() v1alpha1.Authentication {
 		return v1alpha1.Authentication{
@@ -394,6 +416,110 @@ var _ = Describe("Generate Authentication patches", func() {
 				),
 			},
 			ExpectedFailure: true,
+		},
+		{
+			Name: "issuer URL matching explicit service-account-issuer extraArg returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithAPIServerExtraArgs(
+					[]bootstrapv1.Arg{
+						{Name: "service-account-issuer", Value: new("https://sa-primary.example.com")},
+						{Name: "service-account-issuer", Value: new("https://issuer.example.com")},
+					},
+				).
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "issuer URL matching default kubeadm service-account-issuer returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.Authentication{
+						JWT: []v1alpha1.JWTAuthenticator{{
+							Issuer: v1alpha1.Issuer{
+								URL:       "https://kubernetes.default.svc.cluster.local",
+								Audiences: []string{"k8s"},
+							},
+							ClaimMappings: v1alpha1.ClaimMappings{
+								Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+							},
+						}},
+					},
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name:        "issuer URL matching custom cluster serviceDomain service-account-issuer returns error",
+			RequestItem: requestWithServiceDomain("corp.local"),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.Authentication{
+						JWT: []v1alpha1.JWTAuthenticator{{
+							Issuer: v1alpha1.Issuer{
+								URL:       "https://kubernetes.default.svc.corp.local",
+								Audiences: []string{"k8s"},
+							},
+							ClaimMappings: v1alpha1.ClaimMappings{
+								Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+							},
+						}},
+					},
+					VariableName,
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "non-overlapping explicit service-account-issuer extraArg succeeds",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				WithAPIServerExtraArgs(
+					[]bootstrapv1.Arg{
+						{Name: "service-account-issuer", Value: new("https://sa.example.com")},
+					},
+				).
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					singleIssuerAuth(),
+					VariableName,
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				filesMatcherWith(authFileMatcher(yamlHasIssuersInOrder("https://issuer.example.com"))),
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraVolumes",
+					ValueMatcher: gomega.ContainElement(gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", authenticationConfigVolumeName),
+						gomega.HaveKeyWithValue("hostPath", AuthenticationConfigPath),
+						gomega.HaveKeyWithValue("mountPath", AuthenticationConfigPath),
+					)),
+				},
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/clusterConfiguration/apiServer/extraArgs/1",
+					ValueMatcher: gomega.SatisfyAll(
+						gomega.HaveKeyWithValue("name", AuthenticationConfigArg),
+						gomega.HaveKeyWithValue("value", AuthenticationConfigPath),
+					),
+				},
+			},
 		},
 		{
 			Name: "coexistence with admissionconfiguration neither clobbers the other",

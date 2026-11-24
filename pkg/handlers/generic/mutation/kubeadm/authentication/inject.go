@@ -4,6 +4,7 @@
 package authentication
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -57,7 +58,11 @@ const (
 	// AuthenticationConfigArg is the API server flag name.
 	AuthenticationConfigArg = "authentication-config"
 
+	// ServiceAccountIssuerArg is the API server flag name for service account token issuer(s).
+	ServiceAccountIssuerArg = "service-account-issuer"
+
 	authenticationConfigVolumeName = "authentication-config"
+	defaultServiceDomain           = "cluster.local"
 )
 
 type authPatchHandler struct {
@@ -121,46 +126,27 @@ func (h *authPatchHandler) Mutate(
 			if err != nil {
 				return fmt.Errorf("failed to get control plane Kubernetes version from builtin variable: %w", err)
 			}
-			kubernetesVersion, err := semver.ParseTolerant(cpVersion)
-			if err != nil {
-				return fmt.Errorf("failed to parse control plane Kubernetes version %q: %w", cpVersion, err)
+			if err := ValidateKubernetesVersion(cpVersion); err != nil {
+				return err
 			}
-			if !versionGreaterOrEqualTo134Range(kubernetesVersion) {
-				return fmt.Errorf(
-					"authentication requires Kubernetes >= 1.34.0 (apiserver.config.k8s.io/v1), got %q",
-					cpVersion,
-				)
+
+			serviceDomain, err := variables.Get[string](
+				vars,
+				runtimehooksv1.BuiltinsName,
+				"cluster",
+				"network",
+				"serviceDomain",
+			)
+			if err != nil && !variables.IsNotFoundError(err) {
+				return fmt.Errorf("failed to get cluster serviceDomain from builtin variable: %w", err)
+			}
+
+			disallowedIssuers, err := ValidateControlPlaneTemplate(obj, serviceDomain)
+			if err != nil {
+				return err
 			}
 
 			apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
-
-			// Mutually exclusive with legacy --oidc-* flags.
-			for _, arg := range apiServer.ExtraArgs {
-				if strings.HasPrefix(arg.Name, "oidc-") {
-					return fmt.Errorf(
-						"use of --oidc-* flags is mutually exclusive with authentication; remove the --oidc-* extraArgs",
-					)
-				}
-			}
-
-			// Conflict check: existing --authentication-config with nil or unexpected path.
-			for _, arg := range apiServer.ExtraArgs {
-				if arg.Name == AuthenticationConfigArg {
-					if arg.Value == nil {
-						return fmt.Errorf(
-							"existing --%s flag has nil value; expected %q",
-							AuthenticationConfigArg, AuthenticationConfigPath,
-						)
-					}
-					if *arg.Value != AuthenticationConfigPath {
-						return fmt.Errorf(
-							"existing --%s flag value %q does not match expected path %q",
-							AuthenticationConfigArg, *arg.Value, AuthenticationConfigPath,
-						)
-					}
-				}
-			}
-
 			extraVolumes, err := ensureVolumeMount(
 				apiServer.ExtraVolumes,
 				AuthenticationConfigPath,
@@ -170,7 +156,7 @@ func (h *authPatchHandler) Mutate(
 				return err
 			}
 
-			content, err := renderAuthenticationConfig(authVar)
+			content, err := renderAuthenticationConfig(authVar, disallowedIssuers)
 			if err != nil {
 				return fmt.Errorf("failed to render authentication config: %w", err)
 			}
@@ -190,7 +176,87 @@ func (h *authPatchHandler) Mutate(
 	)
 }
 
-func renderAuthenticationConfig(auth *v1alpha1.Authentication) (string, error) {
+// ValidateKubernetesVersion verifies that cpVersion is >= 1.34.0, which is required
+// for apiserver.config.k8s.io/v1 AuthenticationConfiguration.
+func ValidateKubernetesVersion(cpVersion string) error {
+	kubernetesVersion, err := semver.ParseTolerant(cpVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse control plane Kubernetes version %q: %w", cpVersion, err)
+	}
+	if !versionGreaterOrEqualTo134Range(kubernetesVersion) {
+		return fmt.Errorf(
+			"authentication requires Kubernetes >= 1.34.0 (apiserver.config.k8s.io/v1), got %q",
+			cpVersion,
+		)
+	}
+	return nil
+}
+
+// DefaultServiceAccountIssuers returns kubeadm's default --service-account-issuer
+// for the given cluster serviceDomain (defaulting to "cluster.local" when empty).
+func DefaultServiceAccountIssuers(serviceDomain string) []string {
+	domain := cmp.Or(strings.TrimPrefix(serviceDomain, "."), defaultServiceDomain)
+	return []string{"https://kubernetes.default.svc." + domain}
+}
+
+// ValidateControlPlaneTemplate checks a KubeadmControlPlaneTemplate for conflicting
+// --oidc-* flags, --authentication-config flags, and extraVolumes entries, and returns
+// the effective --service-account-issuer values that JWT issuer URLs must not overlap.
+func ValidateControlPlaneTemplate(
+	obj *controlplanev1.KubeadmControlPlaneTemplate,
+	serviceDomain string,
+) ([]string, error) {
+	apiServer := &obj.Spec.Template.Spec.KubeadmConfigSpec.ClusterConfiguration.APIServer
+
+	var serviceAccountIssuers []string
+	for _, arg := range apiServer.ExtraArgs {
+		if strings.HasPrefix(arg.Name, "oidc-") {
+			return nil, fmt.Errorf(
+				"use of --oidc-* flags is mutually exclusive with authentication; remove the --oidc-* extraArgs",
+			)
+		}
+		if arg.Name == AuthenticationConfigArg {
+			if arg.Value == nil {
+				return nil, fmt.Errorf(
+					"existing --%s flag has nil value; expected %q",
+					AuthenticationConfigArg, AuthenticationConfigPath,
+				)
+			}
+			if *arg.Value != AuthenticationConfigPath {
+				return nil, fmt.Errorf(
+					"existing --%s flag value %q does not match expected path %q",
+					AuthenticationConfigArg, *arg.Value, AuthenticationConfigPath,
+				)
+			}
+		}
+		if arg.Name == ServiceAccountIssuerArg && arg.Value != nil && *arg.Value != "" {
+			serviceAccountIssuers = append(serviceAccountIssuers, *arg.Value)
+		}
+	}
+
+	if _, err := ensureVolumeMount(
+		apiServer.ExtraVolumes,
+		AuthenticationConfigPath,
+		authenticationConfigVolumeName,
+	); err != nil {
+		return nil, err
+	}
+
+	if len(serviceAccountIssuers) == 0 {
+		serviceAccountIssuers = DefaultServiceAccountIssuers(serviceDomain)
+	}
+	return serviceAccountIssuers, nil
+}
+
+// ValidateConfiguration renders auth to apiserver.config.k8s.io/v1 AuthenticationConfiguration
+// and validates it with upstream kube-apiserver validation rules, including CEL compilation
+// and disallowed service-account issuer overlap checks.
+func ValidateConfiguration(auth *v1alpha1.Authentication, disallowedIssuers []string) error {
+	_, err := renderAuthenticationConfig(auth, disallowedIssuers)
+	return err
+}
+
+func renderAuthenticationConfig(auth *v1alpha1.Authentication, disallowedIssuers []string) (string, error) {
 	cfg := apiserverv1.AuthenticationConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apiserver.config.k8s.io/v1",
@@ -266,13 +332,13 @@ func renderAuthenticationConfig(auth *v1alpha1.Authentication) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := validateRenderedAuthenticationConfig(out); err != nil {
+	if err := validateRenderedAuthenticationConfig(out, disallowedIssuers); err != nil {
 		return "", err
 	}
 	return string(out), nil
 }
 
-func validateRenderedAuthenticationConfig(raw []byte) error {
+func validateRenderedAuthenticationConfig(raw []byte, disallowedIssuers []string) error {
 	decoder, compiler := apiserverValidator()
 	obj, err := runtime.Decode(decoder, raw)
 	if err != nil {
@@ -282,7 +348,11 @@ func validateRenderedAuthenticationConfig(raw []byte) error {
 	if !ok {
 		return fmt.Errorf("unexpected decoded type %T", obj)
 	}
-	if errs := apiservervalidation.ValidateAuthenticationConfiguration(compiler, internalCfg, nil); len(errs) > 0 {
+	if errs := apiservervalidation.ValidateAuthenticationConfiguration(
+		compiler,
+		internalCfg,
+		disallowedIssuers,
+	); len(errs) > 0 {
 		return errs.ToAggregate()
 	}
 	return nil

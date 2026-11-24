@@ -42,7 +42,7 @@ func testCAPEM(t *testing.T) string {
 
 func mustRender(t *testing.T, auth *v1alpha1.Authentication) (apiserverv1.AuthenticationConfiguration, string) {
 	t.Helper()
-	y, err := renderAuthenticationConfig(auth)
+	y, err := renderAuthenticationConfig(auth, nil)
 	require.NoError(t, err)
 	var cfg apiserverv1.AuthenticationConfiguration
 	require.NoError(t, yaml.Unmarshal([]byte(y), &cfg))
@@ -585,9 +585,10 @@ func TestRenderAuthenticationConfigInvalid(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name        string
-		input       *v1alpha1.Authentication
-		errContains string
+		name              string
+		input             *v1alpha1.Authentication
+		disallowedIssuers []string
+		errContains       string
 	}{
 		{
 			name: "missing prefix when username claim is set",
@@ -764,12 +765,28 @@ func TestRenderAuthenticationConfigInvalid(t *testing.T) {
 			},
 			errContains: "Duplicate value",
 		},
+		{
+			name: "issuer URL overlapping disallowed service-account-issuer",
+			input: &v1alpha1.Authentication{
+				JWT: []v1alpha1.JWTAuthenticator{{
+					Issuer: v1alpha1.Issuer{
+						URL:       "https://sa.example.com",
+						Audiences: []string{"k8s"},
+					},
+					ClaimMappings: v1alpha1.ClaimMappings{
+						Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+					},
+				}},
+			},
+			disallowedIssuers: []string{"https://sa.example.com"},
+			errContains:       "URL must not overlap with disallowed issuers",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := renderAuthenticationConfig(tt.input)
+			_, err := renderAuthenticationConfig(tt.input, tt.disallowedIssuers)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errContains)
 		})
