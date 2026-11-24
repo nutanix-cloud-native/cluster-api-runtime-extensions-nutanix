@@ -23,9 +23,9 @@ unaffected.
 
 Requires **Kubernetes >= 1.34** (`apiserver.config.k8s.io/v1` went GA in 1.34;
 1.29–1.33 only served `v1beta1`, which CAREN does not emit). When
-`clusterConfig.authentication` is set on a cluster whose control-plane
-Kubernetes version (`builtin.controlPlane.version`) is older than `1.34.0`, the
-topology mutation handler returns an error rather than rendering an
+`clusterConfig.authentication` is set on a cluster whose Kubernetes version is
+older than `1.34.0`, both the `Cluster` validating webhook and the topology
+mutation handler reject the configuration rather than rendering an
 `AuthenticationConfiguration` file that the API server cannot parse.
 
 ## Configuration
@@ -35,7 +35,7 @@ Each entry under `clusterConfig.authentication.jwt` mirrors an upstream
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `issuer.url` | `string` (`https://`) | Yes | OIDC issuer URL (no query or fragment), unique across `jwt` entries. Must match the `iss` claim in presented tokens. |
+| `issuer.url` | `string` (`https://`) | Yes | OIDC issuer URL (no query or fragment), unique across `jwt` entries and distinct from `--service-account-issuer`. Must match the `iss` claim in presented tokens. |
 | `issuer.discoveryURL` | `string` (`https://`) | No | Overrides `{issuer.url}/.well-known/openid-configuration`. Must differ from `issuer.url` and be unique across `jwt` entries. |
 | `issuer.certificateAuthority` | `string` (PEM) | No | Inline PEM-encoded CA certificate bundle used to verify TLS connections to the OIDC issuer. |
 | `issuer.audiences` | `[]string` | Yes | Acceptable JWT audiences (non-empty, unique items). |
@@ -55,15 +55,18 @@ flags (`--oidc-issuer-url`, `--oidc-client-id`, `--oidc-ca-file`,
 are **mutually exclusive**. The API server will refuse to start if both are
 present.
 
-CAREN enforces this at reconciliation time: if `APIServer.ExtraArgs` already
+CAREN enforces these constraints at `Cluster` admission (in the validating
+webhook) and during topology reconciliation: if `APIServer.ExtraArgs` already
 contains any flag whose name starts with `oidc-` and `clusterConfig.authentication`
-is also set, the handler returns an error instructing the operator to remove the
-legacy flags and use `authentication` instead. Likewise, if `ExtraArgs` already
-contains `--authentication-config` with a value other than the expected path
-`/etc/kubernetes/authentication.yaml`, or if `APIServer.ExtraVolumes` already
-defines a conflicting `authentication-config` volume or `/etc/kubernetes/authentication.yaml`
-mount, the handler returns an error rather than silently overwriting a
-user-managed configuration.
+is also set, CAREN rejects the configuration and instructs the operator to
+remove the legacy flags and use `authentication` instead. Likewise, CAREN
+rejects configurations where any `jwt[*].issuer.url` matches an explicit
+`--service-account-issuer` flag (or kubeadm's default
+`https://kubernetes.default.svc.<serviceDomain>`), where `ExtraArgs` already
+contains `--authentication-config` with a value other than
+`/etc/kubernetes/authentication.yaml`, or where `APIServer.ExtraVolumes`
+defines a conflicting `authentication-config` volume or
+`/etc/kubernetes/authentication.yaml` mount.
 
 To migrate from flag-based OIDC, remove all `--oidc-*` entries from
 `KubeadmConfigSpec.ClusterConfiguration.APIServer.ExtraArgs` and express the

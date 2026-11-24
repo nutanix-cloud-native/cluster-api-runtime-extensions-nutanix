@@ -51,6 +51,11 @@ pkg/handlers/generic/mutation/kubeadm/
 
 pkg/handlers/generic/mutation/handlers.go  # MODIFY: register new patch in MetaMutators()
 
+pkg/webhook/cluster/
+├── authentication_validator.go         # CREATE: fail-fast Cluster admission validation
+├── authentication_validator_test.go    # CREATE: unit + envtest webhook validation tests
+└── validator.go                        # MODIFY: wire NewAuthenticationValidator into MultiValidatingHandler
+
 docs/content/customization/kubeadm/
 └── authentication.md                   # CREATE (Docsy auto-indexes child pages)
 
