@@ -16,7 +16,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
@@ -24,12 +23,7 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/mutation"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/eks"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix"
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	carenhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers"
 )
 
 var updateGolden = flag.String("update-golden", "",
@@ -41,19 +35,7 @@ var handlerVersion = regexp.MustCompile(`v([0-9]+)configpatch$`)
 
 func registeredHandlers(t *testing.T) []handlers.Named {
 	t.Helper()
-	globalOptions := options.NewGlobalOptions()
-	flags := pflag.NewFlagSet("golden", pflag.ContinueOnError)
-	globalOptions.AddFlags(flags)
-	require.NoError(t, flags.Parse(nil))
-
-	mgr := testEnv.Manager
-	return slices.Concat(
-		aws.New(globalOptions).AllHandlers(mgr),
-		docker.New(globalOptions).AllHandlers(mgr),
-		nutanix.New(globalOptions).AllHandlers(mgr),
-		eks.New(globalOptions).AllHandlers(mgr),
-		generic.New().AllHandlers(mgr),
-	)
+	return carenhandlers.AllHandlers(testEnv.Manager)
 }
 
 func providerOf(name string) string {
