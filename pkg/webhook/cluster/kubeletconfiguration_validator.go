@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -18,6 +19,8 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 )
+
+const defaultImageMinimumGCAge = 2 * time.Minute
 
 // evictionThresholdPattern validates eviction threshold values: number with optional decimal,
 // optional percentage or binary unit suffix (Ki, Mi, Gi, Ti).
@@ -233,6 +236,47 @@ func validateKubeletConfig(cfg *v1alpha1.KubeletConfiguration, path string) erro
 		return err
 	}
 
+	if err := validateImageGCAges(cfg, path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateImageGCAges(cfg *v1alpha1.KubeletConfiguration, path string) error {
+	if cfg.ImageMinimumGCAge != nil && cfg.ImageMinimumGCAge.Duration <= 0 {
+		return fmt.Errorf("%s.imageMinimumGCAge: must be greater than 0s", path)
+	}
+	if cfg.ImageMaximumGCAge == nil {
+		return nil
+	}
+	if cfg.ImageMaximumGCAge.Duration < 0 {
+		return fmt.Errorf("%s.imageMaximumGCAge: must not be negative", path)
+	}
+	if cfg.ImageMaximumGCAge.Duration == 0 {
+		return nil
+	}
+
+	if cfg.ImageMinimumGCAge != nil {
+		if cfg.ImageMaximumGCAge.Duration <= cfg.ImageMinimumGCAge.Duration {
+			return fmt.Errorf(
+				"%s: imageMaximumGCAge (%s) must be greater than imageMinimumGCAge (%s)",
+				path,
+				cfg.ImageMaximumGCAge.Duration,
+				cfg.ImageMinimumGCAge.Duration,
+			)
+		}
+		return nil
+	}
+
+	if cfg.ImageMaximumGCAge.Duration <= defaultImageMinimumGCAge {
+		return fmt.Errorf(
+			"%s: imageMaximumGCAge (%s) must be greater than default imageMinimumGCAge (%s)",
+			path,
+			cfg.ImageMaximumGCAge.Duration,
+			defaultImageMinimumGCAge,
+		)
+	}
 	return nil
 }
 

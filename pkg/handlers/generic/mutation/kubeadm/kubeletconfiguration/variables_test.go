@@ -15,8 +15,11 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/testutils/capitest"
 	awsclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/clusterconfig"
+	awsworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/aws/workerconfig"
 	dockerclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/clusterconfig"
+	dockerworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/docker/workerconfig"
 	nutanixclusterconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/clusterconfig"
+	nutanixworkerconfig "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/nutanix/workerconfig"
 )
 
 func dockerClusterConfigWithKubelet(
@@ -76,6 +79,8 @@ var testDefs = []capitest.VariableTestDef{
 			PodPidsLimit:          new(int64(4096)),
 			ContainerLogMaxSize:   new(resource.MustParse("10Mi")),
 			ContainerLogMaxFiles:  new(int32(5)),
+			ImageMinimumGCAge:     &metav1.Duration{Duration: 15 * time.Minute},
+			ImageMaximumGCAge:     &metav1.Duration{Duration: 48 * time.Hour},
 			MaxParallelImagePulls: new(int32(5)),
 			ShutdownGracePeriod:   &metav1.Duration{Duration: 60 * time.Second},
 			ShutdownGracePeriodCriticalPods: &metav1.Duration{
@@ -187,6 +192,79 @@ var testDefs = []capitest.VariableTestDef{
 			ImageGCHighThresholdPercent: new(int32(70)),
 			ImageGCLowThresholdPercent:  new(int32(80)),
 		}),
+		ExpectError: true,
+	},
+	{
+		Name: "valid imageMaximumGCAge alone",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMaximumGCAge: &metav1.Duration{Duration: 48 * time.Hour},
+		}),
+	},
+	{
+		Name: "valid imageMaximumGCAge disabled with 0s",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMaximumGCAge: &metav1.Duration{Duration: 0},
+		}),
+	},
+	{
+		Name: "valid imageMinimumGCAge lowered below 2m with greater imageMaximumGCAge",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMinimumGCAge: &metav1.Duration{Duration: 30 * time.Second},
+			ImageMaximumGCAge: &metav1.Duration{Duration: time.Minute},
+		}),
+	},
+	{
+		Name: "invalid imageMinimumGCAge zero",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMinimumGCAge: &metav1.Duration{Duration: 0},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMinimumGCAge negative",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMinimumGCAge: &metav1.Duration{Duration: -time.Minute},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMaximumGCAge negative",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMaximumGCAge: &metav1.Duration{Duration: -time.Minute},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMaximumGCAge less than default 2m imageMinimumGCAge",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMaximumGCAge: &metav1.Duration{Duration: time.Minute},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMaximumGCAge equal to default 2m imageMinimumGCAge",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMaximumGCAge: &metav1.Duration{Duration: 2 * time.Minute},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMaximumGCAge less than explicit imageMinimumGCAge",
+		Vals: dockerClusterConfigWithKubelet(&v1alpha1.KubeletConfiguration{
+			ImageMinimumGCAge: &metav1.Duration{Duration: 30 * time.Minute},
+			ImageMaximumGCAge: &metav1.Duration{Duration: 15 * time.Minute},
+		}),
+		ExpectError: true,
+	},
+	{
+		Name: "invalid imageMaximumGCAge non-Go duration unit 2d",
+		Vals: map[string]any{
+			"controlPlane": map[string]any{
+				"kubeletConfiguration": map[string]any{
+					"imageMaximumGCAge": "2d",
+				},
+			},
+		},
 		ExpectError: true,
 	},
 	{
@@ -309,5 +387,76 @@ func TestVariableValidation_Nutanix(t *testing.T) {
 		true,
 		nutanixclusterconfig.NewVariable,
 		nutanixTestDefs...,
+	)
+}
+
+func workerTestDefsFromClusterTestDefs[T any](
+	wrap func(v1alpha1.KubeadmNodeSpec) T,
+) []capitest.VariableTestDef {
+	out := make([]capitest.VariableTestDef, 0, len(testDefs))
+	for _, td := range testDefs {
+		dockerSpec, ok := td.Vals.(v1alpha1.DockerClusterConfigSpec)
+		if !ok {
+			if cpMap, okMap := td.Vals.(map[string]any)["controlPlane"].(map[string]any); okMap {
+				out = append(out, capitest.VariableTestDef{
+					Name:        td.Name,
+					Vals:        cpMap,
+					ExpectError: td.ExpectError,
+				})
+			}
+			continue
+		}
+		var kubeadmNodeSpec v1alpha1.KubeadmNodeSpec
+		if dockerSpec.ControlPlane != nil {
+			kubeadmNodeSpec = dockerSpec.ControlPlane.KubeadmNodeSpec
+		}
+		out = append(out, capitest.VariableTestDef{
+			Name:        td.Name,
+			Vals:        wrap(kubeadmNodeSpec),
+			ExpectError: td.ExpectError,
+		})
+	}
+	return out
+}
+
+func TestWorkerVariableValidation_Docker(t *testing.T) {
+	defs := workerTestDefsFromClusterTestDefs(func(k v1alpha1.KubeadmNodeSpec) v1alpha1.DockerWorkerNodeConfigSpec {
+		return v1alpha1.DockerWorkerNodeConfigSpec{KubeadmNodeSpec: k}
+	})
+	capitest.ValidateDiscoverVariables(
+		t,
+		v1alpha1.WorkerConfigVariableName,
+		new(v1alpha1.DockerWorkerNodeConfig{}.VariableSchema()),
+		false,
+		dockerworkerconfig.NewVariable,
+		defs...,
+	)
+}
+
+func TestWorkerVariableValidation_AWS(t *testing.T) {
+	defs := workerTestDefsFromClusterTestDefs(func(k v1alpha1.KubeadmNodeSpec) v1alpha1.AWSWorkerNodeConfigSpec {
+		return v1alpha1.AWSWorkerNodeConfigSpec{KubeadmNodeSpec: k}
+	})
+	capitest.ValidateDiscoverVariables(
+		t,
+		v1alpha1.WorkerConfigVariableName,
+		new(v1alpha1.AWSWorkerNodeConfig{}.VariableSchema()),
+		false,
+		awsworkerconfig.NewVariable,
+		defs...,
+	)
+}
+
+func TestWorkerVariableValidation_Nutanix(t *testing.T) {
+	defs := workerTestDefsFromClusterTestDefs(func(k v1alpha1.KubeadmNodeSpec) v1alpha1.NutanixWorkerNodeConfigSpec {
+		return v1alpha1.NutanixWorkerNodeConfigSpec{KubeadmNodeSpec: k}
+	})
+	capitest.ValidateDiscoverVariables(
+		t,
+		v1alpha1.WorkerConfigVariableName,
+		new(v1alpha1.NutanixWorkerNodeConfig{}.VariableSchema()),
+		false,
+		nutanixworkerconfig.NewVariable,
+		defs...,
 	)
 }

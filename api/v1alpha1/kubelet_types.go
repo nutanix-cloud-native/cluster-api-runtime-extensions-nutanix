@@ -67,6 +67,8 @@ type AutomaticReservations struct {
 // KubeletConfiguration defines configurable fields for the kubelet's KubeletConfiguration.
 // These fields are written as a strategic merge patch file applied during kubeadm init/join.
 // +kubebuilder:validation:XValidation:rule="!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent",message="imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent"
+// +kubebuilder:validation:XValidation:rule="!has(self.imageMaximumGCAge) || !has(self.imageMinimumGCAge) || duration(self.imageMaximumGCAge) == duration('0s') || duration(self.imageMaximumGCAge) > duration(self.imageMinimumGCAge)",message="imageMaximumGCAge must be greater than imageMinimumGCAge when non-zero"
+// +kubebuilder:validation:XValidation:rule="!has(self.imageMaximumGCAge) || has(self.imageMinimumGCAge) || duration(self.imageMaximumGCAge) == duration('0s') || duration(self.imageMaximumGCAge) > duration('2m')",message="imageMaximumGCAge must be greater than the default imageMinimumGCAge (2m) when non-zero"
 // +kubebuilder:validation:XValidation:rule="!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)",message="evictionSoft must be set when evictionSoftGracePeriod is set"
 // +kubebuilder:validation:XValidation:rule="!has(self.evictionSoftGracePeriod) || !has(self.evictionSoft) || self.evictionSoftGracePeriod.all(k, k in self.evictionSoft)",message="evictionSoftGracePeriod keys must match evictionSoft keys"
 // +kubebuilder:validation:XValidation:rule="!has(self.automaticReservations) || (!has(self.systemReserved) && !has(self.kubeReserved) && !has(self.evictionHard))",message="automaticReservations cannot be combined with systemReserved, kubeReserved, or evictionHard"
@@ -174,6 +176,22 @@ type KubeletConfiguration struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Minimum=2
 	ContainerLogMaxFiles *int32 `json:"containerLogMaxFiles,omitempty"`
+
+	// ImageMinimumGCAge is the minimum age since an image was first seen before
+	// it is eligible for garbage collection. Must be greater than 0s.
+	// Default kubelet value is "2m".
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:XValidation:rule="duration(self) > duration('0s')",message="imageMinimumGCAge must be greater than 0s"
+	ImageMinimumGCAge *metav1.Duration `json:"imageMinimumGCAge,omitempty"`
+
+	// ImageMaximumGCAge is the maximum duration an unused image may remain before
+	// it is garbage collected, regardless of disk usage. Must be greater than
+	// imageMinimumGCAge (default "2m") when non-zero. Setting "0s" disables
+	// age-based image garbage collection.
+	// Default kubelet value is "0s" (disabled).
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:XValidation:rule="duration(self) >= duration('0s')",message="imageMaximumGCAge must not be negative"
+	ImageMaximumGCAge *metav1.Duration `json:"imageMaximumGCAge,omitempty"`
 
 	// ImageGCHighThresholdPercent is the percent of disk usage after which image
 	// garbage collection is always run. Must be greater than

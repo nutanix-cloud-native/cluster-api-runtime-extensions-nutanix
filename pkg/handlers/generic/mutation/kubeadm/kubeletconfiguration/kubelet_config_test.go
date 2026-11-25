@@ -317,6 +317,40 @@ func TestRenderKubeletConfigPatch_EnforceNodeAllocatable_Empty(t *testing.T) {
 	assert.Empty(t, kubeletCfg.KubeReservedCgroup)
 }
 
+func TestRenderKubeletConfigPatch_ImageMinimumGCAge(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ImageMinimumGCAge: &metav1.Duration{Duration: 15 * time.Minute},
+	})
+	assert.Equal(t, metav1.Duration{Duration: 15 * time.Minute}, kubeletCfg.ImageMinimumGCAge)
+	assert.Zero(t, kubeletCfg.ImageMaximumGCAge)
+}
+
+func TestRenderKubeletConfigPatch_ImageMaximumGCAge(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ImageMaximumGCAge: &metav1.Duration{Duration: 48 * time.Hour},
+	})
+	assert.Equal(t, metav1.Duration{Duration: 48 * time.Hour}, kubeletCfg.ImageMaximumGCAge)
+	assert.Zero(t, kubeletCfg.ImageMinimumGCAge)
+}
+
+func TestRenderKubeletConfigPatch_ImageGCAgesTogether(t *testing.T) {
+	kubeletCfg := renderAndDeserialize(t, &v1alpha1.KubeletConfiguration{
+		ImageMinimumGCAge: &metav1.Duration{Duration: 10 * time.Minute},
+		ImageMaximumGCAge: &metav1.Duration{Duration: 24 * time.Hour},
+	})
+	assert.Equal(t, metav1.Duration{Duration: 10 * time.Minute}, kubeletCfg.ImageMinimumGCAge)
+	assert.Equal(t, metav1.Duration{Duration: 24 * time.Hour}, kubeletCfg.ImageMaximumGCAge)
+}
+
+func TestRenderKubeletConfigPatch_ImageMaximumGCAgeZero(t *testing.T) {
+	f, err := renderKubeletConfigPatch(&v1alpha1.KubeletConfiguration{
+		ImageMaximumGCAge: &metav1.Duration{Duration: 0},
+	})
+	require.NoError(t, err)
+	assert.Contains(t, f.Content, "imageMaximumGCAge: 0s")
+	assert.NotContains(t, f.Content, "imageMinimumGCAge")
+}
+
 func TestApplyDeprecatedMaxParallelImagePulls_OnlyDeprecated(t *testing.T) {
 	cfg := &v1alpha1.KubeletConfiguration{}
 	vars := map[string]apiextensionsv1.JSON{

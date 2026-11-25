@@ -55,6 +55,12 @@ containerLogMaxSize: {{ . }}
 {{- with .ContainerLogMaxFiles }}
 containerLogMaxFiles: {{ . }}
 {{- end }}
+{{- with .ImageMinimumGCAge }}
+imageMinimumGCAge: {{ . }}
+{{- end }}
+{{- with .ImageMaximumGCAge }}
+imageMaximumGCAge: {{ . }}
+{{- end }}
 {{- with .ImageGCHighThresholdPercent }}
 imageGCHighThresholdPercent: {{ . }}
 {{- end }}

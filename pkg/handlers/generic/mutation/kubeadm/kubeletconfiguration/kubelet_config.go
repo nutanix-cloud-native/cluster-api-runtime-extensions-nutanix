@@ -46,6 +46,8 @@ type kubeletConfigTemplateInput struct {
 	PodPidsLimit                    any
 	ContainerLogMaxSize             any
 	ContainerLogMaxFiles            any
+	ImageMinimumGCAge               any
+	ImageMaximumGCAge               any
 	ImageGCHighThresholdPercent     any
 	ImageGCLowThresholdPercent      any
 	MaxParallelImagePulls           any
@@ -79,6 +81,12 @@ func toTemplateInput(cfg *v1alpha1.KubeletConfiguration) *kubeletConfigTemplateI
 
 	if cfg.ContainerLogMaxSize != nil {
 		in.ContainerLogMaxSize = cfg.ContainerLogMaxSize.String()
+	}
+	if cfg.ImageMinimumGCAge != nil {
+		in.ImageMinimumGCAge = cfg.ImageMinimumGCAge.Duration.String()
+	}
+	if cfg.ImageMaximumGCAge != nil {
+		in.ImageMaximumGCAge = cfg.ImageMaximumGCAge.Duration.String()
 	}
 	if cfg.ShutdownGracePeriod != nil {
 		in.ShutdownGracePeriod = cfg.ShutdownGracePeriod.Duration.String()
