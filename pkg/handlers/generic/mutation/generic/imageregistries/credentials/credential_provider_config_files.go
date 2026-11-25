@@ -66,6 +66,14 @@ func (c providerConfig) isCredentialsEmpty() bool {
 		c.Password == ""
 }
 
+func (c providerConfig) isHTTP() bool {
+	registryURL, err := url.ParseRequestURI(c.URL)
+	if err != nil {
+		return false
+	}
+	return registryURL.Scheme == "http"
+}
+
 func (c providerConfig) requiresStaticCredentials() (bool, error) {
 	registryHostWithPath, err := c.registryHostWithPath()
 	if err != nil {

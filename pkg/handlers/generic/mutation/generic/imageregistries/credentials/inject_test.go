@@ -222,6 +222,43 @@ func Test_providerConfigsThatNeedConfiguration(t *testing.T) {
 				Mirror:    true,
 			}},
 		},
+		{
+			name: "http registry with no credentials",
+			configs: []providerConfig{{
+				URL: "http://myregistry.com:5000",
+			}},
+			expected: nil,
+		},
+		{
+			name: "http registry with static credentials",
+			configs: []providerConfig{{
+				URL:      "http://myregistry.com:5000",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
+			expected: []providerConfig{{
+				URL:      "http://myregistry.com:5000",
+				Username: "myuser",
+				Password: "mypassword",
+			}},
+		},
+		{
+			name: "http registry with CA certificate fails",
+			configs: []providerConfig{{
+				URL:       "http://myregistry.com:5000",
+				HasCACert: true,
+			}},
+			wantErr: ErrHTTPRegistryWithCACertificate,
+		},
+		{
+			name: "http mirror with CA certificate fails",
+			configs: []providerConfig{{
+				URL:       "http://mymirror.com:5000",
+				HasCACert: true,
+				Mirror:    true,
+			}},
+			wantErr: ErrHTTPRegistryWithCACertificate,
+		},
 	}
 
 	for _, tt := range testCases {

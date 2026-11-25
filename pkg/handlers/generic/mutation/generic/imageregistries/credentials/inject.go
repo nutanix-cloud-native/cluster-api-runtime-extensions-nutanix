@@ -36,7 +36,12 @@ type imageRegistriesPatchHandler struct {
 	variableFieldPath []string
 }
 
-var ErrCredentialsNotFound = errors.New("registry credentials not found")
+var (
+	ErrCredentialsNotFound           = errors.New("registry credentials not found")
+	ErrHTTPRegistryWithCACertificate = errors.New(
+		"CA certificate cannot be specified for http registry",
+	)
+)
 
 func NewPatch(
 	cl ctrlclient.Client,
@@ -447,6 +452,13 @@ func createSecretIfNeeded(
 func providerConfigsThatNeedConfiguration(configs []providerConfig) ([]providerConfig, error) {
 	var needConfiguration []providerConfig
 	for _, config := range configs {
+		if config.isHTTP() && config.HasCACert {
+			return nil, fmt.Errorf(
+				"invalid image registry: %s: %w",
+				config.URL,
+				ErrHTTPRegistryWithCACertificate,
+			)
+		}
 		requiresStaticCredentials, err := config.requiresStaticCredentials()
 		if err != nil {
 			return nil,
@@ -454,9 +466,9 @@ func providerConfigsThatNeedConfiguration(configs []providerConfig) ([]providerC
 		}
 		// verify the credentials are actually set if the plugin requires static credentials
 		if config.isCredentialsEmpty() && requiresStaticCredentials {
-			if config.Mirror || config.HasCACert {
-				// not setting credentials for a mirror is valid, but won't need any configuration
-				// not setting credentials for a registry with a CA cert is valid, but won't need any configuration
+			if config.Mirror || config.HasCACert || config.isHTTP() {
+				// not setting credentials for a mirror, a registry with a CA cert, or an http
+				// registry is valid, and won't need any static credential configuration
 				continue
 			}
 			return nil, fmt.Errorf(

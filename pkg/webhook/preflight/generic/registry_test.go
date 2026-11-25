@@ -395,6 +395,76 @@ func TestRegistryCheck(t *testing.T) {
 			},
 		},
 		{
+			name:  "http image registry with CA certificate fails",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0]",
+			imageRegistry: &carenv1.ImageRegistry{
+				URL: "http://registry.example.com",
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"ca.crt": []byte("test-ca-cert"),
+					}
+					return nil
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed:       false,
+				InternalError: false,
+				Causes: []preflight.Cause{
+					{
+						Message: "Registry credentials Secret \"test-secret\" contains a CA certificate (\"ca.crt\"), which cannot be used with an \"http\" registry URL \"http://registry.example.com\".", ///nolint:lll // Message is long.
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0].credentials.secretRef",
+					},
+				},
+			},
+		},
+		{
+			name:  "http registry mirror with CA certificate fails",
+			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror",
+			registryMirror: &carenv1.GlobalImageRegistryMirror{
+				URL: "http://registry.example.com/library",
+				Credentials: &carenv1.RegistryCredentials{
+					SecretRef: &carenv1.LocalObjectReference{
+						Name: "test-secret",
+					},
+				},
+			},
+			kclient: &mockK8sClient{
+				getSecretFunc: func(ctx context.Context,
+					key types.NamespacedName,
+					obj ctrlclient.Object,
+					opts ...ctrlclient.GetOption,
+				) error {
+					secret := obj.(*corev1.Secret)
+					secret.Data = map[string][]byte{
+						"ca.crt": []byte("test-ca-cert"),
+					}
+					return nil
+				},
+			},
+			want: preflight.CheckResult{
+				Allowed:       false,
+				InternalError: false,
+				Causes: []preflight.Cause{
+					{
+						Message: "Registry credentials Secret \"test-secret\" contains a CA certificate (\"ca.crt\"), which cannot be used with an \"http\" registry URL \"http://registry.example.com/library\".", ///nolint:lll // Message is long.
+						Field:   "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.globalImageRegistryMirror.credentials.secretRef",
+					},
+				},
+			},
+		},
+		{
 			name:  "image registry with invalid URL",
 			field: "$.spec.topology.variables[?@.name==\"clusterConfig\"].value.imageRegistries[0]",
 			imageRegistry: &carenv1.ImageRegistry{

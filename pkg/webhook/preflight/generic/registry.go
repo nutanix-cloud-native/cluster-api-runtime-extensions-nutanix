@@ -175,6 +175,21 @@ func (r *registryCheck) checkRegistry(
 			registryHost.Pass = string(password)
 		}
 		if caCert, ok := credentialsSecret.Data["ca.crt"]; ok {
+			if registryHost.TLS == config.TLSDisabled {
+				result.Allowed = false
+				result.InternalError = false
+				result.Causes = append(result.Causes,
+					preflight.Cause{
+						Message: fmt.Sprintf(
+							"Registry credentials Secret %q contains a CA certificate (\"ca.crt\"), which cannot be used with an \"http\" registry URL %q.", ///nolint:lll // Message is long.
+							credentials.SecretRef.Name,
+							registryURL,
+						),
+						Field: r.field + ".credentials.secretRef",
+					},
+				)
+				return result
+			}
 			registryHost.RegCert = string(caCert)
 		}
 	}

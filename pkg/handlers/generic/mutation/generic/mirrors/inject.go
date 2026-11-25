@@ -309,6 +309,13 @@ func generateFiles(
 		files = append(files, *containerdHostsFile)
 	}
 
+	// generate per-host hosts.toml for http registries
+	perHostHostsFiles, err := generateContainerdPerHostHostsFiles(registriesWithOptionalCA)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, perHostHostsFiles...)
+
 	// generate CA certificate file for registry mirror
 	mirrorCAFiles, err := generateRegistryCACertFiles(registriesWithOptionalCA)
 	if err != nil {
