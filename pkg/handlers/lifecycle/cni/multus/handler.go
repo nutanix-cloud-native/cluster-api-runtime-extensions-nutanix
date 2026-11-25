@@ -8,20 +8,23 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	caaphv1 "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/external/sigs.k8s.io/cluster-api-addon-provider-helm/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	capiutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/utils"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
 
 const (
@@ -108,30 +111,17 @@ func (m *MultusHandler) apply(
 	resp *runtimehooksv1.CommonResponse,
 ) {
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	log := ctrl.LoggerFrom(ctx).WithValues("cluster", clusterKey)
 
-	log := ctrl.LoggerFrom(ctx).WithValues(
-		"cluster",
-		clusterKey,
-	)
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 
-	// Check if Multus is supported for this cloud provider
-	provider := capiutils.GetProvider(cluster)
-	if provider != "eks" && provider != "nutanix" {
-		log.V(5).Info(
-			"Multus is not supported for this cloud provider. Skipping Multus deployment.",
-		)
-		return
-	}
-
-	log.Info(fmt.Sprintf("Cluster is %s. Checking CNI configuration for Multus deployment.", provider))
-
-	// Read CNI configuration to detect which CNI is deployed
 	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
 
 	cniVar, err := variables.Get[v1alpha1.CNI](
 		varMap,
 		v1alpha1.ClusterConfigVariableName,
-		[]string{"addons", v1alpha1.CNIVariableName}...,
+		"addons",
+		v1alpha1.CNIVariableName,
 	)
 	if err != nil {
 		if variables.IsNotFoundError(err) {
@@ -144,28 +134,99 @@ func (m *MultusHandler) apply(
 		return
 	}
 
-	log.Info(fmt.Sprintf("Auto-deploying Multus for %s cluster with %s CNI", provider, cniVar.Provider))
+	targetNamespace := m.config.DefaultsNamespace()
+	helmValuesSourceRefName := m.config.helmAddonConfig.DefaultValuesTemplateConfigMapName()
 
-	// Get helm chart configuration
+	if cniVar.Multus == nil {
+		// Pre-existing Nutanix and EKS clusters created before Multus became opt-in have an
+		// existing multus-<cluster-uuid> HelmChartProxy without cni.multus in clusterConfig.
+		// Reconcile it during upgrades without mutating Cluster.spec so GitOps sync stays clean.
+		clusterUUID := cluster.Annotations[v1alpha1.ClusterUUIDAnnotationKey]
+		if clusterUUID == "" {
+			log.V(5).Info("Multus is not enabled in cluster config. Skipping Multus deployment.")
+			return
+		}
+
+		existingHCP := &caaphv1.HelmChartProxy{}
+		hcpKey := ctrlclient.ObjectKey{
+			Namespace: cluster.Namespace,
+			Name:      fmt.Sprintf("%s-%s", defaultMultusReleaseName, clusterUUID),
+		}
+		if err := m.client.Get(ctx, hcpKey, existingHCP); err != nil {
+			if apierrors.IsNotFound(err) {
+				log.V(5).Info("Multus is not enabled in cluster config. Skipping Multus deployment.")
+				return
+			}
+			log.Error(err, "failed to check for existing Multus HelmChartProxy", "helmChartProxy", hcpKey)
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf("failed to check for existing Multus HelmChartProxy: %v", err))
+			return
+		}
+
+		log.Info(
+			"Pre-existing Multus HelmChartProxy found without addons.cni.multus set; reconciling with default configuration",
+			"helmChartProxy",
+			hcpKey,
+		)
+	} else {
+		switch cniVar.Multus.Strategy {
+		case v1alpha1.AddonStrategyHelmAddon:
+		case "":
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage("strategy not specified for Multus addon")
+			return
+		default:
+			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+			resp.SetMessage(fmt.Sprintf("unknown Multus addon deployment strategy %q", cniVar.Multus.Strategy))
+			return
+		}
+
+		if cniVar.Multus.Values != nil && cniVar.Multus.Values.SourceRef != nil {
+			helmValuesSourceRefName = cniVar.Multus.Values.SourceRef.Name
+			targetNamespace = cluster.Namespace
+
+			err := handlersutils.EnsureClusterOwnerReferenceForObject(
+				ctx,
+				m.client,
+				corev1.TypedLocalObjectReference{
+					Kind: cniVar.Multus.Values.SourceRef.Kind,
+					Name: cniVar.Multus.Values.SourceRef.Name,
+				},
+				cluster,
+			)
+			if err != nil {
+				log.Error(
+					err,
+					"error updating Cluster's owner reference on Multus helm values source object",
+					"name", cniVar.Multus.Values.SourceRef.Name,
+					"kind", cniVar.Multus.Values.SourceRef.Kind,
+				)
+				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+				resp.SetMessage(fmt.Sprintf(
+					"failed to set Cluster's owner reference on Multus helm values source object: %v",
+					err,
+				))
+				return
+			}
+		}
+
+		log.Info(fmt.Sprintf("Deploying Multus with %s CNI", cniVar.Provider))
+	}
+
 	helmChart, err := m.helmChartInfoGetter.For(ctx, log, config.Multus)
 	if err != nil {
-		log.Error(
-			err,
-			"failed to get configmap with helm settings",
-		)
+		log.Error(err, "failed to get configmap with helm settings")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(
-			fmt.Sprintf("failed to get configuration to create helm addon: %v",
-				err,
-			),
-		)
+		resp.SetMessage(fmt.Sprintf("failed to get configuration to create helm addon: %v", err))
 		return
 	}
 
-	// Create and apply helm addon using existing addons package
-	targetNamespace := m.config.DefaultsNamespace()
 	strategy := addons.NewHelmAddonApplier(
-		m.config.helmAddonConfig,
+		addons.NewHelmAddonConfig(
+			helmValuesSourceRefName,
+			defaultMultusNamespace,
+			defaultMultusReleaseName,
+		),
 		m.client,
 		helmChart,
 	).

@@ -246,6 +246,7 @@ func (h *Handlers) AddFlags(flagSet *pflag.FlagSet) {
 	h.calicoCNIConfig.AddFlags("cni.calico", flagSet)
 	h.ciliumCNIConfig.AddFlags("cni.cilium", flagSet)
 	h.nutanixFlowCNIConfig.AddFlags("cni.nutanix-flow", flagSet)
+	h.multusConfig.AddFlags("cni.multus", flagSet)
 	h.ebsConfig.AddFlags("csi.aws-ebs", pflag.CommandLine)
 	h.nutanixCSIConfig.AddFlags("csi.nutanix", flagSet)
 	h.localPathCSIConfig.AddFlags("csi.local-path", flagSet)
