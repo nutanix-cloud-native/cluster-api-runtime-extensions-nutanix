@@ -133,6 +133,11 @@ pkg/handlers/generic/mutation/kubeadm/
 
 pkg/handlers/generic/mutation/handlers.go  # MODIFY: register serviceaccountissuer.NewPatch() in MetaMutators()
 
+pkg/webhook/cluster/
+├── validator.go                         # MODIFY: register NewServiceAccountIssuerValidator in NewValidator()
+├── serviceaccountissuer_validator.go    # CREATE: non-blocking admission warnings when audiences omit in-cluster audience or narrow existing audiences
+└── serviceaccountissuer_validator_test.go # CREATE: unit + live envtest WarningHandler tests
+
 docs/content/customization/kubeadm/
 └── service-account-issuer.md            # CREATE: user-facing docs per FR-010 (auto-indexed by Hugo)
 
@@ -198,6 +203,17 @@ test/e2e/
 - [x] `make fmt` + `make lint` + `prek` clean (license headers current year).
 - [x] `make test` — green across `root`, `api`, and `common` modules.
 - [x] SC-003 spot-check: `GeneratePatches` with no `serviceAccountIssuer` set produces byte-identical output (no version bump).
+
+### Task 7: Webhook warning & CRD field description for `audiences` narrowing
+
+- [x] Write failing unit + live envtest `WarningHandler` suite in `pkg/webhook/cluster/serviceaccountissuer_validator_test.go` covering:
+  - `DELETE`, non-topology Cluster, omitted `serviceAccountIssuer`, `issuer`-only, `audiences` containing `issuer`, `audiences` containing default Kubernetes audience (including custom `serviceDomain`) → allowed with zero warnings
+  - `CREATE` with `audiences` omitting both `issuer` and default Kubernetes audience → allowed with warning
+  - `UPDATE` narrowing audiences (from implicit kubeadm default, from implicit `issuer` default when adding `audiences`, removing an explicit entry, or clearing `audiences`) → allowed with warning naming removed audience(s) without duplicate warnings
+  - `UPDATE` reordering/expanding `audiences`, rotating `issuer` without `audiences`, or fixing malformed `oldCluster` variable → allowed without false audience warnings or denial
+  - Live `envtest` `/validate-cluster` `Create` and `Update` delivering HTTP `Warning` headers via `rest.WarningHandler`
+- [x] Implement `pkg/webhook/cluster/serviceaccountissuer_validator.go` and register in `pkg/webhook/cluster/validator.go`.
+- [x] Add audience-narrowing warning to `ServiceAccountIssuer.Audiences` GoDoc in `api/v1alpha1/serviceaccountissuer_types.go`, regenerate CRDs via `make go-generate`, and document the admission warning in `docs/content/customization/kubeadm/service-account-issuer.md`.
 
 ---
 

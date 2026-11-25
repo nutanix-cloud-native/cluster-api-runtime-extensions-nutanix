@@ -35,7 +35,7 @@ since Kubernetes 1.21).
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `issuer` | `string` (`https://`) | Yes | Identifier asserted in ServiceAccount JWT `iss` claims. Must be an `https://` URL (max 2048 characters) with a non-empty hostname and valid port, without userinfo, query parameters, or fragments. Must not match any `clusterConfig.authentication.jwt[].issuer.url`. Triggers `--service-account-issuer`. |
-| `audiences` | `[]string` | No | List of audiences tokens are bound to (max 50 unique entries, each 1–253 characters, without whitespace, commas, or double quotes). When set, rendered as comma-joined `--api-audiences` sorted alphabetically. When absent, `--api-audiences` is omitted and the API server defaults to `[issuer]`. |
+| `audiences` | `[]string` | No | List of audiences tokens are bound to (max 50 unique entries, each 1–253 characters, without whitespace, commas, or double quotes). When set, rendered as comma-joined `--api-audiences` sorted alphabetically. When absent, `--api-audiences` is omitted and the API server defaults to `[issuer]`. **Warning:** setting only external audiences (such as `sts.amazonaws.com`) without keeping the cluster's in-cluster API audience (`issuer` or `https://kubernetes.default.svc.<serviceDomain>`), or removing a previously accepted audience, causes existing in-cluster ServiceAccount tokens bound to the omitted audience to be rejected until refreshed. |
 | `jwksURI` | `string` (`https://`) | No | Override for the `jwks_uri` advertised in `/.well-known/openid-configuration` (max 2048 characters). Must be an `https://` URL with a non-empty hostname and valid port, without userinfo or fragments (query parameters are allowed per OpenID Connect Discovery 1.0 Section 3). Triggers `--service-account-jwks-uri`. |
 | `maxTokenExpiration` | `duration` | No | Maximum lifetime for ServiceAccount tokens as a Go duration between `1h` and `1193046h28m16s` (`2^32` seconds), e.g. `2h` or `24h` (`kube-apiserver` rejects values below `1h` and logs a startup warning at `<= 3607s`). Triggers `--service-account-max-token-expiration`. Note that `kube-apiserver` enables `--service-account-extend-token-expiration=true` by default, which extends default admission-injected Pod projected tokens (`3607s`) up to 1 year unless a Pod's `serviceAccountToken` volume projection sets `expirationSeconds` explicitly. |
 
@@ -142,7 +142,10 @@ spec:
   reject existing ServiceAccount tokens carrying the previous `iss` or removed `aud`
   with `401 Unauthorized` until kubelet refreshes projected volume tokens (at ~80%
   of token lifetime) or Pods are restarted. Plan Pod restarts when rotating `issuer`
-  or narrowing `audiences` on running clusters.
+  or narrowing `audiences` on running clusters. CAREN's Cluster validating webhook
+  emits an admission warning when `audiences` omits both `issuer` and
+  `https://kubernetes.default.svc.<serviceDomain>`, or when an update removes a
+  previously accepted audience.
 - **Conflict and idempotency:** Existing `apiServer.extraArgs` entries that already
   match the desired values are preserved idempotently. If `service-account-issuer`,
   `api-audiences`, `service-account-jwks-uri`, or `service-account-max-token-expiration`

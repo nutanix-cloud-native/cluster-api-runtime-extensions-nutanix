@@ -15,5 +15,6 @@ func NewValidator(client ctrlclient.Client, decoder admission.Decoder) admission
 		NewAdvancedCiliumConfigurationValidator(client, decoder).Validator(),
 		NewKubeletConfigurationValidator(client, decoder).Validator(),
 		NewAuthenticationValidator(client, decoder).Validator(),
+		NewServiceAccountIssuerValidator(decoder).Validator(),
 	)
 }

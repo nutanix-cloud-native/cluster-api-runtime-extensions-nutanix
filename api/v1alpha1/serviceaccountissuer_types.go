@@ -28,6 +28,10 @@ type ServiceAccountIssuer struct {
 	// kube-apiserver parses --api-audiences as CSV via pflag.StringSlice.
 	// When set, rendered as comma-joined --api-audiences sorted alphabetically.
 	// When absent, --api-audiences is not set (API server defaults to issuer URL).
+	// Warning: setting audiences to only external values (such as sts.amazonaws.com) without
+	// keeping the cluster's in-cluster API audience (issuer or https://kubernetes.default.svc.<serviceDomain>),
+	// or removing a previously accepted audience, causes the API server to reject existing
+	// in-cluster ServiceAccount tokens bound to the omitted audience until refreshed.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems=50
 	// +kubebuilder:validation:UniqueItems=true
