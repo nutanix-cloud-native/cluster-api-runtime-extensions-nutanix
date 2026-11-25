@@ -136,11 +136,11 @@ export METALLB_CHART_VERSION := 0.16.1
 # COSI Controller
 #   Chart name:    cosi-controller
 #   Chart repo: 	 https://mesosphere.github.io/charts/stable/index.yaml
-#   Chart version: 0.2.2
-#   App version:   v0.2.2
+#   Chart version: 0.2.3
+#   App version:   v0.2.3
 #   Repo:          https://github.com/kubernetes-sigs/container-object-storage-interface
-#   Release:       https://github.com/kubernetes-sigs/container-object-storage-interface/releases/tag/v0.2.2
-export COSI_CONTROLLER_VERSION := 0.2.2
+#   Release:       https://github.com/kubernetes-sigs/container-object-storage-interface/releases/tag/v0.2.3
+export COSI_CONTROLLER_VERSION := 0.2.3
 
 # Konnector Agent
 #   Chart name:    konnector-agent
