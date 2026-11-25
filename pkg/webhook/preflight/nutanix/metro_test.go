@@ -168,10 +168,11 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check + 1 control-plane VM image check.
-			expectedChecksCount: 8,
+			// 1 per-metro check + 1 DR service check + 1 cluster PE-scale check
+			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
+			// + 1 metro-sites identity check + 1 vHA category name check
+			// + 1 control-plane VM image check.
+			expectedChecksCount: 9,
 		},
 		{
 			name: "same metro referenced by control plane and worker is de-duplicated",
@@ -187,10 +188,11 @@ func TestNewMetroChecks(t *testing.T) {
 				FailureDomain: metroFailureDomainPrefix + metroName,
 			}},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check + 1 control-plane VM image check.
-			expectedChecksCount: 8,
+			// 1 per-metro check + 1 DR service check + 1 cluster PE-scale check
+			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
+			// + 1 metro-sites identity check + 1 vHA category name check
+			// + 1 control-plane VM image check.
+			expectedChecksCount: 9,
 		},
 		{
 			name: "two distinct metros add a single-metro check",
@@ -206,11 +208,11 @@ func TestNewMetroChecks(t *testing.T) {
 				FailureDomain: metroFailureDomainPrefix + "metro-2",
 			}},
 			nclient: &clientWrapper{},
-			// 2 per-metro checks + 1 single-metro check + 1 cluster PE-scale check
-			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
-			// + 1 metro-sites identity check + 1 vHA category name check
-			// + 1 control-plane VM image check.
-			expectedChecksCount: 10,
+			// 2 per-metro checks + 1 single-metro check + 1 DR service check
+			// + 1 cluster PE-scale check + 1 PC-hosting check + 1 latency check
+			// + 1 all-node-pools check + 1 metro-sites identity check
+			// + 1 vHA category name check + 1 control-plane VM image check.
+			expectedChecksCount: 11,
 		},
 		{
 			name: "metro site failure domain resolves to its metro",
@@ -228,11 +230,12 @@ func TestNewMetroChecks(t *testing.T) {
 				},
 			},
 			nclient: &clientWrapper{},
-			// 1 per-metro check + 1 cluster PE-scale check + 1 PC-hosting check
-			// + 1 latency check + 1 all-node-pools check + 1 metro-sites identity
-			// check + 1 vHA category name check. No VM image check: this case has
-			// no control-plane Nutanix spec and no worker machine details.
-			expectedChecksCount: 7,
+			// 1 per-metro check + 1 DR service check + 1 cluster PE-scale check
+			// + 1 PC-hosting check + 1 latency check + 1 all-node-pools check
+			// + 1 metro-sites identity check + 1 vHA category name check. No VM
+			// image check: this case has no control-plane Nutanix spec and no
+			// worker machine details.
+			expectedChecksCount: 8,
 		},
 	}
 
@@ -1024,6 +1027,90 @@ func TestMetroReplicationLatencyCheck(t *testing.T) {
 				kclient:            kclient,
 				nclient:            metroLatencyNClient(tc.rttMillis, tc.rttFound, tc.rttErr),
 				errMessage:         tc.errMessage,
+			}
+
+			result := check.Run(context.TODO())
+
+			assert.Equal(t, tc.expectedAllowed, result.Allowed)
+			assert.Equal(t, tc.expectedInternalError, result.InternalError)
+			if !tc.expectedAllowed {
+				require.NotEmpty(t, result.Causes)
+				assert.Contains(t, result.Causes[0].Message, tc.expectedCauseMessage)
+				assert.Equal(t, field, result.Causes[0].Field)
+			} else {
+				assert.Empty(t, result.Causes)
+			}
+		})
+	}
+}
+
+// metroDRNClient builds a mock Nutanix client that reports the given Disaster
+// Recovery enablement status.
+func metroDRNClient(disabled, found bool, drErr error) *clientWrapper {
+	return &clientWrapper{
+		IsDisasterRecoveryDisabledFunc: func(ctx context.Context) (bool, bool, error) {
+			if drErr != nil {
+				return false, false, drErr
+			}
+			return disabled, found, nil
+		},
+	}
+}
+
+func TestMetroDRServiceCheck(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		nilClient             bool
+		drDisabled            bool
+		drFound               bool
+		drErr                 error
+		expectedAllowed       bool
+		expectedInternalError bool
+		expectedCauseMessage  string
+	}{
+		{
+			name:            "nil client does not block",
+			nilClient:       true,
+			expectedAllowed: true,
+		},
+		{
+			name:            "disaster recovery enabled is allowed",
+			drDisabled:      false,
+			drFound:         true,
+			expectedAllowed: true,
+		},
+		{
+			name:                 "disaster recovery disabled is rejected",
+			drDisabled:           true,
+			drFound:              true,
+			expectedAllowed:      false,
+			expectedCauseMessage: "Nutanix Disaster Recovery service is not enabled on Prism Central",
+		},
+		{
+			name:            "disaster recovery product not found is allowed",
+			drDisabled:      false,
+			drFound:         false,
+			expectedAllowed: true,
+		},
+		{
+			name:                  "lookup error is an internal error",
+			drErr:                 assert.AnError,
+			expectedAllowed:       false,
+			expectedInternalError: true,
+			expectedCauseMessage:  "Failed to determine whether the Nutanix Disaster Recovery service is enabled",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var nclient client
+			if !tc.nilClient {
+				nclient = metroDRNClient(tc.drDisabled, tc.drFound, tc.drErr)
+			}
+
+			check := &metroDRServiceCheck{
+				field:   field,
+				nclient: nclient,
 			}
 
 			result := check.Run(context.TODO())

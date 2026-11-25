@@ -148,6 +148,13 @@ func newMetroChecks(cd *checkDependencies) []preflight.Check {
 	if len(metroNames) > 0 {
 		fdNames, errMessage := clusterFailureDomainNames(cd)
 		checks = append(checks,
+			// A metro Cluster relies on the Nutanix Disaster Recovery service on
+			// Prism Central for synchronous replication. Block the Cluster when
+			// that service is not enabled.
+			&metroDRServiceCheck{
+				field:   firstField,
+				nclient: cd.nclient,
+			},
 			&clusterPrismElementScaleCheck{
 				failureDomainNames: fdNames,
 				namespace:          cd.cluster.Namespace,
@@ -781,6 +788,52 @@ func (c *metroReplicationLatencyCheck) distinctPrismElementUUIDs(
 		peUUIDs = append(peUUIDs, peUUID)
 	}
 	return peUUIDs
+}
+
+// metroDRServiceCheck enforces that the Nutanix Disaster Recovery service is
+// enabled on the Prism Central backing a metro Cluster. Metro (synchronous)
+// replication depends on the Disaster Recovery service, so creating metro
+// resources against a Prism Central where it is disabled leaves the Cluster
+// without protection.
+type metroDRServiceCheck struct {
+	field   string
+	nclient client
+}
+
+func (c *metroDRServiceCheck) Name() string {
+	return nutanixMetroName
+}
+
+func (c *metroDRServiceCheck) Run(ctx context.Context) preflight.CheckResult {
+	result := preflight.CheckResult{Allowed: true}
+
+	if c.nclient == nil {
+		return result
+	}
+
+	disabled, found, err := c.nclient.IsDisasterRecoveryDisabled(ctx)
+	if err != nil {
+		failCheckInternal(&result, c.field, fmt.Sprintf(
+			"Failed to determine whether the Nutanix Disaster Recovery service is enabled on Prism Central: %s. This is usually a temporary error. Please retry.", //nolint:lll // Message is long.
+			err,
+		))
+		return result
+	}
+	// If the Disaster Recovery product could not be found on Prism Central, do
+	// not block the Cluster: we have no evidence of a violation.
+	if !found {
+		return result
+	}
+
+	if disabled {
+		failCheck(
+			&result,
+			c.field,
+			"The Nutanix Disaster Recovery service is not enabled on Prism Central. A NKP Metro cluster requires the Disaster Recovery service for synchronous replication. Enable the Disaster Recovery service on Prism Central and retry.", //nolint:lll // Message is long.
+		)
+	}
+
+	return result
 }
 
 // singleMetroCheck enforces that a Cluster references at most one NutanixMetro.
