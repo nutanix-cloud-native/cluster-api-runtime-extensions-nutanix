@@ -31,3 +31,5 @@
 - [x] **T4**: Clean up stale sequential-hook comment in `pkg/handlers/lifecycle/handlers.go`, add compile-time `BeforeClusterUpgrade` interface assertion in `pkg/handlers/lifecycle/serviceloadbalancer/handler.go`, and update `docs/content/addons/serviceloadbalancer.md`.
 - [x] **T5**: Run `make go-generate`, `make test`, `make lint`, and `make pre-commit` checks.
 - [x] **T6**: Cap `metallb-config` controller workqueue retry delay at `10s` (with unit test coverage) so transient `metallb-controller` webhook unavailability while worker nodes / CRS CNI start never triggers multi-minute backoff.
+- [x] **T7**: Record a Kubernetes `Warning` `Event` (`events.k8s.io/v1`) on `Cluster` when `metallb-config` fails to reconcile MetalLB configuration, add `events.k8s.io` `events` (`create;patch`) RBAC marker, regenerate chart RBAC via `make go-generate`, and cover with unit and `envtest` integration tests.
+- [x] **T8**: Drop the unused `v1alpha1.ServiceLoadBalancer` parameter from `ServiceLoadBalancerProvider.Apply` and `MetalLB.Apply`, updating unit tests accordingly.

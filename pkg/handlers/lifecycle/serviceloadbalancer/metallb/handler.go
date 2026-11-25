@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/cluster-api/controllers/remote"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -75,7 +74,6 @@ func New(
 
 func (n *MetalLB) Apply(
 	ctx context.Context,
-	_ v1alpha1.ServiceLoadBalancer,
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) error {

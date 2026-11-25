@@ -328,14 +328,6 @@ func TestMetalLBApplyDoesNotWaitOrApplyConfiguration(t *testing.T) {
 
 	err := handler.Apply(
 		ctx,
-		v1alpha1.ServiceLoadBalancer{
-			Provider: v1alpha1.ServiceLoadBalancerProviderMetalLB,
-			Configuration: &v1alpha1.ServiceLoadBalancerConfiguration{
-				AddressRanges: []v1alpha1.AddressRange{
-					{Start: "10.100.1.1", End: "10.100.1.20"},
-				},
-			},
-		},
 		cluster,
 		logr.Discard(),
 	)

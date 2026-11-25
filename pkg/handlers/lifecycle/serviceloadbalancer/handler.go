@@ -22,7 +22,6 @@ import (
 type ServiceLoadBalancerProvider interface {
 	Apply(
 		ctx context.Context,
-		slb v1alpha1.ServiceLoadBalancer,
 		cluster *clusterv1.Cluster,
 		log logr.Logger,
 	) error
@@ -136,7 +135,6 @@ func (s *ServiceLoadBalancerHandler) apply(
 	log.Info(fmt.Sprintf("Deploying ServiceLoadBalancer provider %s", slb.Provider))
 	err = handler.Apply(
 		ctx,
-		slb,
 		cluster,
 		log,
 	)
