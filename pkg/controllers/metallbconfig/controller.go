@@ -9,11 +9,15 @@ import (
 	"fmt"
 	"maps"
 	"time"
+	"unicode/utf8"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/workqueue"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/controllers/remote"
@@ -37,7 +41,15 @@ import (
 // which can happen minutes before worker nodes, CNI, and the metallb-controller validation webhook
 // become Ready. Cap workqueue backoff so transient webhook errors never stall reconciliation in
 // multi-minute exponential backoff (up to 16m40s with the default controller rate limiter).
-const defaultMaxRetryDelay = 10 * time.Second
+const (
+	ControllerName = "metallb-config"
+
+	MetalLBConfigurationFailedReason    = "MetalLBConfigurationFailed"
+	ReconcileMetalLBConfigurationAction = "ReconcileMetalLBConfiguration"
+
+	defaultMaxRetryDelay = 10 * time.Second
+	maxEventNoteLength   = 1024
+)
 
 type RemoteClientGetter func(
 	ctx context.Context,
@@ -47,6 +59,7 @@ type RemoteClientGetter func(
 
 type Reconciler struct {
 	client.Client
+	Recorder           events.EventRecorder
 	RemoteClientGetter RemoteClientGetter
 }
 
@@ -57,9 +70,12 @@ func (r *Reconciler) SetupWithManager(
 	if mgr == nil {
 		return errors.New("manager cannot be nil")
 	}
+	if r.Recorder == nil {
+		r.Recorder = mgr.GetEventRecorder(ControllerName)
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named("metallb-config").
+		Named(ControllerName).
 		For(&clusterv1.Cluster{}, builder.WithPredicates(clusterPredicate())).
 		Watches(
 			&caaphv1.HelmChartProxy{},
@@ -118,11 +134,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if variables.IsNotFoundError(err) {
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, fmt.Errorf(
+		reconcileErr := fmt.Errorf(
 			"failed to read ServiceLoadBalancer configuration from Cluster %s: %w",
 			req.NamespacedName,
 			err,
 		)
+		r.recordWarning(&cluster, nil, reconcileErr)
+		return ctrl.Result{}, reconcileErr
 	}
 
 	if slb.Provider != v1alpha1.ServiceLoadBalancerProviderMetalLB || slb.Configuration == nil {
@@ -149,7 +167,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			)
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, fmt.Errorf("failed to get MetalLB HelmChartProxy %s: %w", hcpKey, err)
+		reconcileErr := fmt.Errorf("failed to get MetalLB HelmChartProxy %s: %w", hcpKey, err)
+		r.recordWarning(&cluster, nil, reconcileErr)
+		return ctrl.Result{}, reconcileErr
 	}
 
 	if !isHelmChartProxyReady(&hcp) {
@@ -174,19 +194,54 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	remoteClient, err := remoteClientGetter(ctx, r.Client, client.ObjectKeyFromObject(&cluster))
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf(
+		reconcileErr := fmt.Errorf(
 			"failed to create remote cluster client for Cluster %s: %w",
 			req.NamespacedName,
 			err,
 		)
+		r.recordWarning(&cluster, &hcp, reconcileErr)
+		return ctrl.Result{}, reconcileErr
 	}
 
 	logger.V(4).Info("Applying MetalLB configuration to workload cluster")
 	if err := metallb.ApplyConfiguration(ctx, remoteClient, slb.Configuration); err != nil {
+		r.recordWarning(&cluster, &hcp, err)
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) recordWarning(
+	cluster *clusterv1.Cluster,
+	related runtime.Object,
+	err error,
+) {
+	if r.Recorder == nil || err == nil {
+		return
+	}
+	r.Recorder.Eventf(
+		cluster,
+		related,
+		corev1.EventTypeWarning,
+		MetalLBConfigurationFailedReason,
+		ReconcileMetalLBConfigurationAction,
+		"%s",
+		truncateEventNote(err.Error()),
+	)
+}
+
+// events.k8s.io/v1 rejects Event notes longer than 1024 bytes.
+func truncateEventNote(note string) string {
+	if len(note) <= maxEventNoteLength {
+		return note
+	}
+	const ellipsis = "..."
+	cut := maxEventNoteLength - len(ellipsis)
+	for cut > 0 && !utf8.RuneStart(note[cut]) {
+		cut--
+	}
+	return note[:cut] + ellipsis
 }
 
 func clusterPredicate() predicate.Predicate {

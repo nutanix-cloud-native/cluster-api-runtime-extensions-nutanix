@@ -7,20 +7,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	eventsv1 "k8s.io/api/events/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/workqueue"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -393,11 +397,17 @@ func TestReconciler_Reconcile_Unit(t *testing.T) {
 			},
 		}
 
+		recorder := events.NewFakeRecorder(10)
 		r := &Reconciler{
-			Client: fake.NewClientBuilder().WithScheme(unitScheme(t)).WithObjects(cluster).Build(),
+			Client:   fake.NewClientBuilder().WithScheme(unitScheme(t)).WithObjects(cluster).Build(),
+			Recorder: recorder,
 		}
 		_, err := r.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(cluster)})
 		require.Error(t, err)
+		require.Len(t, recorder.Events, 1)
+		recordedEvent := <-recorder.Events
+		assert.Contains(t, recordedEvent, corev1.EventTypeWarning+" "+MetalLBConfigurationFailedReason+" ")
+		assert.Contains(t, recordedEvent, "failed to read ServiceLoadBalancer configuration")
 	})
 
 	t.Run("waits without error when UUID annotation or HelmChartProxy is missing or unready", func(t *testing.T) {
@@ -494,8 +504,10 @@ func TestReconciler_Reconcile_Unit(t *testing.T) {
 			}).
 			Build()
 
+		recorder := events.NewFakeRecorder(10)
 		r := &Reconciler{
-			Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, hcp).Build(),
+			Client:   fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, hcp).Build(),
+			Recorder: recorder,
 			RemoteClientGetter: func(_ context.Context, _ client.Client, _ client.ObjectKey) (client.Client, error) {
 				return remoteClient, nil
 			},
@@ -508,6 +520,45 @@ func TestReconciler_Reconcile_Unit(t *testing.T) {
 			err,
 			"This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration",
 		)
+		require.Len(t, recorder.Events, 1)
+		recordedEvent := <-recorder.Events
+		assert.Contains(t, recordedEvent, corev1.EventTypeWarning+" "+MetalLBConfigurationFailedReason+" ")
+		assert.Contains(
+			t,
+			recordedEvent,
+			"This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration",
+		)
+	})
+
+	t.Run("truncates overlong Warning event notes safely without format-string corruption", func(t *testing.T) {
+		t.Parallel()
+
+		scheme := unitScheme(t)
+		cluster := newTestCluster(t, "default", "long-err-cluster", "uuid-long", defaultSLB)
+		hcp := newReadyHelmChartProxy("default", "long-err-cluster", "uuid-long")
+		recorder := events.NewFakeRecorder(10)
+
+		r := &Reconciler{
+			Client:   fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, hcp).Build(),
+			Recorder: recorder,
+			RemoteClientGetter: func(_ context.Context, _ client.Client, _ client.ObjectKey) (client.Client, error) {
+				return nil, fmt.Errorf("webhook %s failed: %s", "%2F%s%d", strings.Repeat("é", 700))
+			},
+		}
+
+		_, err := r.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(cluster)})
+		require.Error(t, err)
+		require.Len(t, recorder.Events, 1)
+		recordedEvent := <-recorder.Events
+		prefix := corev1.EventTypeWarning + " " + MetalLBConfigurationFailedReason + " "
+		require.True(t, strings.HasPrefix(recordedEvent, prefix))
+		note := strings.TrimPrefix(recordedEvent, prefix)
+		assert.LessOrEqual(t, len(note), maxEventNoteLength)
+		assert.True(t, utf8.ValidString(note))
+		assert.Contains(t, note, "%2F%s%d")
+		assert.NotContains(t, note, "%!(EXTRA")
+		assert.NotContains(t, note, "%!(MISSING")
+		assert.True(t, strings.HasSuffix(note, "..."))
 	})
 }
 
@@ -708,4 +759,43 @@ func TestIntegrationReconcileMetalLBConfiguration(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring(
 		"This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration",
 	))
+
+	// Trigger the manager-registered controller and verify a real events.k8s.io/v1 Warning Event
+	// is recorded against the Cluster (with the MetalLB HelmChartProxy as Related).
+	g.Eventually(func() error {
+		var latestCluster clusterv1.Cluster
+		if err := env.GetAPIReader().Get(ctx, client.ObjectKeyFromObject(cluster), &latestCluster); err != nil {
+			return err
+		}
+		if latestCluster.Annotations == nil {
+			latestCluster.Annotations = map[string]string{}
+		}
+		latestCluster.Annotations["caren.nutanix.com/reconcile-trigger"] = "conflict-check"
+		return env.Client.Update(ctx, &latestCluster)
+	}).Should(Succeed())
+
+	g.Eventually(func() bool {
+		var eventList eventsv1.EventList
+		if err := env.GetAPIReader().List(ctx, &eventList, client.InNamespace(ns.Name)); err != nil {
+			return false
+		}
+		for _, evt := range eventList.Items {
+			if evt.Regarding.Kind == clusterv1.ClusterKind &&
+				evt.Regarding.Name == cluster.Name &&
+				evt.Type == corev1.EventTypeWarning &&
+				evt.Reason == MetalLBConfigurationFailedReason &&
+				evt.Action == ReconcileMetalLBConfigurationAction &&
+				evt.ReportingController == ControllerName &&
+				evt.Related != nil &&
+				evt.Related.Kind == "HelmChartProxy" &&
+				evt.Related.Name == hcp.Name &&
+				strings.Contains(
+					evt.Note,
+					"This resource has been modified in the workload cluster: it must contain exactly the addresses listed in the Cluster configuration",
+				) {
+				return true
+			}
+		}
+		return false
+	}).Should(BeTrue())
 }

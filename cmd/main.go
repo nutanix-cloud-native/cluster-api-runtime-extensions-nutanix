@@ -285,7 +285,8 @@ func main() {
 	}
 
 	if err := (&metallbconfig.Reconciler{
-		Client: mgr.GetClient(),
+		Client:   mgr.GetClient(),
+		Recorder: mgr.GetEventRecorder(metallbconfig.ControllerName),
 	}).SetupWithManager(
 		mgr,
 		&controller.Options{MaxConcurrentReconciles: metalLBConfigOptions.Concurrency},
