@@ -56,7 +56,7 @@ spec:
             # credentials omitted for non-authenticated registry
 ```
 
-With authentication:
+With authentication (the credentials Secret may contain `username` and `password`, but must not contain `ca.crt` when using `http://`):
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1

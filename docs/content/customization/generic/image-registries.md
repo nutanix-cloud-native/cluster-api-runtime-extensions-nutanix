@@ -74,7 +74,7 @@ spec:
             - url: http://registry.example.com/app-images
 ```
 
-With authentication:
+With authentication (the credentials Secret may contain `username` and `password`, but must not contain `ca.crt` when using `http://`):
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -98,7 +98,7 @@ spec:
                   name: registry-b-credentials
 ```
 
-NOTE: The same `host:port` must use a consistent scheme across all `imageRegistries` entries. Configuring `http://myregistry.com` and `https://myregistry.com` for the same host will be rejected by admission webhook (`conflicting scheme for host`).
+NOTE: The same `host:port` must use a consistent scheme across all `imageRegistries` entries. Configuring `http://myregistry.com` and `https://myregistry.com` for the same host will be rejected by admission webhook (`conflicting scheme for host`). Providing `ca.crt` in a credentials Secret for an `http://` registry or mirror will also be rejected.
 
 Applying this configuration will result in new files and preKubeadmCommands
 on the `KubeadmControlPlaneTemplate` and `KubeadmConfigTemplate`.

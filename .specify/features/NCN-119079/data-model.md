@@ -52,15 +52,20 @@ Used only during `generateContainerdPerHostHostsFiles` to deduplicate by host.
 ## Validation
 
 - API: `kubebuilder:validation:Pattern=^https?://` + `Format=uri`
-- Handler: `ErrConflictingRegistryCACertificates` if same host has differing `CACert` contents
-- New: http imageRegistries without CA still trigger file generation (previously ignored)
+- Webhook & Handler:
+  - `ErrConflictingRegistrySchemes` / admission denial if same host has mixed `http` and `https` schemes in `imageRegistries`
+  - `ErrHTTPRegistryWithCACertificate` / admission & preflight denial if an `http` registry (`globalImageRegistryMirror` or `imageRegistries`) references a Secret containing `ca.crt`
+  - `ErrConflictingRegistryCACertificates` if same `https` host has differing `CACert` contents
+- New: http imageRegistries without CA or credentials still trigger containerd file generation and do not fail credential provider mutation
 
 ## File Generation Mapping
 
 | Input | Scheme | Mirror | Generated Files |
 |-------|--------|--------|-----------------|
-| GlobalMirror http | http | true | `_default/hosts.toml` (http URL), `registry-config.toml`, optional `ca.crt` |
+| GlobalMirror http (no CA) | http | true | `_default/hosts.toml` (http URL), `registry-config.toml` |
+| GlobalMirror http with CA | http | true | Rejected (`ErrHTTPRegistryWithCACertificate`) |
 | GlobalMirror https | https | true | `_default/hosts.toml` (https URL), `registry-config.toml`, optional `ca.crt` |
-| ImageRegistry http | http | false | `<host>/hosts.toml` (http), `registry-config.toml`, optional `ca.crt` |
+| ImageRegistry http (no CA) | http | false | `<host>/hosts.toml` (http), `registry-config.toml` |
+| ImageRegistry http with CA | http | false | Rejected (`ErrHTTPRegistryWithCACertificate`) |
 | ImageRegistry https with CA | https | false | `<host>/ca.crt`, `registry-config.toml` |
 | ImageRegistry https no CA | https | false | (none) – existing behavior, no change |

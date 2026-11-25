@@ -43,10 +43,9 @@ Create a Cluster with:
 Mutate via handler (or run `capitest` test). Check generated files:
 
 - `/etc/containerd/certs.d/_default/hosts.toml` contains `[host."http://10.111.45.34/v2/library"]`
-- `/etc/containerd/certs.d/10.111.45.34/hosts.toml` contains `server = "http://10.111.45.34"` and `[host."http://10.111.45.34"]`
+- `/etc/containerd/certs.d/10.111.45.34/hosts.toml` contains `[host."http://10.111.45.34"]`
 - `/etc/caren/containerd/patches/registry-config.toml` present
-- If secrets contain `ca.crt` with same cert, `/etc/containerd/certs.d/10.111.45.34/ca.crt` present (single file, deduplicated)
-- If same host has conflicting CA, error `conflicting CA certificate specified for registry host`
+- If secrets contain `ca.crt` for an `http://` registry, admission, preflight, and mutation fail with an error rejecting CA certificates for HTTP registries
 
 ## Verify No Regression for https
 

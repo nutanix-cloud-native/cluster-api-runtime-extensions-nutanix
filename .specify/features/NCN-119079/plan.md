@@ -87,7 +87,7 @@ docs/content/customization/generic/
 
 1. **How does containerd configure plain HTTP registries?**
    - Decision: Create per-registry file `/etc/containerd/certs.d/<host>/hosts.toml` with `server = "http://<host>"` and `[host."http://<host>"] capabilities = ["pull", "resolve"]`.
-   - Rationale: Matches https://github.com/containerd/containerd/blob/main/docs/hosts.md – per-host directory configures that host; `server` field overrides upstream URL scheme to http. Tested against kind with `http://kind-registry:5000`.
+   - Rationale: Matches [containerd hosts documentation](https://github.com/containerd/containerd/blob/main/docs/hosts.md) – per-host directory configures that host; `server` field overrides upstream URL scheme to http. Tested against kind with `http://kind-registry:5000`.
    - Alternatives: `_default/hosts.toml` for per-registry – rejected, `_default` is for default mirror, not per-host. Using `insecureSkipVerify` not needed for plain http.
 
 2. **Does global mirror already work with http?**
@@ -98,9 +98,9 @@ docs/content/customization/generic/
    - Decision: Previously `needContainerdConfiguration = CACert != "" || Mirror` returned false for non-mirror without CA, so no files. Extend to also true when `scheme == "http"`; generate per-host hosts.toml.
    - Rationale: http requires explicit config even without CA; otherwise containerd defaults to https.
 
-4. **How to avoid conflicts for same host with different CAs/schemes?**
-   - Decision: Reuse existing `registryCACertFiles` conflict logic (same host → same ca.crt path; error if caCert differs). For hosts.toml, deduplicate by host; if multiple entries share host, merge and error on CA mismatch already covers; http hosts.toml per host is single file, so duplicate URLs with same host produce one file.
-   - Rationale: Existing CA deduplication already handles this; http hosts.toml deduplication follows same pattern.
+4. **How to handle CA certificates and scheme conflicts with http?**
+   - Decision: Reject `ca.crt` on any `http://` registry (`globalImageRegistryMirror` or `imageRegistries`) in admission webhook, preflight check, and mutation handlers (`ErrHTTPRegistryWithCACertificate`). Reject mixed `http`/`https` schemes for the same `host:port` in `imageRegistries` (`ErrConflictingRegistrySchemes`). Preserve existing CA deduplication and conflict detection (`ErrConflictingRegistryCACertificates`) for `https://` registries.
+   - Rationale: Plain HTTP does not use TLS, and setting `ca` or `skip_verify` on an `http://` host in containerd marks TLS as configured and causes containerd to try HTTPS first on non-80 ports.
 
 ### Research Output
 

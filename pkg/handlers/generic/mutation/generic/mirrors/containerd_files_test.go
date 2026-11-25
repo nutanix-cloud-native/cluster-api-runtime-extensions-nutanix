@@ -454,6 +454,43 @@ func Test_generateContainerdPerHostHostsFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "multiple http image registries on different hosts preserve deterministic order",
+			configs: []containerdConfig{
+				{
+					URL: "http://z-registry.internal:5000",
+				},
+				{
+					URL: "http://a-registry.internal:5000",
+				},
+				{
+					URL: "http://m-registry.internal:5000",
+				},
+			},
+			want: []cabpkv1.File{
+				{
+					Path:        "/etc/containerd/certs.d/z-registry.internal:5000/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://z-registry.internal:5000"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+				{
+					Path:        "/etc/containerd/certs.d/a-registry.internal:5000/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://a-registry.internal:5000"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+				{
+					Path:        "/etc/containerd/certs.d/m-registry.internal:5000/hosts.toml",
+					Permissions: "0600",
+					Content: `[host."http://m-registry.internal:5000"]
+  capabilities = ["pull", "resolve"]
+`,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -497,53 +534,31 @@ func Test_needContainerdConfiguration_HTTP(t *testing.T) {
 	}
 }
 
-func Test_generateFiles_HTTPExample(t *testing.T) {
+func Test_generateFiles_HTTPMirrorWithCA_Error(t *testing.T) {
 	t.Parallel()
 	configs := []containerdConfig{
 		{
-			URL:          "http://10.111.45.34/library",
+			URL:          "http://registry.example.com/library",
 			Mirror:       true,
 			CASecretName: "registry-a-credentials",
 			CACert:       "cert-a",
 		},
+	}
+	_, err := generateFiles(configs)
+	require.ErrorIs(t, err, ErrHTTPRegistryWithCACertificate)
+}
+
+func Test_generateFiles_HTTPImageRegistryWithCA_Error(t *testing.T) {
+	t.Parallel()
+	configs := []containerdConfig{
 		{
-			URL:          "http://10.111.45.34/app-images",
+			URL:          "http://registry.example.com/app-images",
 			CASecretName: "registry-b-credentials",
 			CACert:       "cert-b",
 		},
 	}
 	_, err := generateFiles(configs)
-	require.ErrorIs(t, err, ErrConflictingRegistryCACertificates)
-}
-
-func Test_generateFiles_HTTP_NoCAConflict(t *testing.T) {
-	t.Parallel()
-	configs := []containerdConfig{
-		{
-			URL:          "http://10.111.45.34/library",
-			Mirror:       true,
-			CASecretName: "registry-a-credentials",
-			CACert:       "same-cert",
-		},
-		{
-			URL:          "http://10.111.45.34/app-images",
-			CASecretName: "registry-b-credentials",
-			CACert:       "same-cert",
-		},
-	}
-	files, err := generateFiles(configs)
-	require.NoError(t, err)
-	// Expect 4 files: _default/hosts.toml, per-host hosts.toml, ca.crt, registry-config.toml
-	// But CA deduplicates to single ca.crt file for same host with same cert.
-	assert.Len(t, files, 4)
-	var paths []string
-	for _, f := range files {
-		paths = append(paths, f.Path)
-	}
-	assert.Contains(t, paths, "/etc/containerd/certs.d/_default/hosts.toml")
-	assert.Contains(t, paths, "/etc/containerd/certs.d/10.111.45.34/hosts.toml")
-	assert.Contains(t, paths, "/etc/containerd/certs.d/10.111.45.34/ca.crt")
-	assert.Contains(t, paths, "/etc/caren/containerd/patches/registry-config.toml")
+	require.ErrorIs(t, err, ErrHTTPRegistryWithCACertificate)
 }
 
 func Test_generateFiles_UserExample_NoCA(t *testing.T) {

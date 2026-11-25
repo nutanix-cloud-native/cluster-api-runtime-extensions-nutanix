@@ -409,6 +409,71 @@ var _ = Describe("Generate Global mirror patches", func() {
 				},
 			},
 		},
+		{
+			Name: "files added in KubeadmControlPlaneTemplate for http image registry without credentials",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.ImageRegistry{{
+						URL: "http://registry.example.com:5000",
+					}},
+					v1alpha1.ImageRegistriesVariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				{
+					Operation: "add",
+					Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+					ValueMatcher: gomega.HaveExactElements(
+						gomega.HaveKeyWithValue(
+							"path", "/etc/containerd/certs.d/registry.example.com:5000/hosts.toml",
+						),
+						gomega.HaveKeyWithValue(
+							"path", "/etc/caren/containerd/patches/registry-config.toml",
+						),
+					),
+				},
+			},
+		},
+		{
+			Name: "error for http registry mirror with CA certificate secret",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.GlobalImageRegistryMirror{
+						URL: "http://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorCASecretName,
+							},
+						},
+					},
+					v1alpha1.GlobalMirrorVariableName,
+				),
+			},
+			RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedFailure: true,
+		},
+		{
+			Name: "error for http image registry with CA certificate secret",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					[]v1alpha1.ImageRegistry{{
+						URL: "http://registry.example.com",
+						Credentials: &v1alpha1.RegistryCredentials{
+							SecretRef: &v1alpha1.LocalObjectReference{
+								Name: validMirrorCASecretName,
+							},
+						},
+					}},
+					v1alpha1.ImageRegistriesVariableName,
+				),
+			},
+			RequestItem:     request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedFailure: true,
+		},
 	}
 
 	// Create credentials secret before each test

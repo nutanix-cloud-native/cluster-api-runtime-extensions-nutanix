@@ -16,6 +16,12 @@ import (
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
+	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
+)
+
+const (
+	httpScheme = "http"
+	caCertKey  = "ca.crt"
 )
 
 type imageRegistryValidator struct {
@@ -66,14 +72,42 @@ func (i *imageRegistryValidator) validate(
 		return admission.Allowed("")
 	}
 
-	if err := validateImageRegistries(clusterConfig.GenericClusterConfigSpec); err != nil {
+	namespace := cluster.Namespace
+	if namespace == "" {
+		namespace = req.Namespace
+	}
+
+	if err := validateImageRegistries(
+		ctx,
+		i.client,
+		namespace,
+		clusterConfig.GenericClusterConfigSpec,
+	); err != nil {
 		return admission.Denied(err.Error())
 	}
 
 	return admission.Allowed("")
 }
 
-func validateImageRegistries(spec v1alpha1.GenericClusterConfigSpec) error {
+func validateImageRegistries(
+	ctx context.Context,
+	client ctrlclient.Reader,
+	namespace string,
+	spec v1alpha1.GenericClusterConfigSpec,
+) error {
+	if spec.GlobalImageRegistryMirror != nil {
+		if err := validateHTTPRegistryNoCACert(
+			ctx,
+			client,
+			namespace,
+			"clusterConfig.globalImageRegistryMirror",
+			spec.GlobalImageRegistryMirror.URL,
+			spec.GlobalImageRegistryMirror.Credentials,
+		); err != nil {
+			return err
+		}
+	}
+
 	hostSchemes := make(map[string]string)
 	for idx, reg := range spec.ImageRegistries {
 		u, err := url.ParseRequestURI(reg.URL)
@@ -94,6 +128,59 @@ func validateImageRegistries(spec v1alpha1.GenericClusterConfigSpec) error {
 			)
 		}
 		hostSchemes[host] = scheme
+
+		if err := validateHTTPRegistryNoCACert(
+			ctx,
+			client,
+			namespace,
+			fmt.Sprintf("clusterConfig.imageRegistries[%d]", idx),
+			reg.URL,
+			reg.Credentials,
+		); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func validateHTTPRegistryNoCACert(
+	ctx context.Context,
+	client ctrlclient.Reader,
+	namespace, fieldPath, rawURL string,
+	credentials *v1alpha1.RegistryCredentials,
+) error {
+	u, err := url.ParseRequestURI(rawURL)
+	if err != nil || u.Scheme != httpScheme {
+		return nil
+	}
+
+	secret, err := handlersutils.SecretForImageRegistryCredentials(ctx, client, credentials, namespace)
+	if err != nil {
+		if err = ctrlclient.IgnoreNotFound(err); err != nil {
+			return fmt.Errorf(
+				"failed to get Secret %s/%s: %w",
+				namespace,
+				handlersutils.SecretNameForImageRegistryCredentials(credentials),
+				err,
+			)
+		}
+		return nil
+	}
+	if secret == nil {
+		return nil
+	}
+
+	if _, ok := secret.Data[caCertKey]; ok {
+		return fmt.Errorf(
+			"%s.credentials.secretRef: Secret %q contains %q, "+
+				"which cannot be used with an %q registry URL %q",
+			fieldPath,
+			secret.Name,
+			caCertKey,
+			httpScheme,
+			rawURL,
+		)
+	}
+
 	return nil
 }

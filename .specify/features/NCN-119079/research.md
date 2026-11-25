@@ -14,17 +14,16 @@
 **Decision**: Create per-registry file at `/etc/containerd/certs.d/<host>/hosts.toml` with:
 
 ```toml
-server = "http://<host>"
-
 [host."http://<host>"]
   capabilities = ["pull", "resolve"]
 ```
 
-**Rationale**: According to https://github.com/containerd/containerd/blob/main/docs/hosts.md, the `certs.d` directory is used as `config_path` for registry configuration. Each host namespace (`/etc/containerd/certs.d/<registry-host>/hosts.toml`) can override the `server` URL. Setting `server = "http://<host>"` forces containerd to use plain HTTP instead of default HTTPS. Capabilities `pull` and `resolve` are required for image pulls.
+**Rationale**: According to [containerd hosts documentation](https://github.com/containerd/containerd/blob/main/docs/hosts.md) and containerd's `core/remotes/docker/config/hosts.go`, the `certs.d` directory is used as `config_path` for registry configuration. Setting `[host."http://<host>"]` with `capabilities = ["pull", "resolve"]` configures plain HTTP transport (`rhosts[i].Scheme = "http"`) without TLS.
 
 **Alternatives Considered**:
+
 - Configure via `_default/hosts.toml` for per-registry: rejected because `_default` is for default mirror that applies to all hosts, not per-host.
-- Use `skip_verify = true`: rejected, that's for TLS verification skipping on https with self-signed, not plain http.
+- Use `skip_verify = true` (`insecureSkipVerify`): rejected. `skip_verify` is only for skipping TLS certificate verification on `https://` endpoints. In containerd's `hosts.go`, `explicitTLSFromHost := host.caCerts != nil || host.clientPairs != nil || host.skipVerify != nil`; setting `skip_verify` on an `http://` host marks TLS as explicitly configured and causes containerd to rewrite `host.scheme = "https"` (for ports other than 80) and try HTTPS first instead of plain HTTP.
 - Use containerd config.toml `insecure` flag (deprecated): rejected, deprecated since containerd 1.5, `config_path` is current method.
 
 ### RQ-02: Does global mirror already handle http?
@@ -53,12 +52,12 @@ server = "http://<host>"
 
 ### RQ-05: CA handling for http?
 
-**Decision**: Reuse existing `generateRegistryCACertFiles` which already handles CA for any scheme. For http with CA, produce both `ca.crt` file and per-host hosts.toml. Same host with different CA cert contents still errors via `ErrConflictingRegistryCACertificates`.
+**Decision**: Reject CA certificates (`ca.crt` in the referenced credentials Secret) when the registry URL uses `http://` (`globalImageRegistryMirror` or `imageRegistries`) in the Cluster admission webhook (`ImageRegistryValidator`), preflight check (`registryCheck`), and mutation handlers (`ErrHTTPRegistryWithCACertificate`).
 
-**Rationale**: CA file path is host-based, same as before. Conflict detection prevents ambiguous configuration.
+**Rationale**: Plain HTTP does not use TLS, so a CA certificate is invalid configuration. Furthermore, in containerd's `hosts.go`, providing `ca` on an `http://` host sets `explicitTLSFromHost = true` and causes containerd to attempt HTTPS first on non-80 ports instead of plain HTTP.
 
 ## References
 
-- containerd hosts docs: https://github.com/containerd/containerd/blob/main/docs/hosts.md
+- containerd hosts docs: [docs/hosts.md](https://github.com/containerd/containerd/blob/main/docs/hosts.md)
 - Existing handler: `pkg/handlers/generic/mutation/generic/mirrors/containerd_files.go`
 - API validation: `api/v1alpha1/clusterconfig_types.go` pattern `^https?://`

@@ -74,6 +74,10 @@ func (c containerdConfig) isHTTP() bool {
 	return registryURL.Scheme == "http"
 }
 
+func (c containerdConfig) hasCACert() bool {
+	return c.CASecretName != "" || c.CACert != ""
+}
+
 // Return true if configuration is a mirror, has a CA certificate, or uses http scheme.
 func (c containerdConfig) needContainerdConfiguration() bool {
 	return c.CACert != "" || c.Mirror || c.isHTTP()
@@ -112,6 +116,9 @@ func generateContainerdDefaultHostsFile(
 
 		input := templateInput{
 			URL: formattedURL,
+		}
+		if config.hasCACert() && config.isHTTP() {
+			return nil, fmt.Errorf("%w: %q", ErrHTTPRegistryWithCACertificate, config.URL)
 		}
 		// CA cert is optional for mirror registry.
 		// i.e. registry is using signed certificates. Insecure registry will not be allowed.
@@ -185,8 +192,9 @@ func generateContainerdPerHostHostsFiles(
 		hostSchemes[host] = scheme
 	}
 
-	// Deduplicate by host.
-	hosts := make(map[string]perHostEntry)
+	// Deduplicate by host while preserving input order for deterministic output.
+	seenHosts := make(map[string]struct{})
+	var entries []perHostEntry
 	for _, config := range configs {
 		if !config.isHTTP() || config.Mirror {
 			continue
@@ -198,26 +206,25 @@ func generateContainerdPerHostHostsFiles(
 		}
 
 		host := registryURL.Host
-		if _, exists := hosts[host]; exists {
+		if _, exists := seenHosts[host]; exists {
 			continue
 		}
+		seenHosts[host] = struct{}{}
 
 		// For per-registry http, the repository path is not part of the host
 		// configuration; enabling http for the host covers all paths.
-		hostURL := fmt.Sprintf("%s://%s", registryURL.Scheme, host)
-
-		hosts[host] = perHostEntry{
+		entries = append(entries, perHostEntry{
 			host:    host,
-			hostURL: hostURL,
-		}
+			hostURL: fmt.Sprintf("%s://%s", registryURL.Scheme, host),
+		})
 	}
 
-	if len(hosts) == 0 {
+	if len(entries) == 0 {
 		return nil, nil
 	}
 
-	var files []bootstrapv1.File
-	for _, entry := range hosts {
+	files := make([]bootstrapv1.File, 0, len(entries))
+	for _, entry := range entries {
 		type templateInput struct {
 			HostURL string
 		}
@@ -312,6 +319,10 @@ var ErrConflictingRegistrySchemes = errors.New(
 	"conflicting scheme specified for registry host",
 )
 
+var ErrHTTPRegistryWithCACertificate = errors.New(
+	"CA certificate cannot be specified for http registry",
+)
+
 // registryCACertFiles returns a list of CA certificate files
 // that should be generated for the given containerd configurations.
 // If any of the provided configurations share the same url.Host only a single file will be generated.
@@ -320,6 +331,14 @@ func registryCACertFiles(configs []containerdConfig) ([]containerdConfigFile, er
 	filesToGenerate := make([]containerdConfigFile, 0, len(configs))
 
 	for _, config := range configs {
+		if config.hasCACert() && config.isHTTP() {
+			return nil, fmt.Errorf(
+				"%w: %q (from secret %q)",
+				ErrHTTPRegistryWithCACertificate,
+				config.URL,
+				config.CASecretName,
+			)
+		}
 		// Skip if CA certificate is not provided.
 		if config.CASecretName == "" {
 			continue
