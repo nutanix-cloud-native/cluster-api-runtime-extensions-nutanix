@@ -25,6 +25,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 )
 
 type providerConfiguration struct {
@@ -150,7 +151,7 @@ var _ = Describe("Quick start", func() {
 											)
 										})
 
-										capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+										framework.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
 											if !slices.Contains(
 												e2eConfig.InfrastructureProviders(),
 												lowercaseProvider,

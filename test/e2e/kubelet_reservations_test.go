@@ -18,6 +18,8 @@ import (
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
+
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/e2e/framework"
 )
 
 // Automatic kubelet reservations are validated with a dedicated flavor generated at runtime
@@ -85,7 +87,7 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 				)
 			})
 
-			capie2e.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
+			framework.QuickStartSpec(ctx, func() capie2e.QuickStartSpecInput {
 				if !slices.Contains(e2eConfig.InfrastructureProviders(), lowercaseProvider) {
 					Fail(fmt.Sprintf(
 						"provider %s is not enabled - check environment setup for provider specific requirements",
