@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
@@ -19,6 +20,7 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -196,80 +198,18 @@ func (c *NutanixFlowCNI) apply(
 	// as a side effect of copying imagePullCredentials; with a registry mirror
 	// Konvoy omits those credentials, so namespaces never appeared and Helm
 	// could not install into them.
-	remoteClient, err := remote.NewClusterClient(ctx, "", c.client, clusterKey)
+	imagePullSecretName, err := prepareRemoteClusterForFlow(
+		ctx,
+		c.client,
+		remote.NewClusterClient,
+		cluster,
+		cniVar,
+	)
 	if err != nil {
-		log.Error(err, "error creating client for remote cluster")
+		log.Error(err, "error preparing remote cluster for Flow CNI")
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf("error creating client for remote cluster: %v", err))
+		resp.SetMessage(err.Error())
 		return
-	}
-	for _, ns := range flowNamespaces {
-		if nsErr := handlersutils.EnsureNamespaceWithName(ctx, remoteClient, ns); nsErr != nil {
-			log.Error(nsErr, "error creating Flow CNI namespace on remote cluster", "namespace", ns)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(fmt.Sprintf(
-				"failed to create Flow CNI namespace %q on remote cluster: %v",
-				ns,
-				nsErr,
-			))
-			return
-		}
-	}
-
-	var imagePullSecretName string
-	if cniVar.ImagePullCredentials != nil {
-		err := handlersutils.EnsureClusterOwnerReferenceForObject(
-			ctx,
-			c.client,
-			corev1.TypedLocalObjectReference{
-				Kind: "Secret",
-				Name: cniVar.ImagePullCredentials.SecretRef.Name,
-			},
-			cluster,
-		)
-		if err != nil {
-			log.Error(
-				err,
-				"error updating Cluster's owner reference on Flow CNI image pull Secret",
-				"name", cniVar.ImagePullCredentials.SecretRef.Name,
-			)
-			resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-			resp.SetMessage(fmt.Sprintf(
-				"failed to set Cluster's owner reference on Flow CNI image pull Secret: %v",
-				err,
-			))
-			return
-		}
-
-		for _, ns := range flowNamespaces {
-			key := ctrlclient.ObjectKey{
-				Name:      defaultImagePullSecretName,
-				Namespace: ns,
-			}
-			err = handlersutils.CopySecretToRemoteCluster(
-				ctx,
-				c.client,
-				cniVar.ImagePullCredentials.SecretRef.Name,
-				key,
-				cluster,
-			)
-			if err != nil {
-				log.Error(
-					err,
-					"error copying image pull Secret for Flow CNI to remote cluster",
-					"namespace", ns,
-				)
-				resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-				resp.SetMessage(fmt.Sprintf(
-					"failed to copy image pull Secret for Flow CNI to namespace %q on remote cluster: %v",
-					ns,
-					err,
-				))
-				return
-			}
-		}
-
-		imagePullSecretName = defaultImagePullSecretName
 	}
 
 	targetNamespace := c.config.DefaultsNamespace()
@@ -326,4 +266,99 @@ func (c *NutanixFlowCNI) apply(
 	}
 
 	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+}
+
+// prepareRemoteClusterForFlow ensures Flow namespaces exist on the workload
+// cluster. When imagePullCredentials are provided it also copies the pull
+// secret into each namespace; when they are omitted (registry mirror /
+// air-gapped), namespaces are still created so Helm can install.
+func prepareRemoteClusterForFlow(
+	ctx context.Context,
+	mgmtClient ctrlclient.Client,
+	getRemoteClient remote.ClusterClientGetter,
+	cluster *clusterv1.Cluster,
+	cniVar v1alpha1.CNI,
+) (string, error) {
+	remoteClient, err := getRemoteClient(
+		ctx,
+		"",
+		mgmtClient,
+		ctrlclient.ObjectKeyFromObject(cluster),
+	)
+	if err != nil {
+		return "", fmt.Errorf("error creating client for remote cluster: %w", err)
+	}
+
+	for _, ns := range flowNamespaces {
+		if nsErr := handlersutils.EnsureNamespaceWithName(ctx, remoteClient, ns); nsErr != nil {
+			return "", fmt.Errorf(
+				"failed to create Flow CNI namespace %q on remote cluster: %w",
+				ns,
+				nsErr,
+			)
+		}
+	}
+
+	if cniVar.ImagePullCredentials == nil {
+		return "", nil
+	}
+
+	err = handlersutils.EnsureClusterOwnerReferenceForObject(
+		ctx,
+		mgmtClient,
+		corev1.TypedLocalObjectReference{
+			Kind: "Secret",
+			Name: cniVar.ImagePullCredentials.SecretRef.Name,
+		},
+		cluster,
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to set Cluster's owner reference on Flow CNI image pull Secret: %w",
+			err,
+		)
+	}
+
+	sourceSecret := &corev1.Secret{}
+	err = mgmtClient.Get(ctx, ctrlclient.ObjectKey{
+		Name:      cniVar.ImagePullCredentials.SecretRef.Name,
+		Namespace: cluster.Namespace,
+	}, sourceSecret)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to get Flow CNI image pull Secret %q: %w",
+			cniVar.ImagePullCredentials.SecretRef.Name,
+			err,
+		)
+	}
+
+	for _, ns := range flowNamespaces {
+		secretOnRemote := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: corev1.SchemeGroupVersion.String(),
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaultImagePullSecretName,
+				Namespace: ns,
+			},
+			Data:       sourceSecret.Data,
+			StringData: sourceSecret.StringData,
+			Type:       sourceSecret.Type,
+		}
+		if applyErr := k8sclient.ServerSideApply(
+			ctx,
+			remoteClient,
+			secretOnRemote,
+			k8sclient.ForceOwnership,
+		); applyErr != nil {
+			return "", fmt.Errorf(
+				"failed to copy image pull Secret for Flow CNI to namespace %q on remote cluster: %w",
+				ns,
+				applyErr,
+			)
+		}
+	}
+
+	return defaultImagePullSecretName, nil
 }
