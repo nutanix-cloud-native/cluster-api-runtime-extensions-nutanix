@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,4 +117,45 @@ func TestNewPrismCentralKonnectorClient_IsolatesDefaultTransportConcurrently(t *
 			"NewPrismCentralKonnectorClient must not leave InsecureSkipVerify=true on http.DefaultTransport",
 		)
 	}
+}
+
+func TestPrismCentralKonnectorClient_DeleteMethods(t *testing.T) {
+	t.Parallel()
+
+	var nilClient *PrismCentralKonnectorClient
+	assert.Error(t, nilClient.DeleteClusterRegistration(context.Background(), "uuid", true))
+	assert.Error(t, nilClient.DeleteClusterRegistrationKubeconfig(context.Background(), "uuid", true))
+
+	const clusterUUID = "11111111-2222-3333-4444-555566667777"
+	var kcForce, regForce atomic.Bool
+
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/karbon/v1-alpha.1/k8s/cluster-registrations/" + clusterUUID + "/kubeconfig":
+			kcForce.Store(r.URL.Query().Get("force") == "true")
+			_, _ = w.Write([]byte(`{"task_uuid":"kc-del"}`))
+		case "/karbon/v1-alpha.1/k8s/cluster-registrations/" + clusterUUID:
+			regForce.Store(r.URL.Query().Get("force") == "true")
+			_, _ = w.Write([]byte(`{"task_uuid":"reg-del"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	hostPort := srv.Listener.Addr().String()
+	pcClient, err := NewPrismCentralKonnectorClient(&prismgoclient.Credentials{
+		Endpoint: hostPort,
+		URL:      srv.URL,
+		Username: "admin",
+		Password: "secret",
+		Insecure: true,
+	}, "")
+	require.NoError(t, err)
+
+	require.NoError(t, pcClient.DeleteClusterRegistrationKubeconfig(context.Background(), clusterUUID, true))
+	require.NoError(t, pcClient.DeleteClusterRegistration(context.Background(), clusterUUID, true))
+	assert.True(t, kcForce.Load())
+	assert.True(t, regForce.Load())
 }

@@ -162,3 +162,43 @@ func (pc *PrismCentralKonnectorClient) GetClusterRegistration(
 	}
 	return clusterRegistration, nil
 }
+
+// DeleteClusterRegistrationKubeconfig deletes the uploaded cluster kubeconfig from Prism Central.
+func (pc *PrismCentralKonnectorClient) DeleteClusterRegistrationKubeconfig(
+	ctx context.Context,
+	clusterUUID string,
+	force bool,
+) error {
+	if pc == nil || pc.prismCentralKonnectorClient == nil {
+		return fmt.Errorf("could not connect to API server on PC: client is nil")
+	}
+	_, err := pc.prismCentralKonnectorClient.ClusterRegistrationOperations.DeleteK8sRegistrationKubeconfig(
+		ctx,
+		clusterUUID,
+		konnectorprismgoclient.DeleteK8sRegistrationKubeconfigParams{Force: force},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to delete Kubernetes cluster(%s) registration kubeconfig: %w", clusterUUID, err)
+	}
+	return nil
+}
+
+// DeleteClusterRegistration deletes the cluster registration from Prism Central.
+func (pc *PrismCentralKonnectorClient) DeleteClusterRegistration(
+	ctx context.Context,
+	clusterUUID string,
+	force bool,
+) error {
+	if pc == nil || pc.prismCentralKonnectorClient == nil {
+		return fmt.Errorf("could not connect to API server on PC: client is nil")
+	}
+	_, err := pc.prismCentralKonnectorClient.ClusterRegistrationOperations.DeleteK8sRegistration(
+		ctx,
+		clusterUUID,
+		konnectorprismgoclient.DeleteK8sRegistrationParams{Force: force},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to delete Kubernetes cluster(%s) registration: %w", clusterUUID, err)
+	}
+	return nil
+}

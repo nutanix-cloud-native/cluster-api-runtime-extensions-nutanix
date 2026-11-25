@@ -57,6 +57,13 @@ const (
 	// before giving up and allowing cluster deletion to proceed.
 	helmUninstallTimeout = 5 * time.Minute
 
+	// remoteCallTimeout bounds Prism Central and workload cluster calls in BeforeClusterDelete
+	// because prism-go-client's underlying http.Client has no request timeout.
+	remoteCallTimeout = 5 * time.Second
+
+	// cleanupRetryAfterSeconds is the blocking hook retry interval returned while waiting for cleanup.
+	cleanupRetryAfterSeconds = 5
+
 	// maxClusterNameLength is the maximum cluster name length supported by Prism Central.
 	maxClusterNameLength = 40
 )
@@ -604,21 +611,10 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// Check cluster is registered in PC
-	clusterRegistered, err := isClusterRegisteredInPC(ctx, n.client, clusterWithStatus, log)
-	if err != nil {
-		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
-		// setting response status to success to allow cluster deletion to proceed
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-		return
-	}
-	if !clusterRegistered {
-		log.Info("Cluster is not registered in Prism Central, skipping cleanup")
-		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
-		return
-	}
-
-	// Check if cleanup is already in progress or completed
+	// Check local management-cluster HelmChartProxy state BEFORE making external calls to the
+	// workload API server or Prism Central. ControlPlaneInitialized is a sticky condition in CAPI,
+	// so if the workload API hung before HelmChartProxy was ever created (or after HelmChartProxy
+	// finished deleting), we avoid waiting on unreachable remote endpoints.
 	cleanupStatus, statusMsg, err := n.checkCleanupStatus(ctx, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to check cleanup status")
@@ -633,37 +629,54 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
 	case cleanupStatusTimedOut:
-		// Log the error prominently and block cluster deletion
+		// Do not block cluster deletion indefinitely once helmUninstallTimeout has elapsed.
+		// Once the Cluster is deleted, CAAPH automatically removes HelmReleaseProxyFinalizer
+		// when its parent Cluster is NotFound. Attempt best-effort forced deregistration in
+		// Prism Central first so orphaned cluster registrations do not accumulate.
 		log.Error(
-			fmt.Errorf("konnector Agent helm uninstallation timed out"),
-			"ERROR: Konnector Agent cleanup timed out - blocking cluster deletion",
-			"details", statusMsg,
-			"action", "Manual intervention required - check HelmChartProxy status and remove finalizers if needed",
-		)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetMessage(fmt.Sprintf(
-			"Konnector Agent helm uninstallation timed out after %v. "+
-				"The HelmChartProxy is stuck in deletion state. "+
-				"Manual intervention required: Check HelmChartProxy status and remove finalizers if needed. "+
-				"Details: %s",
-			helmUninstallTimeout,
+			fmt.Errorf("konnector Agent helm uninstallation timed out after %v", helmUninstallTimeout),
+			"Konnector Agent cleanup timed out; allowing cluster deletion after best-effort PC cleanup",
+			"details",
 			statusMsg,
-		))
+		)
+		forceCtx, cancel := context.WithTimeout(ctx, remoteCallTimeout)
+		defer cancel()
+		if forceErr := forceDeleteClusterRegistrationInPC(forceCtx, n.client, clusterWithStatus, log); forceErr != nil {
+			log.Error(
+				forceErr,
+				"Best-effort Prism Central deregistration after timeout did not succeed, proceeding with cluster deletion",
+			)
+		}
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		return
-	case cleanupStatusInProgress:
+	}
+
+	regCtx, cancel := context.WithTimeout(ctx, remoteCallTimeout)
+	defer cancel()
+	clusterRegistered, err := isClusterRegisteredInPC(regCtx, n.client, clusterWithStatus, log)
+	if err != nil {
+		log.Error(err, "Failed to check if cluster is registered in Prism Central, continuing with deletion anyway")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+	if !clusterRegistered {
+		log.Info("Cluster is not registered in Prism Central, skipping cleanup")
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		return
+	}
+
+	if cleanupStatus == cleanupStatusInProgress {
 		log.Info("Konnector Agent cleanup in progress, requesting retry", "details", statusMsg)
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-		resp.SetRetryAfterSeconds(5) // Retry after 5 seconds
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+		resp.SetRetryAfterSeconds(cleanupRetryAfterSeconds)
 		resp.SetMessage(fmt.Sprintf(
 			"Konnector Agent cleanup in progress. Waiting for HelmChartProxy deletion to complete. %s",
 			statusMsg,
 		))
 		return
-	case cleanupStatusNotStarted:
-		log.Info("Starting Konnector Agent cleanup")
-		// Proceed with cleanup below
 	}
 
+	log.Info("Starting Konnector Agent cleanup")
 	err = n.deleteHelmChartProxy(ctx, clusterWithStatus, log)
 	if err != nil {
 		log.Error(err, "Failed to delete HelmChartProxy")
@@ -672,10 +685,11 @@ func (n *DefaultKonnectorAgent) BeforeClusterDelete(
 		return
 	}
 
-	// After initiating cleanup, request a retry to monitor completion
+	// CAPI's RetryResponseObject contract requires ResponseStatusSuccess with non-zero
+	// RetryAfterSeconds to block deletion and requeue cleanly without error backoff.
 	log.Info("Konnector Agent cleanup initiated, will monitor progress")
-	resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
-	resp.SetRetryAfterSeconds(5) // Quick retry to start monitoring
+	resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
+	resp.SetRetryAfterSeconds(cleanupRetryAfterSeconds)
 	resp.SetMessage("Konnector Agent cleanup initiated. Waiting for HelmChartProxy deletion to start.")
 }
 
@@ -805,6 +819,105 @@ func (n *DefaultKonnectorAgent) checkCleanupStatus(
 	return cleanupStatusNotStarted, "HelmChartProxy exists and needs to be deleted", nil
 }
 
+// resolvePCClientAndClusterUUID builds a Prism Central Konnector client and fetches the workload
+// cluster's kube-system namespace UID (used as the registration UUID in Prism Central).
+func resolvePCClientAndClusterUUID(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+) (*lifecycleutils.PrismCentralKonnectorClient, string, error) {
+	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
+	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+	)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read clusterConfig variable: %w", err)
+	}
+
+	if clusterConfigVar.Nutanix == nil || clusterConfigVar.Nutanix.PrismCentralEndpoint.URL == "" {
+		return nil, "", fmt.Errorf("prism central endpoint not configured")
+	}
+
+	prismCentralEndpointSpec := clusterConfigVar.Nutanix.PrismCentralEndpoint
+	host, port, err := prismCentralEndpointSpec.ParseURL()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse prism central endpoint URL: %w", err)
+	}
+
+	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
+		varMap,
+		v1alpha1.ClusterConfigVariableName,
+		"addons", v1alpha1.KonnectorAgentVariableName,
+	)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read konnector agent variable: %w", err)
+	}
+
+	if k8sAgentVar.Credentials == nil || k8sAgentVar.Credentials.SecretRef.Name == "" {
+		return nil, "", fmt.Errorf("konnector agent credentials secret not configured")
+	}
+
+	credentialsSecret := &corev1.Secret{}
+	err = client.Get(ctx, types.NamespacedName{
+		Namespace: cluster.Namespace,
+		Name:      k8sAgentVar.Credentials.SecretRef.Name,
+	}, credentialsSecret)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get credentials secret: %w", err)
+	}
+
+	usernameData, ok := credentialsSecret.Data["username"]
+	if !ok {
+		return nil, "", fmt.Errorf("credentials secret does not contain 'username' key")
+	}
+	passwordData, ok := credentialsSecret.Data["password"]
+	if !ok {
+		return nil, "", fmt.Errorf("credentials secret does not contain 'password' key")
+	}
+
+	// Match templateValuesFunc fallback: if insecure is false without a trust bundle, fall back to insecure.
+	insecure := prismCentralEndpointSpec.Insecure
+	var trustBundle string
+	if !insecure {
+		if prismCentralEndpointSpec.AdditionalTrustBundle != "" {
+			trustBundle = prismCentralEndpointSpec.AdditionalTrustBundle
+		} else {
+			insecure = true
+		}
+	}
+
+	credentials := prismgoclient.Credentials{
+		Endpoint: fmt.Sprintf("%s:%d", host, port),
+		URL:      fmt.Sprintf("https://%s:%d", host, port),
+		Username: string(usernameData),
+		Password: string(passwordData),
+		Insecure: insecure,
+		Port:     fmt.Sprintf("%d", port),
+	}
+
+	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
+	remoteClient, err := remote.NewClusterClient(ctx, "", client, clusterKey)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create remote cluster client: %w", err)
+	}
+
+	kubeSystemNS := &corev1.Namespace{}
+	err = remoteClient.Get(ctx, types.NamespacedName{Name: "kube-system"}, kubeSystemNS)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get kube-system namespace from cluster(%s): %w", cluster.Name, err)
+	}
+
+	clusterUUID := string(kubeSystemNS.UID)
+
+	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&credentials, trustBundle)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create prism central konnector client: %w", err)
+	}
+
+	return prismCentralKonnectorClient, clusterUUID, nil
+}
+
 // isClusterRegisteredInPC checks if the cluster is registered in Prism Central by calling
 // the Konnector GetClusterRegistration API using the cluster's kube-system namespace UUID.
 func isClusterRegisteredInPC(
@@ -813,103 +926,45 @@ func isClusterRegisteredInPC(
 	cluster *clusterv1.Cluster,
 	log logr.Logger,
 ) (bool, error) {
-	// Get cluster config to extract PC endpoint
-	varMap := variables.ClusterVariablesToVariablesMap(cluster.Spec.Topology.Variables)
-	clusterConfigVar, err := variables.Get[apivariables.ClusterConfigSpec](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-	)
+	prismCentralKonnectorClient, clusterUUID, err := resolvePCClientAndClusterUUID(ctx, client, cluster)
 	if err != nil {
-		return false, fmt.Errorf("failed to read clusterConfig variable: %w", err)
+		return false, err
 	}
 
-	if clusterConfigVar.Nutanix == nil || clusterConfigVar.Nutanix.PrismCentralEndpoint.URL == "" {
-		return false, fmt.Errorf("prism central endpoint not configured")
-	}
-
-	prismCentralEndpointSpec := clusterConfigVar.Nutanix.PrismCentralEndpoint
-	host, port, err := prismCentralEndpointSpec.ParseURL()
-	if err != nil {
-		return false, fmt.Errorf("failed to parse prism central endpoint URL: %w", err)
-	}
-
-	// Get konnector agent variable to access its credentials secret
-	k8sAgentVar, err := variables.Get[apivariables.NutanixKonnectorAgent](
-		varMap,
-		v1alpha1.ClusterConfigVariableName,
-		"addons", v1alpha1.KonnectorAgentVariableName,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to read konnector agent variable: %w", err)
-	}
-
-	if k8sAgentVar.Credentials == nil || k8sAgentVar.Credentials.SecretRef.Name == "" {
-		return false, fmt.Errorf("konnector agent credentials secret not configured")
-	}
-
-	// Get credentials from konnector agent addon Secret
-	credentialsSecret := &corev1.Secret{}
-	err = client.Get(ctx, types.NamespacedName{
-		Namespace: cluster.Namespace,
-		Name:      k8sAgentVar.Credentials.SecretRef.Name,
-	}, credentialsSecret)
-	if err != nil {
-		return false, fmt.Errorf("failed to get credentials secret: %w", err)
-	}
-
-	usernameData, ok := credentialsSecret.Data["username"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'username' key")
-	}
-	passwordData, ok := credentialsSecret.Data["password"]
-	if !ok {
-		return false, fmt.Errorf("credentials secret does not contain 'password' key")
-	}
-
-	// Create credentials struct
-	credentials := prismgoclient.Credentials{
-		Endpoint: fmt.Sprintf("%s:%d", host, port),
-		URL:      fmt.Sprintf("https://%s:%d", host, port),
-		Username: string(usernameData),
-		Password: string(passwordData),
-		Insecure: prismCentralEndpointSpec.Insecure,
-		Port:     fmt.Sprintf("%d", port),
-	}
-
-	// Get kube-system namespace UUID from the cluster
-	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
-	remoteClient, err := remote.NewClusterClient(ctx, "", client, clusterKey)
-	if err != nil {
-		return false, fmt.Errorf("failed to create remote cluster client: %w", err)
-	}
-
-	kubeSystemNS := &corev1.Namespace{}
-	err = remoteClient.Get(ctx, types.NamespacedName{Name: "kube-system"}, kubeSystemNS)
-	if err != nil {
-		return false, fmt.Errorf("failed to get kube-system namespace from cluster(%s): %w", cluster.Name, err)
-	}
-
-	clusterUUID := string(kubeSystemNS.UID)
-
-	// Get trust bundle if insecure is false
-	var trustBundle string
-	if !prismCentralEndpointSpec.Insecure {
-		trustBundle = prismCentralEndpointSpec.AdditionalTrustBundle
-	}
-
-	// Create Prism Central Konnector client
-	prismCentralKonnectorClient, err := lifecycleutils.NewPrismCentralKonnectorClient(&credentials, trustBundle)
-	if err != nil {
-		return false, fmt.Errorf("failed to create prism central konnector client: %w", err)
-	}
-
-	// Call GetClusterRegistration API
 	_, err = prismCentralKonnectorClient.GetClusterRegistration(ctx, clusterUUID)
 	if err != nil {
 		return false, fmt.Errorf("failed to get cluster(%s) registration: %w", clusterUUID, err)
 	}
 
-	// If we got here, the cluster is registered
 	log.Info("Cluster is registered in Prism Central", "clusterUUID", clusterUUID)
 	return true, nil
+}
+
+// forceDeleteClusterRegistrationInPC performs a best-effort forced removal of the cluster's
+// uploaded kubeconfig and registration in Prism Central when Helm uninstall times out.
+func forceDeleteClusterRegistrationInPC(
+	ctx context.Context,
+	client ctrlclient.Client,
+	cluster *clusterv1.Cluster,
+	log logr.Logger,
+) error {
+	prismCentralKonnectorClient, clusterUUID, err := resolvePCClientAndClusterUUID(ctx, client, cluster)
+	if err != nil {
+		return err
+	}
+
+	if kcErr := prismCentralKonnectorClient.DeleteClusterRegistrationKubeconfig(ctx, clusterUUID, true); kcErr != nil {
+		log.Info(
+			"Best-effort Prism Central kubeconfig delete returned an error (may not exist)",
+			"clusterUUID", clusterUUID,
+			"error", kcErr,
+		)
+	}
+
+	if err := prismCentralKonnectorClient.DeleteClusterRegistration(ctx, clusterUUID, true); err != nil {
+		return err
+	}
+
+	log.Info("Force-deleted cluster registration from Prism Central after timeout", "clusterUUID", clusterUUID)
+	return nil
 }
