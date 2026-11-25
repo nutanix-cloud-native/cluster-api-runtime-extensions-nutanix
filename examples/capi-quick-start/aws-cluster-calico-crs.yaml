@@ -27,6 +27,7 @@ spec:
           clusterAutoscaler:
             strategy: ClusterResourceSet
           cni:
+            multus: {}
             provider: Calico
             strategy: ClusterResourceSet
           csi:

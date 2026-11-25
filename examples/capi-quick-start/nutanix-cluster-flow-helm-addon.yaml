@@ -101,6 +101,7 @@ spec:
             imagePullCredentials:
               secretRef:
                 name: ${CLUSTER_NAME}-flow-image-pull-secret
+            multus: {}
             provider: Flow
           cosi: {}
           csi:

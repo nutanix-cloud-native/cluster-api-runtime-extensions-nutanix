@@ -11,6 +11,7 @@
     imagePullCredentials:
       secretRef:
         name: "${CLUSTER_NAME}-flow-image-pull-secret"
+    multus: {}
 - op: "replace"
   path: "/spec/topology/variables/0/value/controlPlane/nutanix/machineDetails/memorySize"
   value: 8Gi

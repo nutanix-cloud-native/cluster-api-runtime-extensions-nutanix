@@ -25,6 +25,7 @@ spec:
           ccm: {}
           clusterAutoscaler: {}
           cni:
+            multus: {}
             provider: Calico
           csi:
             defaultStorage:

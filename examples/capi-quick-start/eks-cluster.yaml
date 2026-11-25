@@ -17,6 +17,7 @@ spec:
         addons:
           clusterAutoscaler: {}
           cni:
+            multus: {}
             provider: Cilium
           csi:
             defaultStorage:

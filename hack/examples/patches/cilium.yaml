@@ -5,3 +5,4 @@
   path: "/spec/topology/variables/0/value/addons/cni"
   value:
     provider: Cilium
+    multus: {}

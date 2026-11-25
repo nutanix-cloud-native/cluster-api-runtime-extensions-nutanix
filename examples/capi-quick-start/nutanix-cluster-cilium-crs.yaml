@@ -83,6 +83,7 @@ spec:
           clusterAutoscaler:
             strategy: ClusterResourceSet
           cni:
+            multus: {}
             provider: Cilium
             strategy: ClusterResourceSet
           cosi: {}

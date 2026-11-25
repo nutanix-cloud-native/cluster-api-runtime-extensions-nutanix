@@ -96,6 +96,66 @@ func WaitForCNIToBeReadyInWorkloadCluster(
 			),
 		)
 	}
+
+	if input.CNI.Multus != nil {
+		waitForMultusToBeReadyInWorkloadCluster(
+			ctx,
+			waitForMultusToBeReadyInWorkloadClusterInput{
+				strategy:             input.CNI.Multus.Strategy,
+				workloadCluster:      input.WorkloadCluster,
+				clusterProxy:         input.ClusterProxy,
+				daemonSetIntervals:   input.DaemonSetIntervals,
+				helmReleaseIntervals: input.HelmReleaseIntervals,
+			},
+		)
+	}
+}
+
+type waitForMultusToBeReadyInWorkloadClusterInput struct {
+	strategy             v1alpha1.AddonStrategy
+	workloadCluster      *clusterv1.Cluster
+	clusterProxy         framework.ClusterProxy
+	daemonSetIntervals   []interface{}
+	helmReleaseIntervals []interface{}
+}
+
+func waitForMultusToBeReadyInWorkloadCluster(
+	ctx context.Context,
+	input waitForMultusToBeReadyInWorkloadClusterInput, //nolint:gocritic // This hugeParam is OK in tests.
+) {
+	switch input.strategy {
+	case v1alpha1.AddonStrategyHelmAddon:
+		WaitForHelmReleaseProxyReadyForCluster(
+			ctx,
+			WaitForHelmReleaseProxyReadyForClusterInput{
+				GetLister:       input.clusterProxy.GetClient(),
+				Cluster:         input.workloadCluster,
+				HelmReleaseName: "multus",
+			},
+			input.helmReleaseIntervals...,
+		)
+	default:
+		Fail(
+			fmt.Sprintf(
+				"Do not know how to wait for Multus using strategy %s to be ready",
+				input.strategy,
+			),
+		)
+	}
+
+	workloadClusterClient := input.clusterProxy.GetWorkloadCluster(
+		ctx, input.workloadCluster.Namespace, input.workloadCluster.Name,
+	).GetClient()
+
+	WaitForDaemonSetsAvailable(ctx, WaitForDaemonSetsAvailableInput{
+		Getter: workloadClusterClient,
+		DaemonSet: &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "multus",
+				Namespace: metav1.NamespaceSystem,
+			},
+		},
+	}, input.daemonSetIntervals...)
 }
 
 type waitForCalicoToBeReadyInWorkloadClusterInput struct {
