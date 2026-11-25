@@ -5,6 +5,7 @@ package nutanixflow
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -102,6 +103,12 @@ func TestPrepareRemoteClusterForFlow_WithImagePullCredentials(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, defaultImagePullSecretName, secretName)
 
+	updatedSource := &corev1.Secret{}
+	require.NoError(t, c.Get(context.Background(), client.ObjectKeyFromObject(sourceSecret), updatedSource))
+	require.Len(t, updatedSource.OwnerReferences, 1)
+	assert.Equal(t, cluster.Name, updatedSource.OwnerReferences[0].Name)
+	assert.Equal(t, cluster.UID, updatedSource.OwnerReferences[0].UID)
+
 	for _, ns := range flowNamespaces {
 		got := &corev1.Namespace{}
 		require.NoError(t, c.Get(context.Background(), client.ObjectKey{Name: ns}, got))
@@ -111,9 +118,61 @@ func TestPrepareRemoteClusterForFlow_WithImagePullCredentials(t *testing.T) {
 			Name:      defaultImagePullSecretName,
 			Namespace: ns,
 		}, secret))
+		assert.Equal(t, defaultImagePullSecretName, secret.Name)
 		assert.Equal(t, corev1.SecretTypeDockerConfigJson, secret.Type)
 		assert.Equal(t, sourceSecret.Data[corev1.DockerConfigJsonKey], secret.Data[corev1.DockerConfigJsonKey])
 	}
+}
+
+func TestPrepareRemoteClusterForFlow_MissingImagePullSecret(t *testing.T) {
+	t.Parallel()
+
+	scheme := newFlowTestScheme()
+	cluster := newFlowTestCluster()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+
+	secretName, err := prepareRemoteClusterForFlow(
+		context.Background(),
+		c,
+		remotefake.NewClusterClient,
+		cluster,
+		v1alpha1.CNI{
+			Provider: v1alpha1.CNIProviderFlow,
+			Strategy: v1alpha1.AddonStrategyHelmAddon,
+			ImagePullCredentials: &v1alpha1.ImagePullCredentials{
+				SecretRef: v1alpha1.LocalObjectReference{Name: "missing-flow-pull-secret"},
+			},
+		},
+	)
+	require.Error(t, err)
+	assert.Empty(t, secretName)
+	assert.Contains(t, err.Error(), "failed to get resource from object reference")
+	assert.Contains(t, err.Error(), "missing-flow-pull-secret")
+}
+
+func TestPrepareRemoteClusterForFlow_RemoteClientError(t *testing.T) {
+	t.Parallel()
+
+	scheme := newFlowTestScheme()
+	cluster := newFlowTestCluster()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+
+	secretName, err := prepareRemoteClusterForFlow(
+		context.Background(),
+		c,
+		func(context.Context, string, client.Client, client.ObjectKey) (client.Client, error) {
+			return nil, fmt.Errorf("remote client unavailable")
+		},
+		cluster,
+		v1alpha1.CNI{
+			Provider: v1alpha1.CNIProviderFlow,
+			Strategy: v1alpha1.AddonStrategyHelmAddon,
+		},
+	)
+	require.Error(t, err)
+	assert.Empty(t, secretName)
+	assert.ErrorContains(t, err, "error creating client for remote cluster")
+	assert.ErrorContains(t, err, "remote client unavailable")
 }
 
 func newFlowTestScheme() *runtime.Scheme {
