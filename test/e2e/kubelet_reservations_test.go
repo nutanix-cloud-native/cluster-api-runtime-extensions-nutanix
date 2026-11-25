@@ -17,7 +17,6 @@ import (
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
-	"sigs.k8s.io/cluster-api/util"
 )
 
 // Automatic kubelet reservations are validated with a dedicated flavor generated at runtime
@@ -44,6 +43,7 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 				testE2EConfig                    *clusterctl.E2EConfig
 				clusterLocalClusterctlConfigPath string
 				flavor                           string
+				clusterName                      string
 			)
 
 			BeforeEach(func() {
@@ -55,8 +55,10 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 
 				applyProviderKubernetesVersionOverride(testE2EConfig, lowercaseProvider)
 
+				clusterName = generateClusterName("kubelet-res-", lowercaseProvider)
+
 				if provider == "Nutanix" {
-					reserveNutanixIPsForCluster(testE2EConfig)
+					reserveNutanixIPsForCluster(testE2EConfig, clusterName)
 				}
 
 				clusterLocalTempDir, err := os.MkdirTemp("", "clusterctl-kubelet-reservations-")
@@ -93,15 +95,8 @@ var _ = Describe("Quick start with automatic kubelet reservations", Label("kubel
 					))
 				}
 
-				clusterNamePrefix := "kubelet-res-"
-				maxClusterNameLength := 63
-				if lowercaseProvider == "docker" {
-					maxClusterNameLength = 64 - 23
-				}
-
 				return capie2e.QuickStartSpecInput{
-					ClusterName: ptr.To(clusterNamePrefix +
-						util.RandomString(maxClusterNameLength-len(clusterNamePrefix))),
+					ClusterName:            ptr.To(clusterName),
 					E2EConfig:              testE2EConfig,
 					ClusterctlConfigPath:   clusterLocalClusterctlConfigPath,
 					BootstrapClusterProxy:  bootstrapClusterProxy,

@@ -11,17 +11,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
+	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -55,11 +61,70 @@ func applyProviderKubernetesVersionOverride(
 	}
 }
 
-// reserveNutanixIPsForCluster reserves the control-plane endpoint and Kubernetes Service
-// load balancer IPs for a Nutanix workload cluster, registers cleanup to unreserve them,
-// and writes the reserved addresses into the e2e config variables. It must be called from
-// within a running spec node (e.g. BeforeEach) so DeferCleanup is honoured.
-func reserveNutanixIPsForCluster(testE2EConfig *clusterctl.E2EConfig) {
+const (
+	// nutanixIPReserveMaxAttempts bounds how many consecutive Nutanix IPAM reservations are tried
+	// when reserved addresses already respond on the workload subnet (for example, an orphaned VM
+	// from an earlier timed-out cluster teardown still advertising kube-vip or MetalLB).
+	nutanixIPReserveMaxAttempts = 5
+
+	// nutanixIPReserveTimeout bounds the overall Eventually loop across reservation + probe attempts.
+	nutanixIPReserveTimeout = 5 * time.Minute
+
+	// nutanixIPReservePollInterval is the delay between consecutive reservation attempts when a
+	// newly reserved IP is already responding on the subnet.
+	nutanixIPReservePollInterval = 50 * time.Millisecond
+
+	// nutanixIPProbeTimeout allows ARP resolution and a TCP SYN retry on the local Nutanix VLAN
+	// while keeping unused-IP checks fast during BeforeEach.
+	nutanixIPProbeTimeout = 3 * time.Second
+
+	// nutanixClusterCheckTimeout bounds the management-cluster Cluster lookup during DeferCleanup.
+	nutanixClusterCheckTimeout = 15 * time.Second
+)
+
+var (
+	nutanixClusterListBackoff = wait.Backoff{
+		Duration: 200 * time.Millisecond,
+		Factor:   2.0,
+		Jitter:   0.1,
+		Steps:    5,
+	}
+	nutanixIPUnreserveBackoff = wait.Backoff{
+		Duration: 200 * time.Millisecond,
+		Factor:   2.0,
+		Jitter:   0.1,
+		Steps:    4,
+	}
+)
+
+// nutanixIPProbePorts are the ports every Nutanix e2e test reaches directly from the runner
+// (kube-apiserver on 6443 and the LoadBalancer test Service on 80), ensuring no intermediate
+// firewall rule can spoof a TCP RST for an unused address.
+var nutanixIPProbePorts = []string{"6443", "80"}
+
+type (
+	tcpDialFunc   func(ctx context.Context, network, address string) (net.Conn, error)
+	ipReserveFunc func(ctx context.Context) (string, func() error, error)
+	ipProbeFunc   func(ctx context.Context, ip string) (bool, string)
+)
+
+// generateClusterName builds a random cluster name of maximum length so e2e exercises the 63-char
+// DNS label limit, shortened on Docker where CAPI appends 23 characters of random suffixes across
+// DockerCluster, MachineDeployment, and Machine names and KinD enforces HOST_NAME_MAX=64.
+func generateClusterName(prefix, lowercaseProvider string) string {
+	maxClusterNameLength := 63
+	if lowercaseProvider == "docker" {
+		maxClusterNameLength = 64 - 23
+	}
+	return prefix + util.RandomString(maxClusterNameLength-len(prefix))
+}
+
+// reserveNutanixIPsForCluster reserves unused control-plane endpoint and Kubernetes Service
+// load balancer IPs for a Nutanix workload cluster, registers gated cleanup to unreserve them
+// only once the workload Cluster is confirmed deleted, and writes the reserved addresses into
+// the e2e config variables. It must be called from within a running spec node (e.g. BeforeEach)
+// so DeferCleanup is honoured.
+func reserveNutanixIPsForCluster(testE2EConfig *clusterctl.E2EConfig, clusterName string) {
 	nutanixClient, err := nutanix.NewConvergedV4Client(
 		nutanix.CredentialsFromCAPIE2EConfig(testE2EConfig),
 	)
@@ -67,29 +132,270 @@ func reserveNutanixIPsForCluster(testE2EConfig *clusterctl.E2EConfig) {
 	subnetName := testE2EConfig.MustGetVariable("NUTANIX_SUBNET_NAME")
 	prismElementClusterName := testE2EConfig.MustGetVariable("NUTANIX_PRISM_ELEMENT_CLUSTER_NAME")
 
-	By("Reserving an IP address for the workload cluster control plane endpoint")
-	controlPlaneEndpointIP, unreserveControlPlaneEndpointIP, err := nutanix.ReserveIP(
-		context.Background(),
-		subnetName,
-		prismElementClusterName,
-		nutanixClient,
-	)
-	Expect(err).ToNot(HaveOccurred())
-	DeferCleanup(unreserveControlPlaneEndpointIP)
-	testE2EConfig.Variables["CONTROL_PLANE_ENDPOINT_IP"] = controlPlaneEndpointIP
-	Logf("Reserved control-plane endpoint IP: %s", controlPlaneEndpointIP)
+	reserveClusterVariableIP := func(variableName, description string) {
+		By("Reserving an IP address for the workload cluster " + description)
+		ip, unreserve, reserveErr := reserveUnusedIP(
+			context.Background(),
+			nutanixIPReserveMaxAttempts,
+			func(reserveCtx context.Context) (string, func() error, error) {
+				return nutanix.ReserveIP(
+					reserveCtx,
+					subnetName,
+					prismElementClusterName,
+					nutanixClient,
+				)
+			},
+			isNutanixIPInUse,
+			Logf,
+		)
+		Expect(reserveErr).ToNot(HaveOccurred())
+		DeferCleanup(func(cleanupCtx SpecContext) error {
+			var k8sReader client.Reader
+			if !skipCleanup && bootstrapClusterProxy != nil {
+				k8sReader = bootstrapClusterProxy.GetClient()
+			}
+			return unreserveIPAfterClusterDeleted(
+				cleanupCtx,
+				ip,
+				unreserve,
+				skipCleanup,
+				clusterName,
+				k8sReader,
+				Logf,
+			)
+		})
+		testE2EConfig.Variables[variableName] = ip
+		Logf("Reserved %s IP: %s", description, ip)
+	}
 
-	By("Reserving an IP address for the workload cluster kubernetes Service load balancer")
-	kubernetesServiceLoadBalancerIP, unreservekubernetesServiceLoadBalancerIP, err := nutanix.ReserveIP(
-		context.Background(),
-		subnetName,
-		prismElementClusterName,
-		nutanixClient,
+	reserveClusterVariableIP("CONTROL_PLANE_ENDPOINT_IP", "control plane endpoint")
+	reserveClusterVariableIP(
+		"KUBERNETES_SERVICE_LOAD_BALANCER_IP",
+		"kubernetes Service load balancer",
 	)
-	Expect(err).ToNot(HaveOccurred())
-	DeferCleanup(unreservekubernetesServiceLoadBalancerIP)
-	testE2EConfig.Variables["KUBERNETES_SERVICE_LOAD_BALANCER_IP"] = kubernetesServiceLoadBalancerIP
-	Logf("Reserved service load balancer IP: %s", kubernetesServiceLoadBalancerIP)
+}
+
+func isNutanixIPInUse(ctx context.Context, ip string) (inUse bool, reason string) {
+	probeCtx, cancel := context.WithTimeout(ctx, nutanixIPProbeTimeout)
+	defer cancel()
+	var dialer net.Dialer
+	return probeTCPHostInUse(probeCtx, dialer.DialContext, ip, nutanixIPProbePorts)
+}
+
+// probeTCPHostInUse dials ports concurrently and reports whether any port proves a live TCP stack
+// owns ip. Both a completed handshake and ECONNREFUSED (TCP RST) confirm a host answered ARP for
+// ip, whereas routing/ARP timeouts (DeadlineExceeded, EHOSTUNREACH, ENETUNREACH) mean nothing
+// responded at that address.
+func probeTCPHostInUse(
+	ctx context.Context,
+	dialContext tcpDialFunc,
+	ip string,
+	ports []string,
+) (inUse bool, reason string) {
+	probeCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	type probeResult struct {
+		inUse  bool
+		reason string
+	}
+
+	results := make(chan probeResult, len(ports))
+	for _, port := range ports {
+		addr := net.JoinHostPort(ip, port)
+		go func(address string) {
+			conn, err := dialContext(probeCtx, "tcp", address)
+			if err == nil {
+				_ = conn.Close()
+				results <- probeResult{
+					inUse:  true,
+					reason: fmt.Sprintf("tcp %s connected", address),
+				}
+				return
+			}
+			if errors.Is(err, syscall.ECONNREFUSED) {
+				results <- probeResult{
+					inUse:  true,
+					reason: fmt.Sprintf("tcp %s connection refused", address),
+				}
+				return
+			}
+			results <- probeResult{}
+		}(addr)
+	}
+
+	for range ports {
+		res := <-results
+		if res.inUse {
+			cancel()
+			return true, res.reason
+		}
+	}
+	return false, ""
+}
+
+// reserveUnusedIP reserves an IP via reserve and verifies via probe that nothing on the network is
+// already responding at that address. Any collided address is intentionally left reserved in IPAM
+// (quarantined) so neither the next retry nor concurrent specs receive it while the orphaned VM is
+// still running.
+func reserveUnusedIP(
+	ctx context.Context,
+	maxAttempts int,
+	reserve ipReserveFunc,
+	probe ipProbeFunc,
+	logf func(format string, args ...interface{}),
+) (reservedIP string, unreserve func() error, err error) {
+	if maxAttempts < 1 {
+		return "", nil, fmt.Errorf("maxAttempts must be at least 1, got %d", maxAttempts)
+	}
+
+	var (
+		selectedIP        string
+		selectedUnreserve func() error
+		attempt           int
+		failureErr        error
+	)
+	g := NewGomega(func(message string, _ ...int) {
+		if failureErr == nil {
+			failureErr = errors.New(message)
+		}
+	})
+	g.Eventually(func(attemptCtx context.Context) error {
+		attempt++
+		ip, unreserveFn, reserveErr := reserve(attemptCtx)
+		if reserveErr != nil {
+			failureErr = reserveErr
+			return StopTrying("failed to reserve IP").Wrap(reserveErr)
+		}
+
+		inUse, reason := probe(attemptCtx, ip)
+		if !inUse {
+			selectedIP = ip
+			selectedUnreserve = unreserveFn
+			return nil
+		}
+
+		logf(
+			"Reserved IP %s is already reachable on the network (%s); "+
+				"keeping reservation quarantined and retrying (attempt %d/%d)",
+			ip, reason, attempt, maxAttempts,
+		)
+		if attempt >= maxAttempts {
+			failureErr = fmt.Errorf(
+				"failed to reserve an unused IP after %d attempts: last reserved IP %s is already in use (%s)",
+				maxAttempts, ip, reason,
+			)
+			return StopTrying(failureErr.Error())
+		}
+		return fmt.Errorf("reserved IP %s is already in use (%s)", ip, reason)
+	}).WithContext(ctx).WithTimeout(nutanixIPReserveTimeout).WithPolling(nutanixIPReservePollInterval).Should(Succeed())
+
+	if failureErr != nil {
+		return "", nil, failureErr
+	}
+	return selectedIP, selectedUnreserve, nil
+}
+
+// shouldUnreserveClusterIP reports whether it is safe to release a workload cluster's reserved IP
+// back to Nutanix IPAM. If cleanup was skipped, the management cluster cannot be queried, or the
+// Cluster object still exists (for example because AfterEach timed out waiting for
+// BeforeClusterDelete hooks or VM deletion), workload VMs may still hold the VIP via kube-vip or
+// MetalLB; keeping the IP reserved quarantines it until those VMs are cleaned up.
+func shouldUnreserveClusterIP(
+	ctx context.Context,
+	skipCleanup bool,
+	clusterName string,
+	k8sReader client.Reader,
+) (canUnreserve bool, reason string) {
+	if skipCleanup {
+		return false, "skipCleanup is enabled"
+	}
+	if clusterName == "" {
+		return false, "cluster name is empty"
+	}
+	if k8sReader == nil {
+		return false, "management cluster client is unavailable"
+	}
+
+	clusterList := &clusterv1.ClusterList{}
+	var lastErr error
+	if err := wait.ExponentialBackoffWithContext(
+		ctx,
+		nutanixClusterListBackoff,
+		func(listCtx context.Context) (bool, error) {
+			clusterList.Items = nil
+			if listErr := k8sReader.List(listCtx, clusterList); listErr != nil {
+				lastErr = listErr
+				return false, nil
+			}
+			return true, nil
+		},
+	); err != nil {
+		if lastErr == nil {
+			lastErr = err
+		}
+		return false, fmt.Sprintf("failed to list Clusters on management cluster: %v", lastErr)
+	}
+
+	for i := range clusterList.Items {
+		c := &clusterList.Items[i]
+		if c.Name == clusterName {
+			return false, fmt.Sprintf("Cluster %s/%s still exists", c.Namespace, c.Name)
+		}
+	}
+
+	return true, ""
+}
+
+func unreserveIPAfterClusterDeleted(
+	ctx context.Context,
+	ip string,
+	unreserve func() error,
+	skipCleanup bool,
+	clusterName string,
+	k8sReader client.Reader,
+	logf func(format string, args ...interface{}),
+) error {
+	checkCtx, cancel := context.WithTimeout(ctx, nutanixClusterCheckTimeout)
+	defer cancel()
+
+	ok, reason := shouldUnreserveClusterIP(checkCtx, skipCleanup, clusterName, k8sReader)
+	if !ok {
+		logf(
+			"Skipping unreserving Nutanix IP %s (%s); "+
+				"keeping IPAM reservation to prevent VIP collision",
+			ip, reason,
+		)
+		return nil
+	}
+
+	var (
+		attempt int
+		lastErr error
+	)
+	if err := wait.ExponentialBackoffWithContext(
+		ctx,
+		nutanixIPUnreserveBackoff,
+		func(context.Context) (bool, error) {
+			attempt++
+			if unreserveErr := unreserve(); unreserveErr != nil {
+				lastErr = unreserveErr
+				logf(
+					"Failed to unreserve Nutanix IP %s (attempt %d/%d): %v",
+					ip, attempt, nutanixIPUnreserveBackoff.Steps, unreserveErr,
+				)
+				return false, nil
+			}
+			return true, nil
+		},
+	); err != nil {
+		if lastErr != nil {
+			return lastErr
+		}
+		return err
+	}
+
+	return nil
 }
 
 // isolateProviderVersions deep-copies the named provider's Versions and their Files slices on a
