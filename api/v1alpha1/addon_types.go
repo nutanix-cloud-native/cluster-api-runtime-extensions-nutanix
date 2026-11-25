@@ -124,13 +124,8 @@ type GenericAddons struct {
 
 type AddonStrategy string
 
-// CNI defines CNI provider configuration.
-type CNI struct {
-	// CNI provider to deploy.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Calico;Cilium
-	Provider string `json:"provider"`
-
+// GenericCNI defines shared CNI configuration across providers.
+type GenericCNI struct {
 	// Addon strategy used to deploy the CNI provider to the workload cluster.
 	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
@@ -145,6 +140,34 @@ type CNI struct {
 	// for the CNI provider images. The Secret will be copied to the workload cluster.
 	// +kubebuilder:validation:Optional
 	ImagePullCredentials *ImagePullCredentials `json:"imagePullCredentials,omitempty"`
+
+	// Multus configures the optional Multus meta-CNI addon alongside the primary CNI.
+	// +kubebuilder:validation:Optional
+	Multus *Multus `json:"multus,omitempty"`
+}
+
+// Multus tells us to enable or disable the Multus meta-CNI addon.
+type Multus struct {
+	// Addon strategy used to deploy Multus to the workload cluster.
+	// +kubebuilder:default=HelmAddon
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=HelmAddon
+	Strategy AddonStrategy `json:"strategy,omitzero"`
+
+	// AddonConfig contains the configuration for the Multus addon.
+	// +kubebuilder:validation:Optional
+	AddonConfig `json:",inline"`
+}
+
+// CNI defines CNI provider configuration.
+type CNI struct {
+	// CNI provider to deploy.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Calico;Cilium
+	Provider string `json:"provider"`
+
+	// +kubebuilder:validation:Optional
+	GenericCNI `json:",inline"`
 }
 
 // NutanixCNI defines CNI configuration for Nutanix clusters, which additionally support Flow.
@@ -154,20 +177,8 @@ type NutanixCNI struct {
 	// +kubebuilder:validation:Enum=Calico;Cilium;Flow
 	Provider string `json:"provider"`
 
-	// Addon strategy used to deploy the CNI provider to the workload cluster.
-	// +kubebuilder:default=HelmAddon
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=ClusterResourceSet;HelmAddon
-	Strategy AddonStrategy `json:"strategy,omitzero"`
-
-	// AddonConfig contains the configuration for the CNI provider.
-	// +kubebuilder:validation:Optional
-	AddonConfig `json:",inline"`
-
-	// ImagePullCredentials is a reference to a Secret with image pull credentials
-	// for the CNI provider images. The Secret will be copied to the workload cluster.
-	// +kubebuilder:validation:Optional
-	ImagePullCredentials *ImagePullCredentials `json:"imagePullCredentials,omitempty"`
+	GenericCNI `json:",inline"`
 }
 
 // AddonConfig contains the configuration for the Addon provider.
