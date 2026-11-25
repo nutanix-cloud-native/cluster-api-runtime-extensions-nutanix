@@ -105,8 +105,10 @@ func (s *ServiceLoadBalancerGC) BeforeClusterDelete(
 		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
 		resp.SetMessage(err.Error())
 		resp.SetRetryAfterSeconds(5)
+	// CAPI's RetryResponseObject contract uses ResponseStatusSuccess with RetryAfterSeconds > 0
+	// to block cluster deletion and requeue cleanly while LoadBalancer Services finish deleting.
 	case errors.Is(err, ErrServicesStillExist):
-		resp.SetStatus(runtimehooksv1.ResponseStatusFailure)
+		resp.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		resp.SetMessage(err.Error())
 		resp.SetRetryAfterSeconds(5)
 	default:

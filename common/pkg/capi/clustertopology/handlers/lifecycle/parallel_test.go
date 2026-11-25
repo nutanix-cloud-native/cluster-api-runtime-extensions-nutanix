@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 )
 
@@ -218,6 +219,92 @@ func Test_runHooksInParallel(t *testing.T) {
 			},
 			RetryAfterSeconds: 10,
 		},
+	}, {
+		name: "Single blocking success response preserves retry after",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "cleanup in progress",
+			},
+			RetryAfterSeconds: 5,
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "cleanup in progress",
+			},
+			RetryAfterSeconds: 5,
+		},
+	}, {
+		name: "Multiple success responses pick lowest non-zero retry after",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting on lb",
+			},
+			RetryAfterSeconds: 10,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status: runtimehooksv1.ResponseStatusSuccess,
+			},
+			RetryAfterSeconds: 0,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting on konnector",
+			},
+			RetryAfterSeconds: 5,
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting on lb, waiting on konnector",
+			},
+			RetryAfterSeconds: 5,
+		},
+	}, {
+		name: "Blocking success combined with failure without retry after does not leak success retry after",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting on konnector",
+			},
+			RetryAfterSeconds: 5,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusFailure,
+				Message: "fatal error",
+			},
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusFailure,
+				Message: "fatal error",
+			},
+			RetryAfterSeconds: 0,
+		},
+	}, {
+		name: "Blocking success combined with failure with retry after uses failure retry after",
+		individualResponses: []*runtimehooksv1.CommonRetryResponse{{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusSuccess,
+				Message: "waiting on konnector",
+			},
+			RetryAfterSeconds: 3,
+		}, {
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusFailure,
+				Message: "transient error",
+			},
+			RetryAfterSeconds: 10,
+		}},
+		expectedAggregatedResponse: &runtimehooksv1.CommonRetryResponse{
+			CommonResponse: runtimehooksv1.CommonResponse{
+				Status:  runtimehooksv1.ResponseStatusFailure,
+				Message: "transient error",
+			},
+			RetryAfterSeconds: 10,
+		},
 	}}
 
 	for _, tt := range tests {
@@ -271,4 +358,52 @@ func Test_runHooksInParallel(t *testing.T) {
 			}
 		})
 	}
+}
+
+type stubBCDHandler struct {
+	setStatus         bool
+	status            runtimehooksv1.ResponseStatus
+	message           string
+	retryAfterSeconds int32
+}
+
+func (s stubBCDHandler) BeforeClusterDelete(
+	_ context.Context,
+	_ *runtimehooksv1.BeforeClusterDeleteRequest,
+	resp *runtimehooksv1.BeforeClusterDeleteResponse,
+) {
+	if s.setStatus {
+		resp.SetStatus(s.status)
+	}
+	if s.message != "" {
+		resp.SetMessage(s.message)
+	}
+	if s.retryAfterSeconds != 0 {
+		resp.SetRetryAfterSeconds(s.retryAfterSeconds)
+	}
+}
+
+func TestParallelBeforeClusterDeleteHook_DefaultsStatusToSuccessAndPreservesRetryAfter(t *testing.T) {
+	t.Parallel()
+
+	hook := ParallelBeforeClusterDeleteHook(
+		"caren",
+		// Simulates a handler (like RegistryHandler when addon is disabled) that returns early
+		// without calling resp.SetStatus, relying on CAPI's default ResponseStatusSuccess.
+		stubBCDHandler{message: "addon skipped"},
+		stubBCDHandler{
+			setStatus:         true,
+			status:            runtimehooksv1.ResponseStatusSuccess,
+			message:           "cleanup in progress",
+			retryAfterSeconds: 5,
+		},
+	)
+
+	resp := &runtimehooksv1.BeforeClusterDeleteResponse{}
+	hook.BeforeClusterDelete(context.Background(), &runtimehooksv1.BeforeClusterDeleteRequest{}, resp)
+
+	assert.Equal(t, runtimehooksv1.ResponseStatusSuccess, resp.GetStatus())
+	assert.Equal(t, int32(5), resp.GetRetryAfterSeconds())
+	assert.Contains(t, resp.GetMessage(), "addon skipped")
+	assert.Contains(t, resp.GetMessage(), "cleanup in progress")
 }

@@ -32,15 +32,13 @@ func runHooksInParallel[T runtimehooksv1.RequestObject, U runtimehooksv1.Respons
 	// Run each hook in a new goroutine, send the response to the response channel and decrement the
 	// wait group counter when the hook finishes.
 	for _, f := range hookFuncs {
-		// Create a new instance of the response object type for each hook. Due to the use of generics,
-		// we need to use reflection to create a new instance of the response object type.
+		// Match CAPI's runtime server by pre-populating ResponseStatusSuccess so handlers that
+		// return early without calling SetStatus still participate in response aggregation.
 		hookResponse := reflect.New(responsePtrType).Interface().(U)
+		hookResponse.SetStatus(runtimehooksv1.ResponseStatusSuccess)
 		go func() {
-			// Run the hook function.
 			f(ctx, request, hookResponse)
-			// Send the response to the response channel.
 			responseChan <- hookResponse
-			// Decrement the wait group counter.
 			wg.Done()
 		}()
 	}
@@ -69,65 +67,63 @@ func aggregateResponses[T runtimehooksv1.ResponseObject](
 	responses []T,
 ) {
 	var (
-		// Initialize slices to store success and failure messages.
-		successMessages, failureMessages []string
-		// Initialize retryAfterSeconds to 0.
-		retryAfterSeconds int32
+		successMessages, failureMessages                   []string
+		failureRetryAfterSeconds, successRetryAfterSeconds int32
 		// Default to success. If any response is a failure, the aggregated response will be a failure.
 		aggregatedResponseStatus = runtimehooksv1.ResponseStatusSuccess
 	)
 
-	// Iterate over all responses and aggregate the responses.
 	for _, resp := range responses {
 		switch resp.GetStatus() {
-		// If the response status is failure, set the aggregated response status to failure and append
-		// the message to the failure messages slice.
-		// If the response is a RetryResponseObject, set the retryAfterSeconds to the lowest non-zero
-		// value between the current retryAfterSeconds and the retryAfterSeconds of the response.
 		case runtimehooksv1.ResponseStatusFailure:
 			aggregatedResponseStatus = runtimehooksv1.ResponseStatusFailure
 
-			// Only append the message if it is not empty.
 			if resp.GetMessage() != "" {
 				failureMessages = append(failureMessages, resp.GetMessage())
 			}
 
-			retryResp, ok := any(resp).(runtimehooksv1.RetryResponseObject)
-			if ok {
-				retryAfterSeconds = util.LowestNonZeroInt32(
-					retryAfterSeconds,
+			if retryResp, ok := any(resp).(runtimehooksv1.RetryResponseObject); ok {
+				failureRetryAfterSeconds = util.LowestNonZeroInt32(
+					failureRetryAfterSeconds,
 					retryResp.GetRetryAfterSeconds(),
 				)
 			}
-		// If the response status is success, append the message to the success messages slice.
+		// CAPI's RetryResponseObject contract represents a non-error blocking hook response
+		// ("wait and requeue after N seconds") as ResponseStatusSuccess with RetryAfterSeconds > 0.
 		case runtimehooksv1.ResponseStatusSuccess:
-			// Only append the message if it is not empty.
 			if resp.GetMessage() != "" {
 				successMessages = append(successMessages, resp.GetMessage())
+			}
+
+			if retryResp, ok := any(resp).(runtimehooksv1.RetryResponseObject); ok {
+				successRetryAfterSeconds = util.LowestNonZeroInt32(
+					successRetryAfterSeconds,
+					retryResp.GetRetryAfterSeconds(),
+				)
 			}
 		}
 	}
 
-	// Set the aggregated response status.
 	aggregatedResponse.SetStatus(aggregatedResponseStatus)
 
 	switch aggregatedResponse.GetStatus() {
-	// If the aggregated response status is failure, set the message to the failure messages
-	// concatenated with a comma, and set the retryAfterSeconds if it is greater than 0.
 	case runtimehooksv1.ResponseStatusFailure:
 		aggregatedResponse.SetMessage(strings.Join(failureMessages, ", "))
 
-		if retryAfterSeconds > 0 {
-			// If retryAfterSeconds is set, we can safely assume that the response is a RetryResponseObject.
+		if failureRetryAfterSeconds > 0 {
 			any(aggregatedResponse).(runtimehooksv1.RetryResponseObject).SetRetryAfterSeconds(
-				retryAfterSeconds,
+				failureRetryAfterSeconds,
 			)
 		}
 
-	// If the aggregated response status is success, set the message to the success messages
-	// concatenated with a comma.
 	case runtimehooksv1.ResponseStatusSuccess:
 		aggregatedResponse.SetMessage(strings.Join(successMessages, ", "))
+
+		if successRetryAfterSeconds > 0 {
+			any(aggregatedResponse).(runtimehooksv1.RetryResponseObject).SetRetryAfterSeconds(
+				successRetryAfterSeconds,
+			)
+		}
 	}
 }
 
