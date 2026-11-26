@@ -25,6 +25,7 @@ spec:
           ccm: {}
           clusterAutoscaler: {}
           cni:
+            multus: {}
             provider: Cilium
           csi:
             defaultStorage:

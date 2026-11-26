@@ -80,11 +80,13 @@ var _ = Describe("AdvancedCiliumConfigurationValidator", func() {
 		It("should skip validation when annotation is true", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -123,11 +125,13 @@ kubeProxyReplacement: false
 		It("should not skip validation when annotation is false", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -166,11 +170,13 @@ kubeProxyReplacement: false
 		It("should not skip validation when annotation is missing", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -257,11 +263,13 @@ kubeProxyReplacement: false
 		It("should allow when ConfigMap does not exist", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -279,11 +287,13 @@ kubeProxyReplacement: false
 		It("should allow when ConfigMap does not have values.yaml key", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -312,11 +322,13 @@ kubeProxyReplacement: false
 		It("should deny when ConfigMap does not have kubeProxyReplacement enabled", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -349,11 +361,13 @@ ipam:
 		It("should deny when kubeProxyReplacement is set to false", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -387,11 +401,13 @@ kubeProxyReplacement: false
 		It("should allow when kubeProxyReplacement is set to true", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -424,11 +440,13 @@ kubeProxyReplacement: true
 		It("should allow when ConfigMap uses templated values with ControlPlaneEndpoint", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -472,11 +490,13 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 		It("should deny when ConfigMap uses templated values that would be false after templating", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},
@@ -520,11 +540,13 @@ k8sServicePort: "{{ .ControlPlaneEndpoint.Port }}"
 		It("should error out when ConfigMap uses unknown templated values", func() {
 			cni := &v1alpha1.CNI{
 				Provider: v1alpha1.CNIProviderCilium,
-				AddonConfig: v1alpha1.AddonConfig{
-					Values: &v1alpha1.AddonValues{
-						SourceRef: &v1alpha1.ValuesReference{
-							Kind: "ConfigMap",
-							Name: "cilium-values",
+				GenericCNI: v1alpha1.GenericCNI{
+					AddonConfig: v1alpha1.AddonConfig{
+						Values: &v1alpha1.AddonValues{
+							SourceRef: &v1alpha1.ValuesReference{
+								Kind: "ConfigMap",
+								Name: "cilium-values",
+							},
 						},
 					},
 				},

@@ -11,5 +11,6 @@
           nfd: {}
           cni:
             provider: Cilium
+            multus: {}
           ingress:
             provider: aws-lb-controller

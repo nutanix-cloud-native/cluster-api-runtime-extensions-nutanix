@@ -82,6 +82,7 @@ spec:
             strategy: HelmAddon
           clusterAutoscaler: {}
           cni:
+            multus: {}
             provider: Cilium
           cosi: {}
           csi:

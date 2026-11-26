@@ -63,6 +63,10 @@ func (c *HelmAddonConfig) AddFlags(prefix string, flags *pflag.FlagSet) {
 	)
 }
 
+func (c *HelmAddonConfig) DefaultValuesTemplateConfigMapName() string {
+	return c.defaultValuesTemplateConfigMapName
+}
+
 type helmAddonApplier struct {
 	config    *HelmAddonConfig
 	client    ctrlclient.Client

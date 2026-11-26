@@ -6,18 +6,3 @@ daemonConfig:
 resources:
   limits:
     memory: null
-
-{{- if .ReadinessSocketPath }}
-# Volumes for CNI readiness socket
-volumes:
-  - name: cni-readiness-sock
-    hostPath:
-      path: "{{ .ReadinessSocketPath }}"
-      type: Socket
-
-# Volume mounts for CNI readiness socket
-volumeMounts:
-  - name: cni-readiness-sock
-    mountPath: "{{ .ReadinessSocketPath }}"
-    readOnly: true
-{{- end }}

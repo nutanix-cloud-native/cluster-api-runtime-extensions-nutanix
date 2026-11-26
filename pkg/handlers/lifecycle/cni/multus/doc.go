@@ -1,24 +1,13 @@
 // Copyright 2024 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package multus provides a standalone lifecycle handler for Multus CNI that automatically
-// deploys Multus when:
-// - The cluster is on either Nutanix or EKS cloud provider
-// - A supported CNI provider is configured (Cilium or Calico)
+// Package multus provides a lifecycle handler for deploying the Multus meta-CNI addon.
 //
-// MultusHandler implements the cluster lifecycle hooks and:
-// - Detects the cloud provider from the cluster infrastructure
-// - Reads CNI configuration from cluster variables
-// - Gets the readiness socket path for the configured CNI (via cni.ReadinessSocketPath)
-// - Automatically deploys Multus with socket-based configuration
-//
-// helmAddonStrategy is the internal strategy that handles:
-// - Templating Helm values with the CNI socket path
-// - Deploying Multus using HelmAddon strategy with Go template-based values
-//
-// Multus relies on the readinessIndicatorFile configuration to wait for the primary CNI
-// to be ready, eliminating the need for explicit wait logic in the strategy.
-//
-// This package does NOT expose Multus in the API - it's an internal addon
-// that deploys automatically based on cloud provider and CNI selection.
+// MultusHandler implements AfterControlPlaneInitialized and BeforeClusterUpgrade hooks:
+//   - Deploys Multus via HelmAddon when explicitly enabled at clusterConfig.addons.cni.multus
+//   - Reconciles pre-existing multus-<cluster-uuid> HelmChartProxy resources during upgrades
+//     even when clusterConfig.addons.cni.multus is unset, preserving backwards compatibility
+//     without mutating Cluster.spec
+//   - Populates daemonConfig.readinessIndicatorFile with the primary CNI readiness socket path
+//     (via cni.ReadinessSocketPath) unless explicitly overridden in custom Helm values.
 package multus

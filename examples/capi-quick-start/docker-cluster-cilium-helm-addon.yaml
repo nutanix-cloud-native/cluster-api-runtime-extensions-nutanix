@@ -24,6 +24,7 @@ spec:
         addons:
           clusterAutoscaler: {}
           cni:
+            multus: {}
             provider: Cilium
           cosi: {}
           csi:

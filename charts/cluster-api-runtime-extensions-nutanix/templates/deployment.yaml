@@ -38,6 +38,7 @@ spec:
         - --failure-domain-rollout-concurrency={{ .Values.failureDomainRollout.concurrency }}
         - --helm-addons-configmap={{ .Values.helmAddonsConfigMap }}
         - --cni.cilium.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.cilium.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
+        - --cni.multus.helm-addon.default-values-template-configmap-name={{ .Values.hooks.cni.multus.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --nfd.helm-addon.default-values-template-configmap-name={{ .Values.hooks.nfd.helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.aws-ebs.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "aws-ebs").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
         - --csi.nutanix.helm-addon.default-values-template-configmap-name={{ (index .Values.hooks.csi "nutanix").helmAddonStrategy.defaultValueTemplateConfigMap.name }}
