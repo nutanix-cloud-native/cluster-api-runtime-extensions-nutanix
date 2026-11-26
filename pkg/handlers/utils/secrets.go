@@ -23,20 +23,26 @@ const (
 	RegistryAddonRootCASecretName = "registry-addon-root-ca"
 )
 
-// CopySecretToRemoteCluster will get the Secret from srcSecretName
-// and create it on the remote cluster, copying Data and StringData to dstSecretKey Secret.
-func CopySecretToRemoteCluster(
+// SecretForCluster returns the Secret named secretName in the Cluster's namespace.
+func SecretForCluster(
+	ctx context.Context,
+	c ctrlclient.Reader,
+	secretName string,
+	cluster metav1.Object,
+) (*corev1.Secret, error) {
+	return getSecret(ctx, c, secretName, cluster.GetNamespace())
+}
+
+// ApplySecretToClient copies Data, StringData, and Type from sourceSecret into a
+// Secret at dstSecretKey on the given client via ServerSideApply with ForceOwnership.
+// The caller is responsible for ensuring the destination namespace exists and for
+// obtaining the client (for example a remote workload-cluster client).
+func ApplySecretToClient(
 	ctx context.Context,
 	cl ctrlclient.Client,
-	srcSecretName string,
+	sourceSecret *corev1.Secret,
 	dstSecretKey ctrlclient.ObjectKey,
-	cluster *clusterv1.Cluster,
 ) error {
-	sourceSecret, err := getSecretForCluster(ctx, cl, srcSecretName, cluster)
-	if err != nil {
-		return err
-	}
-
 	secretOnRemote := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -51,6 +57,28 @@ func CopySecretToRemoteCluster(
 		Type:       sourceSecret.Type,
 	}
 
+	err := client.ServerSideApply(ctx, cl, secretOnRemote, client.ForceOwnership)
+	if err != nil {
+		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
+	}
+
+	return nil
+}
+
+// CopySecretToRemoteCluster will get the Secret from srcSecretName
+// and create it on the remote cluster, copying Data and StringData to dstSecretKey Secret.
+func CopySecretToRemoteCluster(
+	ctx context.Context,
+	cl ctrlclient.Client,
+	srcSecretName string,
+	dstSecretKey ctrlclient.ObjectKey,
+	cluster *clusterv1.Cluster,
+) error {
+	sourceSecret, err := SecretForCluster(ctx, cl, srcSecretName, cluster)
+	if err != nil {
+		return err
+	}
+
 	clusterKey := ctrlclient.ObjectKeyFromObject(cluster)
 	remoteClient, err := remote.NewClusterClient(ctx, "", cl, clusterKey)
 	if err != nil {
@@ -62,12 +90,7 @@ func CopySecretToRemoteCluster(
 		return fmt.Errorf("error creating namespace on the remote cluster: %w", err)
 	}
 
-	err = client.ServerSideApply(ctx, remoteClient, secretOnRemote, client.ForceOwnership)
-	if err != nil {
-		return fmt.Errorf("error creating Secret on the remote cluster: %w", err)
-	}
-
-	return nil
+	return ApplySecretToClient(ctx, remoteClient, sourceSecret, dstSecretKey)
 }
 
 // EnsureSecretOnRemoteCluster ensures that the given Secret exists on the remote cluster.
@@ -176,7 +199,7 @@ func SecretForClusterRegistryAddonCA(
 	c ctrlclient.Reader,
 	cluster *clusterv1.Cluster,
 ) (*corev1.Secret, error) {
-	secret, err := getSecretForCluster(ctx, c, SecretNameForRegistryAddonCA(cluster), cluster)
+	secret, err := SecretForCluster(ctx, c, SecretNameForRegistryAddonCA(cluster), cluster)
 	if err != nil {
 		return nil, fmt.Errorf("error getting registry addon CA secret for cluster: %w", err)
 	}
@@ -186,15 +209,6 @@ func SecretForClusterRegistryAddonCA(
 // SecretNameForRegistryAddonCA returns the name of the registry addon CA Secret.
 func SecretNameForRegistryAddonCA(cluster metav1.Object) string {
 	return fmt.Sprintf("%s-registry-addon-ca", cluster.GetName())
-}
-
-func getSecretForCluster(
-	ctx context.Context,
-	c ctrlclient.Reader,
-	secretName string,
-	cluster metav1.Object,
-) (*corev1.Secret, error) {
-	return getSecret(ctx, c, secretName, cluster.GetNamespace())
 }
 
 func getSecret(
