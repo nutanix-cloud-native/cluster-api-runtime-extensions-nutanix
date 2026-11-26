@@ -6,24 +6,33 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capie2e "sigs.k8s.io/cluster-api/test/e2e"
 	capiframework "sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/generic/mutation/kubeadm/authentication"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/test/framework/oidc"
 )
 
 type providerConfiguration struct {
@@ -118,10 +127,12 @@ var _ = Describe("Quick start", func() {
 											testE2EConfig                    *clusterctl.E2EConfig
 											clusterLocalClusterctlConfigPath string
 											clusterName                      string
+											mockOIDCBundle                   *oidc.Bundle
 										)
 
 										BeforeEach(func() {
 											testE2EConfig = e2eConfig.DeepCopy()
+											isolateProviderVersions(testE2EConfig, lowercaseProvider)
 
 											// Check if a provider-specific Kubernetes version is set in the environment and use that. This allows
 											// for testing against different Kubernetes versions, as some providers (e.g. Docker) have machine images
@@ -146,6 +157,20 @@ var _ = Describe("Quick start", func() {
 											DeferCleanup(func() {
 												Expect(os.RemoveAll(clusterLocalTempDir)).To(Succeed())
 											})
+
+											// Inject structured authentication at cluster creation time on one flavor
+											// per provider using a pre-generated CA and static Service ClusterIP derived
+											// from the template's Service CIDR, avoiding a post-provision control-plane rollout.
+											mockOIDCBundle = nil
+											if flavor == "topology-cilium-helm-addon" {
+												mockOIDCBundle = enableMockOIDCInFlavorTemplate(
+													testE2EConfig,
+													lowercaseProvider,
+													flavor,
+													clusterLocalTempDir,
+												)
+											}
+
 											clusterLocalClusterctlConfigPath = createClusterctlLocalRepository(
 												testE2EConfig,
 												clusterLocalTempDir,
@@ -215,7 +240,7 @@ var _ = Describe("Quick start", func() {
 													) +
 														lo.Reduce(
 															workloadCluster.Spec.Topology.Workers.MachineDeployments,
-															func(agg int, md clusterv1beta2.MachineDeploymentTopology, _ int) int {
+															func(agg int, md clusterv1.MachineDeploymentTopology, _ int) int {
 																switch {
 																case md.Replicas != nil:
 																	return agg + int(
@@ -349,6 +374,28 @@ var _ = Describe("Quick start", func() {
 															},
 														)
 													}
+
+													if flavor == "topology-cilium-helm-addon" {
+														ensureWorkloadClusterAuthentication(
+															ctx,
+															ensureWorkloadClusterAuthenticationInput{
+																BootstrapProxy:  proxy,
+																WorkloadProxy:   workloadProxy,
+																WorkloadCluster: workloadCluster,
+																Namespace:       namespace,
+																ClusterName:     clusterName,
+																Bundle:          mockOIDCBundle,
+																ControlPlaneIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-control-plane",
+																),
+																DeploymentIntervals: testE2EConfig.GetIntervals(
+																	flavor,
+																	"wait-deployment",
+																),
+															},
+														)
+													}
 												},
 											}
 										})
@@ -362,3 +409,234 @@ var _ = Describe("Quick start", func() {
 		})
 	}
 })
+
+func enableMockOIDCInFlavorTemplate(
+	testE2EConfig *clusterctl.E2EConfig,
+	lowercaseProvider, flavor, tmpDir string,
+) *oidc.Bundle {
+	target := "cluster-template-" + flavor + ".yaml"
+	for i := range testE2EConfig.Providers {
+		p := &testE2EConfig.Providers[i]
+		if p.Name != lowercaseProvider {
+			continue
+		}
+		for j := range p.Versions {
+			v := &p.Versions[j]
+			for k := range v.Files {
+				f := &v.Files[k]
+				if f.TargetName != target {
+					continue
+				}
+				raw, err := os.ReadFile(f.SourcePath)
+				Expect(err).ToNot(HaveOccurred(), "failed to read template %q", f.SourcePath)
+
+				serviceCIDR, err := oidc.ResolveClusterTemplateServiceCIDR(
+					raw,
+					func(name string) (string, bool) {
+						if envVal, ok := os.LookupEnv(name); ok && envVal != "" {
+							return envVal, true
+						}
+						if testE2EConfig != nil && testE2EConfig.HasVariable(name) {
+							if val := testE2EConfig.GetVariableOrEmpty(name); val != "" {
+								return val, true
+							}
+						}
+						return "", false
+					},
+				)
+				Expect(err).ToNot(HaveOccurred(), "resolving service CIDR for %q", f.SourcePath)
+
+				staticIP, err := oidc.StaticServiceIPFromCIDR(serviceCIDR)
+				Expect(err).ToNot(HaveOccurred(), "selecting static OIDC IP from %q", serviceCIDR)
+
+				bundle, err := oidc.NewBundle(staticIP)
+				Expect(err).ToNot(HaveOccurred(), "generating pre-boot mock OIDC bundle")
+
+				patched, err := oidc.EnableAuthenticationInClusterTemplate(
+					raw,
+					bundle.AuthenticationConfig(),
+				)
+				Expect(err).ToNot(HaveOccurred(), "injecting authentication into %q", f.SourcePath)
+
+				dst := filepath.Join(tmpDir, target)
+				Expect(os.WriteFile(dst, patched, 0o600)).To(Succeed())
+				f.SourcePath = dst
+				Logf(
+					"Pre-configured mock OIDC %s (service CIDR %s) in %s/%s",
+					bundle.IssuerURL,
+					serviceCIDR,
+					lowercaseProvider,
+					target,
+				)
+				return bundle
+			}
+		}
+	}
+	Fail(fmt.Sprintf("flavor %q not found for provider %q", flavor, lowercaseProvider))
+	return nil
+}
+
+type ensureWorkloadClusterAuthenticationInput struct {
+	BootstrapProxy        capiframework.ClusterProxy
+	WorkloadProxy         capiframework.ClusterProxy
+	WorkloadCluster       *clusterv1.Cluster
+	Namespace             string
+	ClusterName           string
+	Bundle                *oidc.Bundle
+	ControlPlaneIntervals []any
+	DeploymentIntervals   []any
+}
+
+func ensureWorkloadClusterAuthentication(
+	ctx context.Context,
+	input ensureWorkloadClusterAuthenticationInput,
+) {
+	By("Validating structured authentication with pre-generated CA and static Service ClusterIP")
+	Expect(input.Bundle).ToNot(BeNil())
+	Expect(oidc.VerifyServiceIPInCluster(input.Bundle.ClusterIP, input.WorkloadCluster)).To(Succeed())
+
+	bootstrapClient := input.BootstrapProxy.GetClient()
+	Eventually(func() bool {
+		c := &clusterv1.Cluster{}
+		if err := bootstrapClient.Get(
+			ctx,
+			client.ObjectKey{Namespace: input.Namespace, Name: input.ClusterName},
+			c,
+		); err != nil {
+			Logf("failed to get Cluster: %v", err)
+			return false
+		}
+		if !oidc.ClusterControlPlaneSettled(c) {
+			Logf(
+				"Cluster control plane not settled (generation %d observed %d), conditions: %v",
+				c.Generation,
+				c.Status.ObservedGeneration,
+				c.Status.Conditions,
+			)
+			return false
+		}
+		kcpList := &controlplanev1.KubeadmControlPlaneList{}
+		if err := bootstrapClient.List(
+			ctx,
+			kcpList,
+			client.InNamespace(input.Namespace),
+			client.MatchingLabels{clusterv1.ClusterNameLabel: input.ClusterName},
+		); err != nil {
+			Logf("failed to list KubeadmControlPlanes: %v", err)
+			return false
+		}
+		for i := range kcpList.Items {
+			kcp := &kcpList.Items[i]
+			if oidc.AuthenticationConfigCurrent(kcp) {
+				return true
+			}
+			Logf(
+				"KCP %s generation %d observed %d auth file %t replicas %d ready %d upToDate %d",
+				kcp.Name,
+				kcp.Generation,
+				kcp.Status.ObservedGeneration,
+				oidc.KubeadmControlPlaneHasFile(kcp, authentication.AuthenticationConfigPath),
+				ptr.Deref(kcp.Status.Replicas, 0),
+				ptr.Deref(kcp.Status.ReadyReplicas, 0),
+				ptr.Deref(kcp.Status.UpToDateReplicas, 0),
+			)
+		}
+		return false
+	}, input.ControlPlaneIntervals...).Should(
+		BeTrue(),
+		"KubeadmControlPlane did not settle with authentication config",
+	)
+
+	workloadClient := input.WorkloadProxy.GetClient()
+	By(fmt.Sprintf("Deploying mock OIDC at %s", input.Bundle.IssuerURL))
+	Expect(input.Bundle.Deploy(ctx, workloadClient, oidc.DefaultNamespace)).To(Succeed())
+
+	Eventually(func() bool {
+		dep := &appsv1.Deployment{}
+		if err := workloadClient.Get(
+			ctx,
+			client.ObjectKey{Namespace: oidc.DefaultNamespace, Name: oidc.ServiceName},
+			dep,
+		); err != nil {
+			Logf("failed to get mock-oidc deployment: %v", err)
+			return false
+		}
+		if dep.Status.ObservedGeneration >= dep.Generation {
+			for _, c := range dep.Status.Conditions {
+				if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue {
+					return true
+				}
+			}
+		}
+		Logf(
+			"mock-oidc deployment not yet available: generation %d observed %d replicas %d/%d/%d conditions %v",
+			dep.Generation,
+			dep.Status.ObservedGeneration,
+			dep.Status.Replicas,
+			dep.Status.ReadyReplicas,
+			dep.Status.AvailableReplicas,
+			dep.Status.Conditions,
+		)
+		return false
+	}, input.DeploymentIntervals...).Should(
+		BeTrue(),
+		"mock OIDC deployment not available",
+	)
+
+	By("Verifying admin kubeconfig still works with authentication enabled")
+	pods := &corev1.PodList{}
+	Expect(workloadClient.List(ctx, pods, client.InNamespace("kube-system"))).To(Succeed())
+
+	By("Validating valid JWT maps username, groups, and extra claims")
+	validToken, err := input.Bundle.MintJWT(map[string]any{
+		"email":  "test@example.com",
+		"groups": []string{"e2e-group"},
+		"hd":     "example.com",
+		"foo":    "bar",
+		"aud":    "e2e-aud",
+		"sub":    "123",
+	})
+	Expect(err).ToNot(HaveOccurred())
+	wantUser := &oidc.ExpectedUserInfo{
+		Username: "test@example.com",
+		Groups:   []string{"e2e-group"},
+		Extra: map[string][]string{
+			"example.org/foo": {"bar"},
+		},
+	}
+	restCfg := input.WorkloadProxy.GetRESTConfig()
+	Eventually(func() error {
+		return oidc.ValidateTokenAuth(ctx, restCfg, validToken, wantUser)
+	}, 2*time.Minute, 5*time.Second).Should(Succeed())
+
+	By("Validating invalid JWTs are rejected")
+	invalidCases := []map[string]any{
+		{
+			"email":  "test@example.com",
+			"groups": []string{"e2e-group"},
+			"hd":     "wrong.com",
+			"aud":    "e2e-aud",
+		},
+		{
+			"email": "test@example.com",
+			"hd":    "example.com",
+			"aud":   "wrong-aud",
+		},
+		{
+			"email": "test@example.com",
+			"hd":    "example.com",
+			"aud":   "e2e-aud",
+			"exp":   time.Now().Add(-time.Hour).Unix(),
+		},
+		{
+			"email": "system:evil@example.com",
+			"hd":    "example.com",
+			"aud":   "e2e-aud",
+		},
+	}
+	for _, claims := range invalidCases {
+		token, err := input.Bundle.MintJWT(claims)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(oidc.ValidateTokenAuth(ctx, restCfg, token, nil)).To(Succeed())
+	}
+}
