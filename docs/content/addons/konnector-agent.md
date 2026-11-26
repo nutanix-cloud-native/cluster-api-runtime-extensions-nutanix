@@ -37,9 +37,9 @@ The addon implements the following Cluster API lifecycle hooks:
 - **Purpose**: Gracefully removes the Konnector Agent before cluster deletion
 - **Timing**: Executes before cluster deletion begins
 - **Actions**:
-  - Initiates graceful helm uninstall
-  - Waits for cleanup completion
-  - Ensures proper cleanup order
+  - Skips cleanup immediately if the `HelmChartProxy` does not exist or has already been removed
+  - Initiates graceful `HelmChartProxy` uninstallation and polls every 5 seconds until the cluster is unregistered from Prism Central or `HelmChartProxy` deletion completes
+  - Bounds cleanup to a 5-minute timeout: if `HelmChartProxy` deletion does not complete within 5 minutes, CAREN attempts a best-effort forced deregistration in Prism Central and allows cluster deletion to proceed
 
 ## Configuration
 
