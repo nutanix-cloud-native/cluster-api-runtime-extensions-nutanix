@@ -330,6 +330,26 @@ spec:
                       maximum: 100
                       minimum: 0
                       type: integer
+                    imageMaximumGCAge:
+                      description: |-
+                        ImageMaximumGCAge is the maximum duration an unused image may remain before
+                        it is garbage collected, regardless of disk usage. Must be greater than
+                        imageMinimumGCAge (default "2m") when non-zero. Setting "0s" disables
+                        age-based image garbage collection.
+                        Default kubelet value is "0s" (disabled).
+                      type: string
+                      x-kubernetes-validations:
+                        - message: imageMaximumGCAge must not be negative
+                          rule: duration(self) >= duration('0s')
+                    imageMinimumGCAge:
+                      description: |-
+                        ImageMinimumGCAge is the minimum age since an image was first seen before
+                        it is eligible for garbage collection. Must be greater than 0s.
+                        Default kubelet value is "2m".
+                      type: string
+                      x-kubernetes-validations:
+                        - message: imageMinimumGCAge must be greater than 0s
+                          rule: duration(self) > duration('0s')
                     kubeReserved:
                       additionalProperties:
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -436,6 +456,10 @@ spec:
                   x-kubernetes-validations:
                     - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
                       rule: '!has(self.imageGCHighThresholdPercent) || !has(self.imageGCLowThresholdPercent) || self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent'
+                    - message: imageMaximumGCAge must be greater than imageMinimumGCAge when non-zero
+                      rule: '!has(self.imageMaximumGCAge) || !has(self.imageMinimumGCAge) || duration(self.imageMaximumGCAge) == duration(''0s'') || duration(self.imageMaximumGCAge) > duration(self.imageMinimumGCAge)'
+                    - message: imageMaximumGCAge must be greater than the default imageMinimumGCAge (2m) when non-zero
+                      rule: '!has(self.imageMaximumGCAge) || has(self.imageMinimumGCAge) || duration(self.imageMaximumGCAge) == duration(''0s'') || duration(self.imageMaximumGCAge) > duration(''2m'')'
                     - message: evictionSoft must be set when evictionSoftGracePeriod is set
                       rule: '!has(self.evictionSoftGracePeriod) || has(self.evictionSoft)'
                     - message: evictionSoftGracePeriod keys must match evictionSoft keys

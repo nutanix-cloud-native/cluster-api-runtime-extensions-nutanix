@@ -6,6 +6,7 @@ package cluster
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -440,6 +441,150 @@ var _ = Describe("KubeletConfigurationValidator", func() {
 			Expect(resp.Allowed).To(BeTrue())
 			Expect(resp.Warnings).To(ContainElement(
 				ContainSubstring("maxParallelImagePullsPerNode will be ignored"),
+			))
+		})
+
+		It("should reject imageMaximumGCAge <= imageMinimumGCAge on worker override", func() {
+			workerConfig := &variables.WorkerNodeConfigSpec{
+				KubeadmNodeSpec: v1alpha1.KubeadmNodeSpec{
+					KubeletConfiguration: &v1alpha1.KubeletConfiguration{
+						ImageMinimumGCAge: &metav1.Duration{Duration: 30 * time.Minute},
+						ImageMaximumGCAge: &metav1.Duration{Duration: 30 * time.Minute},
+					},
+				},
+			}
+			cluster := createClusterWithWorkerConfigAndOverrides(
+				clusterConfig,
+				nil,
+				map[string]*variables.WorkerNodeConfigSpec{
+					"md-0": workerConfig,
+				},
+			)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				`workers.machineDeployments["md-0"].variables.overrides[workerConfig].kubeletConfiguration`,
+			))
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"imageMaximumGCAge (30m0s) must be greater than imageMinimumGCAge (30m0s)",
+			))
+		})
+	})
+
+	Context("imageMinimumGCAge and imageMaximumGCAge validation", func() {
+		It("should accept imageMaximumGCAge greater than default 2m imageMinimumGCAge", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMaximumGCAge: &metav1.Duration{Duration: 48 * time.Hour},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should accept imageMaximumGCAge set to 0s (disabled)", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMaximumGCAge: &metav1.Duration{Duration: 0},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should accept imageMinimumGCAge below 2m when imageMaximumGCAge is greater", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMinimumGCAge: &metav1.Duration{Duration: 30 * time.Second},
+				ImageMaximumGCAge: &metav1.Duration{Duration: time.Minute},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeTrue())
+		})
+
+		It("should reject imageMinimumGCAge set to 0s", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMinimumGCAge: &metav1.Duration{Duration: 0},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"clusterConfig.controlPlane.kubeletConfiguration.imageMinimumGCAge: must be greater than 0s",
+			))
+		})
+
+		It("should reject negative imageMinimumGCAge", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMinimumGCAge: &metav1.Duration{Duration: -time.Minute},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"clusterConfig.controlPlane.kubeletConfiguration.imageMinimumGCAge: must be greater than 0s",
+			))
+		})
+
+		It("should reject negative imageMaximumGCAge", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMaximumGCAge: &metav1.Duration{Duration: -time.Minute},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"clusterConfig.controlPlane.kubeletConfiguration.imageMaximumGCAge: must not be negative",
+			))
+		})
+
+		It("should reject imageMaximumGCAge <= default 2m imageMinimumGCAge when imageMinimumGCAge is unset", func() {
+			cfg := &v1alpha1.KubeletConfiguration{
+				ImageMaximumGCAge: &metav1.Duration{Duration: time.Minute},
+			}
+			cluster := createClusterWithKubeletConfig(cfg)
+			req := createKubeletAdmissionRequest(cluster)
+
+			client := fake.NewClientBuilder().WithScheme(scheme).Build()
+			validator = NewKubeletConfigurationValidator(client, decoder)
+
+			resp := validator.validate(context.Background(), req)
+			Expect(resp.Allowed).To(BeFalse())
+			Expect(resp.Result.Message).To(ContainSubstring(
+				"imageMaximumGCAge (1m0s) must be greater than default imageMinimumGCAge (2m0s)",
 			))
 		})
 	})

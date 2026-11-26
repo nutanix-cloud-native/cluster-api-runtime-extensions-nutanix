@@ -4,8 +4,11 @@
 package kubeletconfiguration
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/v1alpha1"
@@ -173,6 +176,42 @@ seccompDefault: true
 								gomega.ContainSubstring("systemReservedCgroup: /system.slice"),
 								gomega.ContainSubstring("kubeReservedCgroup: /system.slice/kubelet.service"),
 							),
+						),
+					),
+				),
+			}},
+		},
+		{
+			Name: "kubeletConfiguration with imageMinimumGCAge and imageMaximumGCAge set at control plane",
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeletConfiguration{
+						ImageMinimumGCAge: &metav1.Duration{Duration: 15 * time.Minute},
+						ImageMaximumGCAge: &metav1.Duration{Duration: 48 * time.Hour},
+					},
+					v1alpha1.ControlPlaneConfigVariableName,
+					VariableName,
+				),
+			},
+			RequestItem: request.NewKubeadmControlPlaneTemplateRequestItem(""),
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{{
+				Operation: "add",
+				Path:      "/spec/template/spec/kubeadmConfigSpec/files",
+				ValueMatcher: gomega.ContainElement(
+					gomega.And(
+						gomega.HaveKeyWithValue(
+							"path",
+							kubeletConfigurationPatchFilePath,
+						),
+						gomega.HaveKeyWithValue(
+							"content",
+							`---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+imageMinimumGCAge: 15m0s
+imageMaximumGCAge: 48h0m0s
+`,
 						),
 					),
 				),

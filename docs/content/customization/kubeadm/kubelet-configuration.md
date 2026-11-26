@@ -36,6 +36,8 @@ For full upstream documentation on each setting, see the
 | `podPidsLimit` | integer (1024–16384) | Maximum number of PIDs per pod. |
 | `containerLogMaxSize` | quantity (e.g. `"10Mi"`) | Maximum size of a container log file before rotation. |
 | `containerLogMaxFiles` | integer (≥2) | Maximum number of rotated log files per container. |
+| `imageMinimumGCAge` | duration (e.g. `"15m"`) | Minimum age since an image was first seen before it is eligible for garbage collection. Must be > `"0s"`. Default: `"2m"`. |
+| `imageMaximumGCAge` | duration (e.g. `"48h"`) | Maximum duration an unused image may remain before garbage collection runs regardless of disk usage. Must be > `imageMinimumGCAge` when non-zero (`"0s"` disables). Default: `"0s"`. |
 | `imageGCHighThresholdPercent` | integer (0–100) | Disk usage percent above which image GC always runs. Must be > `imageGCLowThresholdPercent`. |
 | `imageGCLowThresholdPercent` | integer (0–100) | Disk usage percent below which image GC never runs. |
 | `maxParallelImagePulls` | integer (≥0) | Maximum concurrent image pulls. When > 0, `serializeImagePulls` is automatically set to `false`. |
@@ -207,13 +209,42 @@ kubeletConfiguration:
 
 ### Image garbage collection
 
-`imageGCHighThresholdPercent` must be greater than `imageGCLowThresholdPercent` when both
-are set.
+Kubelet image garbage collection supports two complementary policies that apply **only to
+unused images** — images referenced by running or active containers are never removed:
+
+- **Disk-threshold cleanup** (`imageGCHighThresholdPercent`, `imageGCLowThresholdPercent`):
+  triggers garbage collection when image filesystem usage exceeds `imageGCHighThresholdPercent`
+  (default `85`) and reclaims space down to `imageGCLowThresholdPercent` (default `80`).
+  `imageGCHighThresholdPercent` must be greater than `imageGCLowThresholdPercent` when both
+  are set.
+- **Age-based cleanup** (`imageMaximumGCAge`): removes images that have remained unused for
+  longer than the specified duration, regardless of current disk usage. Unset or `"0s"`
+  disables age-based cleanup.
+- **Minimum age protection** (`imageMinimumGCAge`): minimum duration since an image was first
+  seen before it becomes eligible for garbage collection (default `"2m"`).
+
+Validation and duration format notes:
+
+- Durations use Go `time.ParseDuration` units (`h`, `m`, `s`), so specify multi-day windows
+  in hours (for example `"48h"` or `"168h"`, **not** `"2d"` or `"7d"`).
+- When `imageMaximumGCAge` is greater than `"0s"`, it must be strictly greater than
+  `imageMinimumGCAge` (comparing against `"2m"` when `imageMinimumGCAge` is unset).
 
 ```yaml
 kubeletConfiguration:
+  imageMinimumGCAge: "15m"
+  imageMaximumGCAge: "48h"
   imageGCHighThresholdPercent: 85
   imageGCLowThresholdPercent: 70
+```
+
+Changing any `kubeletConfiguration` field updates the rendered `KubeadmConfigTemplate` or
+`KubeadmControlPlaneTemplate` and triggers a rolling node replacement. You can monitor
+rollout progress through Cluster API resources (`kubectl get cluster,machinedeployment,machine`)
+and verify the effective kubelet configuration on a workload node via its `/configz` endpoint:
+
+```shell
+kubectl --kubeconfig <WORKLOAD_KUBECONFIG> get --raw /api/v1/nodes/<NODE_NAME>/proxy/configz | jq '.kubeletconfig | {imageMinimumGCAge, imageMaximumGCAge, imageGCHighThresholdPercent, imageGCLowThresholdPercent}'
 ```
 
 ### Container log rotation
