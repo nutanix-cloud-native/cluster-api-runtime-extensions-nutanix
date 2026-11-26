@@ -17,7 +17,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
-	remotefake "sigs.k8s.io/cluster-api/controllers/remote/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -42,12 +41,13 @@ func TestPrepareRemoteClusterForFlow_WithoutImagePullCredentials(t *testing.T) {
 
 	scheme := newFlowTestScheme()
 	cluster := newFlowTestCluster()
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	mgmtClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	remoteClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	secretName, err := prepareRemoteClusterForFlow(
 		context.Background(),
-		c,
-		remotefake.NewClusterClient,
+		mgmtClient,
+		fixedRemoteClusterClient(remoteClient),
 		cluster,
 		v1alpha1.CNI{
 			Provider: v1alpha1.CNIProviderFlow,
@@ -59,10 +59,14 @@ func TestPrepareRemoteClusterForFlow_WithoutImagePullCredentials(t *testing.T) {
 
 	for _, ns := range flowNamespaces {
 		got := &corev1.Namespace{}
-		require.NoError(t, c.Get(context.Background(), client.ObjectKey{Name: ns}, got))
+		require.NoError(t, remoteClient.Get(context.Background(), client.ObjectKey{Name: ns}, got))
+
+		// Namespaces must not appear on the management client.
+		err := mgmtClient.Get(context.Background(), client.ObjectKey{Name: ns}, &corev1.Namespace{})
+		assert.True(t, apierrors.IsNotFound(err), "expected no %s namespace on management client", ns)
 
 		secret := &corev1.Secret{}
-		err := c.Get(context.Background(), client.ObjectKey{
+		err = remoteClient.Get(context.Background(), client.ObjectKey{
 			Name:      defaultImagePullSecretName,
 			Namespace: ns,
 		}, secret)
@@ -85,12 +89,13 @@ func TestPrepareRemoteClusterForFlow_WithImagePullCredentials(t *testing.T) {
 			corev1.DockerConfigJsonKey: []byte(`{"auths":{"docker.io":{"username":"u","password":"p"}}}`),
 		},
 	}
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, sourceSecret).Build()
+	mgmtClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, sourceSecret).Build()
+	remoteClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	secretName, err := prepareRemoteClusterForFlow(
 		context.Background(),
-		c,
-		remotefake.NewClusterClient,
+		mgmtClient,
+		fixedRemoteClusterClient(remoteClient),
 		cluster,
 		v1alpha1.CNI{
 			Provider: v1alpha1.CNIProviderFlow,
@@ -104,23 +109,30 @@ func TestPrepareRemoteClusterForFlow_WithImagePullCredentials(t *testing.T) {
 	assert.Equal(t, defaultImagePullSecretName, secretName)
 
 	updatedSource := &corev1.Secret{}
-	require.NoError(t, c.Get(context.Background(), client.ObjectKeyFromObject(sourceSecret), updatedSource))
+	require.NoError(t, mgmtClient.Get(context.Background(), client.ObjectKeyFromObject(sourceSecret), updatedSource))
 	require.Len(t, updatedSource.OwnerReferences, 1)
 	assert.Equal(t, cluster.Name, updatedSource.OwnerReferences[0].Name)
 	assert.Equal(t, cluster.UID, updatedSource.OwnerReferences[0].UID)
 
 	for _, ns := range flowNamespaces {
 		got := &corev1.Namespace{}
-		require.NoError(t, c.Get(context.Background(), client.ObjectKey{Name: ns}, got))
+		require.NoError(t, remoteClient.Get(context.Background(), client.ObjectKey{Name: ns}, got))
 
 		secret := &corev1.Secret{}
-		require.NoError(t, c.Get(context.Background(), client.ObjectKey{
+		require.NoError(t, remoteClient.Get(context.Background(), client.ObjectKey{
 			Name:      defaultImagePullSecretName,
 			Namespace: ns,
 		}, secret))
 		assert.Equal(t, defaultImagePullSecretName, secret.Name)
 		assert.Equal(t, corev1.SecretTypeDockerConfigJson, secret.Type)
 		assert.Equal(t, sourceSecret.Data[corev1.DockerConfigJsonKey], secret.Data[corev1.DockerConfigJsonKey])
+
+		// Pull secret must not be applied with the management client.
+		err := mgmtClient.Get(context.Background(), client.ObjectKey{
+			Name:      defaultImagePullSecretName,
+			Namespace: ns,
+		}, &corev1.Secret{})
+		assert.True(t, apierrors.IsNotFound(err), "expected no pull secret on management client in %s", ns)
 	}
 }
 
@@ -129,12 +141,13 @@ func TestPrepareRemoteClusterForFlow_MissingImagePullSecret(t *testing.T) {
 
 	scheme := newFlowTestScheme()
 	cluster := newFlowTestCluster()
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	mgmtClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	remoteClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	secretName, err := prepareRemoteClusterForFlow(
 		context.Background(),
-		c,
-		remotefake.NewClusterClient,
+		mgmtClient,
+		fixedRemoteClusterClient(remoteClient),
 		cluster,
 		v1alpha1.CNI{
 			Provider: v1alpha1.CNIProviderFlow,
@@ -155,11 +168,11 @@ func TestPrepareRemoteClusterForFlow_RemoteClientError(t *testing.T) {
 
 	scheme := newFlowTestScheme()
 	cluster := newFlowTestCluster()
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	mgmtClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
 
 	secretName, err := prepareRemoteClusterForFlow(
 		context.Background(),
-		c,
+		mgmtClient,
 		func(context.Context, string, client.Client, client.ObjectKey) (client.Client, error) {
 			return nil, fmt.Errorf("remote client unavailable")
 		},
@@ -173,6 +186,17 @@ func TestPrepareRemoteClusterForFlow_RemoteClientError(t *testing.T) {
 	assert.Empty(t, secretName)
 	assert.ErrorContains(t, err, "error creating client for remote cluster")
 	assert.ErrorContains(t, err, "remote client unavailable")
+}
+
+func fixedRemoteClusterClient(remoteClient client.Client) func(
+	context.Context,
+	string,
+	client.Client,
+	client.ObjectKey,
+) (client.Client, error) {
+	return func(context.Context, string, client.Client, client.ObjectKey) (client.Client, error) {
+		return remoteClient, nil
+	}
 }
 
 func newFlowTestScheme() *runtime.Scheme {

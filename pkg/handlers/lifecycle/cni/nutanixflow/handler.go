@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	"sigs.k8s.io/cluster-api/controllers/remote"
@@ -20,7 +19,6 @@ import (
 	commonhandlers "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/handlers/lifecycle"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
-	k8sclient "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/k8s/client"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
@@ -319,11 +317,12 @@ func prepareRemoteClusterForFlow(
 		)
 	}
 
-	sourceSecret := &corev1.Secret{}
-	err = mgmtClient.Get(ctx, ctrlclient.ObjectKey{
-		Name:      cniVar.ImagePullCredentials.SecretRef.Name,
-		Namespace: cluster.Namespace,
-	}, sourceSecret)
+	sourceSecret, err := handlersutils.SecretForCluster(
+		ctx,
+		mgmtClient,
+		cniVar.ImagePullCredentials.SecretRef.Name,
+		cluster,
+	)
 	if err != nil {
 		return "", fmt.Errorf(
 			"failed to get Flow CNI image pull Secret %q: %w",
@@ -333,24 +332,14 @@ func prepareRemoteClusterForFlow(
 	}
 
 	for _, ns := range flowNamespaces {
-		secretOnRemote := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: corev1.SchemeGroupVersion.String(),
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
+		if applyErr := handlersutils.ApplySecretToClient(
+			ctx,
+			remoteClient,
+			sourceSecret,
+			ctrlclient.ObjectKey{
 				Name:      defaultImagePullSecretName,
 				Namespace: ns,
 			},
-			Data:       sourceSecret.Data,
-			StringData: sourceSecret.StringData,
-			Type:       sourceSecret.Type,
-		}
-		if applyErr := k8sclient.ServerSideApply(
-			ctx,
-			remoteClient,
-			secretOnRemote,
-			k8sclient.ForceOwnership,
 		); applyErr != nil {
 			return "", fmt.Errorf(
 				"failed to copy image pull Secret for Flow CNI to namespace %q on remote cluster: %w",
