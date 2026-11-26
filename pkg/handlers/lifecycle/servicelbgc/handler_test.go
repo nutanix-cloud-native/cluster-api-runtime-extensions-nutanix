@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	runtimehooksv1 "sigs.k8s.io/cluster-api/api/runtime/hooks/v1alpha1"
 	remotefake "sigs.k8s.io/cluster-api/controllers/remote/fake"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,20 +24,20 @@ import (
 // testProvisionedCluster returns a provisioned cluster with initialized control plane; used in all cases
 // to drive the handler into the service-deletion switch.
 // This returns a new resource on each call to avoid sharing resources between test cases.
-func testProvisionedCluster(t *testing.T, clusterName, clusterNamespace string) *clusterv1beta2.Cluster {
+func testProvisionedCluster(t *testing.T, clusterName, clusterNamespace string) *clusterv1.Cluster {
 	t.Helper()
 
-	return &clusterv1beta2.Cluster{
+	return &clusterv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterName,
 			Namespace: clusterNamespace,
 		},
-		Status: clusterv1beta2.ClusterStatus{
+		Status: clusterv1.ClusterStatus{
 			Conditions: []metav1.Condition{{
-				Type:   clusterv1beta2.ClusterControlPlaneInitializedCondition,
+				Type:   clusterv1.ClusterControlPlaneInitializedCondition,
 				Status: metav1.ConditionTrue,
 			}},
-			Phase: string(clusterv1beta2.ClusterPhaseProvisioned),
+			Phase: string(clusterv1.ClusterPhaseProvisioned),
 		},
 	}
 }
@@ -71,7 +71,7 @@ func TestBeforeClusterDelete(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(corev1.AddToScheme(scheme))
-	utilruntime.Must(clusterv1beta2.AddToScheme(scheme))
+	utilruntime.Must(clusterv1.AddToScheme(scheme))
 
 	const (
 		clusterName      = "test-cluster"
@@ -91,12 +91,12 @@ func TestBeforeClusterDelete(t *testing.T) {
 		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
 		wantRetryAfter: false,
 	}, {
-		// ErrServicesStillExist branch: delete succeeds but the service existed
-		// at list time, so the function reports it still needs to be confirmed
-		// gone. The handler MUST return Failure so CAPI retries the hook.
-		name:           "LB service still present: failure with retry",
+		// Per CAPI Runtime SDK RetryResponseObject contract, blocking BeforeClusterDelete
+		// responses use ResponseStatusSuccess with non-zero RetryAfterSeconds so CAPI
+		// requeues cleanly without error backoff while Services finish deleting.
+		name:           "LB service still present: blocking success with retry",
 		services:       []ctrlclient.Object{testLBService(t, clusterNamespace)},
-		wantStatus:     runtimehooksv1.ResponseStatusFailure,
+		wantStatus:     runtimehooksv1.ResponseStatusSuccess,
 		wantRetryAfter: true,
 	}, {
 		// ErrFailedToDeleteService branch: the Delete call fails with a
@@ -146,7 +146,7 @@ func TestBeforeClusterDelete(t *testing.T) {
 			}
 
 			req := &runtimehooksv1.BeforeClusterDeleteRequest{
-				Cluster: clusterv1beta2.Cluster{
+				Cluster: clusterv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      clusterName,
 						Namespace: clusterNamespace,
