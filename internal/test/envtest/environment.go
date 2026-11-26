@@ -154,8 +154,9 @@ type Environment struct {
 }
 
 type environmentOpts struct {
-	uncachedObjs    []client.Object
-	preexistingObjs []client.Object
+	uncachedObjs      []client.Object
+	preexistingObjs   []client.Object
+	crdDirectoryPaths []string
 }
 
 // EnvironmentOption is a functional option for configuring the environment.
@@ -172,6 +173,13 @@ func WithUncachedObjects(objs ...client.Object) EnvironmentOpt {
 func WithPreexistingObjects(objs ...client.Object) EnvironmentOpt {
 	return func(opts *environmentOpts) {
 		opts.preexistingObjs = objs
+	}
+}
+
+// WithCRDDirectoryPaths appends additional CRD directories to load into the test environment.
+func WithCRDDirectoryPaths(dirs ...string) EnvironmentOpt {
+	return func(opts *environmentOpts) {
+		opts.crdDirectoryPaths = append(opts.crdDirectoryPaths, dirs...)
 	}
 }
 
@@ -194,7 +202,10 @@ func newEnvironment(
 	// envtest does not run conversion webhooks, so only the storage version
 	// round-trips correctly. Since this project uses v1beta2 typed clients,
 	// we must keep v1beta2 as storage.
-	patchedCRDs := loadCRDsWithV1Beta2Storage(ExternalCRDDirectoryPaths())
+	crdPaths := make([]string, 0, len(ExternalCRDDirectoryPaths())+len(envOpts.crdDirectoryPaths))
+	crdPaths = append(crdPaths, ExternalCRDDirectoryPaths()...)
+	crdPaths = append(crdPaths, envOpts.crdDirectoryPaths...)
+	patchedCRDs := loadCRDsWithV1Beta2Storage(crdPaths)
 
 	// Create the test environment.
 	env := &envtest.Environment{
