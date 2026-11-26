@@ -77,7 +77,9 @@ var _ = Describe("Test runApply", func() {
 		Expect(err).To(BeNil())
 
 		// Speed up the test.
+		prevWaitTimeout := waitTimeout
 		waitTimeout = 1 * time.Second
+		defer func() { waitTimeout = prevWaitTimeout }()
 		err = runApply(ctx, c, cluster, strategy, cluster.Namespace, logr.Discard())
 		Expect(err).ToNot(BeNil())
 
