@@ -35,7 +35,7 @@ repositories:
     repoURL: https://mesosphere.github.io/charts/stable/
     charts:
       cosi:
-      - 0.2.2
+      - 0.2.3
   docker-registry:
     repoURL: https://mesosphere.github.io/charts/staging/
     charts:
