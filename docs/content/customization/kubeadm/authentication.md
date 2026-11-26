@@ -60,9 +60,11 @@ webhook) and during topology reconciliation: if `APIServer.ExtraArgs` already
 contains any flag whose name starts with `oidc-` and `clusterConfig.authentication`
 is also set, CAREN rejects the configuration and instructs the operator to
 remove the legacy flags and use `authentication` instead. Likewise, CAREN
-rejects configurations where any `jwt[*].issuer.url` matches an explicit
-`--service-account-issuer` flag (or kubeadm's default
-`https://kubernetes.default.svc.<serviceDomain>`), where `ExtraArgs` already
+rejects configurations where any `jwt[*].issuer.url` matches
+`clusterConfig.serviceAccountIssuer.issuer`, an explicit
+`--service-account-issuer` flag, or kubeadm's default
+`https://kubernetes.default.svc.<serviceDomain>` (when no ServiceAccount issuer
+is configured), where `ExtraArgs` already
 contains `--authentication-config` with a value other than
 `/etc/kubernetes/authentication.yaml`, or where `APIServer.ExtraVolumes`
 defines a conflicting `authentication-config` volume or
@@ -250,8 +252,9 @@ into `clusterConfig.authentication`:
 - **`--oidc-ca-file` (or a file-mounted CA) becomes inline PEM** in
   `issuer.certificateAuthority` rather than a host file path.
 - **Multiple audiences require `audienceMatchPolicy: MatchAny`** on `issuer`.
-- **`issuer.url` must not match `--service-account-issuer`** (or kubeadm's
-  default `https://kubernetes.default.svc.<serviceDomain>`).
+- **`issuer.url` must not match `clusterConfig.serviceAccountIssuer.issuer` or `--service-account-issuer`**
+  (or kubeadm's default `https://kubernetes.default.svc.<serviceDomain>` when
+  no ServiceAccount issuer is configured).
 
 ### Step-by-step migration
 

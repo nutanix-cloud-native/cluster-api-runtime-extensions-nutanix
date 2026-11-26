@@ -455,7 +455,76 @@ spec:
                         Violations trigger a user-facing warning.
                       type: string
                   type: object
+                serviceAccountIssuer:
+                  description: |-
+                    ServiceAccountIssuer configures the API server's ServiceAccount token issuer.
+                    When unset, no issuer flags are set (API server uses kubeadm defaults).
+                  properties:
+                    audiences:
+                      description: |-
+                        Audiences is an optional list of audiences tokens are bound to.
+                        Entries must not contain whitespace, commas, or double quotes because
+                        kube-apiserver parses --api-audiences as CSV via pflag.StringSlice.
+                        When set, rendered as comma-joined --api-audiences sorted alphabetically.
+                        When absent, --api-audiences is not set (API server defaults to issuer URL).
+                        Warning: setting audiences to only external values (such as sts.amazonaws.com) without
+                        keeping the cluster's in-cluster API audience (issuer or https://kubernetes.default.svc.<serviceDomain>),
+                        or removing a previously accepted audience, causes the API server to reject existing
+                        in-cluster ServiceAccount tokens bound to the omitted audience until refreshed.
+                      items:
+                        maxLength: 253
+                        minLength: 1
+                        pattern: ^[^\s,"]+$
+                        type: string
+                      maxItems: 50
+                      type: array
+                      uniqueItems: true
+                    issuer:
+                      description: |-
+                        Issuer is the identifier asserted in ServiceAccount JWT iss claims.
+                        Must be an https:// URL with a non-empty hostname and without userinfo, query, or fragment.
+                        Triggers --service-account-issuer.
+                      format: uri
+                      maxLength: 2048
+                      minLength: 9
+                      pattern: ^https://[^/?#@\s]+(/[^\s?#]*)?$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: must be a valid https URL with a non-empty hostname and valid port
+                          rule: isURL(self) && url(self).getHostname() != '' && (url(self).getPort() == '' || (int(url(self).getPort()) >= 1 && int(url(self).getPort()) <= 65535))
+                    jwksURI:
+                      description: |-
+                        JWKSURI overrides the JWKS URI advertised in the OIDC discovery document.
+                        When set, must be an https:// URL with a non-empty hostname and without userinfo or fragment
+                        (query parameters are permitted per OpenID Connect Discovery 1.0 Section 3).
+                        Triggers --service-account-jwks-uri.
+                      format: uri
+                      maxLength: 2048
+                      minLength: 9
+                      pattern: ^https://[^/?#@\s]+(/[^\s?#]*)?(\?[^\s#]*)?$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: must be a valid https URL with a non-empty hostname and valid port
+                          rule: isURL(self) && url(self).getHostname() != '' && (url(self).getPort() == '' || (int(url(self).getPort()) >= 1 && int(url(self).getPort()) <= 65535))
+                    maxTokenExpiration:
+                      description: |-
+                        MaxTokenExpiration is the maximum lifetime for ServiceAccount tokens.
+                        Must be between 1h and 1193046h28m16s (2^32 seconds), matching kube-apiserver validation.
+                        Note that kube-apiserver enables --service-account-extend-token-expiration=true by default,
+                        which extends default admission-injected Pod projected tokens up to 1 year unless the Pod's
+                        serviceAccountToken projection sets expirationSeconds explicitly.
+                        When set, triggers --service-account-max-token-expiration.
+                      type: string
+                      x-kubernetes-validations:
+                        - message: must be between 1h and 1193046h28m16s (2^32s)
+                          rule: duration(self) >= duration('1h') && duration(self) <= duration('1193046h28m16s')
+                  required:
+                    - issuer
+                  type: object
               type: object
+              x-kubernetes-validations:
+                - message: serviceAccountIssuer.issuer must not overlap with any authentication.jwt issuer.url
+                  rule: '!has(self.authentication) || !has(self.serviceAccountIssuer) || self.authentication.jwt.all(j, j.issuer.url != self.serviceAccountIssuer.issuer)'
           type: object
       served: true
       storage: true

@@ -500,23 +500,31 @@ func EnableAuthenticationInClusterTemplate(
 	raw []byte,
 	auth v1alpha1.Authentication,
 ) ([]byte, error) {
+	return enableClusterConfigFieldInTemplate(raw, authentication.VariableName, auth)
+}
+
+func enableClusterConfigFieldInTemplate(
+	raw []byte,
+	fieldName string,
+	fieldVal any,
+) ([]byte, error) {
 	docs, err := decodeYAMLDocuments(raw)
 	if err != nil {
 		return nil, err
 	}
 
-	authYAML, err := sigsyaml.Marshal(auth)
+	fieldYAML, err := sigsyaml.Marshal(fieldVal)
 	if err != nil {
-		return nil, fmt.Errorf("marshalling authentication config: %w", err)
+		return nil, fmt.Errorf("marshalling %s config: %w", fieldName, err)
 	}
-	var authDoc yaml.Node
-	if err := yaml.Unmarshal(authYAML, &authDoc); err != nil {
-		return nil, fmt.Errorf("decoding authentication yaml node: %w", err)
+	var fieldDoc yaml.Node
+	if err := yaml.Unmarshal(fieldYAML, &fieldDoc); err != nil {
+		return nil, fmt.Errorf("decoding %s yaml node: %w", fieldName, err)
 	}
-	if authDoc.Kind != yaml.DocumentNode || len(authDoc.Content) == 0 {
-		return nil, errors.New("marshalled authentication produced empty YAML node")
+	if fieldDoc.Kind != yaml.DocumentNode || len(fieldDoc.Content) == 0 {
+		return nil, fmt.Errorf("marshalled %s produced empty YAML node", fieldName)
 	}
-	authNode := authDoc.Content[0]
+	fieldNode := fieldDoc.Content[0]
 
 	patched := false
 	for _, doc := range docs {
@@ -533,7 +541,7 @@ func EnableAuthenticationInClusterTemplate(
 			vars = &yaml.Node{Kind: yaml.SequenceNode}
 			setMappingValue(topology, "variables", vars)
 		}
-		upsertClusterConfigAuthenticationNode(vars, authNode)
+		upsertClusterConfigFieldNode(vars, fieldName, fieldNode)
 		patched = true
 	}
 	if !patched {
@@ -876,7 +884,7 @@ func clusterMappingRoot(doc *yaml.Node) *yaml.Node {
 	return root
 }
 
-func upsertClusterConfigAuthenticationNode(varsSeq, authNode *yaml.Node) {
+func upsertClusterConfigFieldNode(varsSeq *yaml.Node, fieldName string, fieldNode *yaml.Node) {
 	for _, item := range varsSeq.Content {
 		if item.Kind != yaml.MappingNode {
 			continue
@@ -894,7 +902,7 @@ func upsertClusterConfigAuthenticationNode(varsSeq, authNode *yaml.Node) {
 		value.Tag = "!!map"
 		value.Value = ""
 		value.Style = 0
-		setMappingValue(value, authentication.VariableName, authNode)
+		setMappingValue(value, fieldName, fieldNode)
 		return
 	}
 
@@ -907,8 +915,8 @@ func upsertClusterConfigAuthenticationNode(varsSeq, authNode *yaml.Node) {
 			{
 				Kind: yaml.MappingNode,
 				Content: []*yaml.Node{
-					{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: authentication.VariableName},
-					authNode,
+					{Kind: yaml.ScalarNode, Tag: yamlStringTag, Value: fieldName},
+					fieldNode,
 				},
 			},
 		},

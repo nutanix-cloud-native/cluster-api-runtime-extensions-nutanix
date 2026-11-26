@@ -522,6 +522,60 @@ var _ = Describe("Generate Authentication patches", func() {
 			},
 		},
 		{
+			Name: "issuer URL matching clusterConfig.serviceAccountIssuer.issuer returns error",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeadmClusterConfigSpec{
+						Authentication: func() *v1alpha1.Authentication {
+							a := singleIssuerAuth()
+							return &a
+						}(),
+						ServiceAccountIssuer: &v1alpha1.ServiceAccountIssuer{
+							Issuer: "https://issuer.example.com",
+						},
+					},
+				),
+			},
+			ExpectedFailure: true,
+		},
+		{
+			Name: "default kubeadm issuer URL succeeds when clusterConfig.serviceAccountIssuer overrides issuer",
+			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
+				WithKubernetesVersion("v1.34.0").
+				NewRequest(""),
+			Vars: []runtimehooksv1.Variable{
+				capitest.VariableWithValue(
+					v1alpha1.ClusterConfigVariableName,
+					v1alpha1.KubeadmClusterConfigSpec{
+						Authentication: &v1alpha1.Authentication{
+							JWT: []v1alpha1.JWTAuthenticator{{
+								Issuer: v1alpha1.Issuer{
+									URL:       "https://kubernetes.default.svc.cluster.local",
+									Audiences: []string{"k8s"},
+								},
+								ClaimMappings: v1alpha1.ClaimMappings{
+									Username: v1alpha1.PrefixedClaimOrExpression{Claim: "sub", Prefix: new("")},
+								},
+							}},
+						},
+						ServiceAccountIssuer: &v1alpha1.ServiceAccountIssuer{
+							Issuer: "https://sa.example.com",
+						},
+					},
+				),
+			},
+			ExpectedPatchMatchers: []capitest.JSONPatchMatcher{
+				filesMatcherWith(
+					authFileMatcher(yamlHasIssuersInOrder("https://kubernetes.default.svc.cluster.local")),
+				),
+				clusterConfigMatcher(authExtraArgsMatcher, authExtraVolumesMatcher),
+			},
+		},
+		{
 			Name: "coexistence with admissionconfiguration neither clobbers the other",
 			RequestItem: (&request.KubeadmControlPlaneTemplateRequestItemBuilder{}).
 				WithKubernetesVersion("v1.34.0").

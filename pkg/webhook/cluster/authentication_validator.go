@@ -78,7 +78,11 @@ func (a *authenticationValidator) validate(
 		return admission.Denied(fmt.Sprintf("clusterConfig.authentication: %v", err))
 	}
 
-	disallowedIssuers, err := a.resolveDisallowedIssuersAndValidateTemplate(ctx, cluster)
+	disallowedIssuers, err := a.resolveDisallowedIssuersAndValidateTemplate(
+		ctx,
+		cluster,
+		clusterConfig.ServiceAccountIssuer,
+	)
 	if err != nil {
 		return admission.Denied(fmt.Sprintf("clusterConfig.authentication: %v", err))
 	}
@@ -96,9 +100,10 @@ func (a *authenticationValidator) validate(
 func (a *authenticationValidator) resolveDisallowedIssuersAndValidateTemplate(
 	ctx context.Context,
 	cluster *clusterv1.Cluster,
+	sai *v1alpha1.ServiceAccountIssuer,
 ) ([]string, error) {
 	serviceDomain := cluster.Spec.ClusterNetwork.ServiceDomain
-	defaultIssuers := authentication.DefaultServiceAccountIssuers(serviceDomain)
+	defaultIssuers := authentication.EffectiveServiceAccountIssuers(sai, serviceDomain)
 
 	if a.client == nil || cluster.Spec.Topology.ClassRef.Name == "" {
 		return defaultIssuers, nil
@@ -133,5 +138,5 @@ func (a *authenticationValidator) resolveDisallowedIssuersAndValidateTemplate(
 		return nil, fmt.Errorf("failed to get KubeadmControlPlaneTemplate %s: %w", templateKey, err)
 	}
 
-	return authentication.ValidateControlPlaneTemplate(cpTemplate, serviceDomain)
+	return authentication.ValidateControlPlaneTemplate(cpTemplate, sai, serviceDomain)
 }
