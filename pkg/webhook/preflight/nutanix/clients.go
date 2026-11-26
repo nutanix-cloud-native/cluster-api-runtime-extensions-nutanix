@@ -157,6 +157,17 @@ type client interface {
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
+
+	// ListReservedIpsBySubnetId lists the reserved addresses on a subnet. One
+	// call answers three questions at once: the subnet exists, it is
+	// IPAM-managed (an unmanaged subnet is rejected outright), and the
+	// credentials may read its reservations, which is the permission the CCM
+	// needs to reserve one.
+	ListReservedIpsBySubnetId(
+		ctx context.Context,
+		subnetExtID string,
+		limit_ *int,
+	) error
 }
 
 // clientWrapper implements the client interface and wraps converged v4 client.
@@ -266,6 +277,12 @@ type clientWrapper struct {
 	) (
 		*netv4.ListSubnetsApiResponse, error,
 	)
+
+	ListReservedIpsBySubnetIdFunc func(
+		ctx context.Context,
+		subnetExtID string,
+		limit_ *int,
+	) error
 }
 
 var _ = client(&clientWrapper{})
@@ -530,7 +547,32 @@ func newClient(
 			}
 			return resp, nil
 		},
+		ListReservedIpsBySubnetIdFunc: func(
+			ctx context.Context,
+			subnetExtID string,
+			limit_ *int,
+		) error {
+			opts := buildODataOptions(nil, limit_, nil, nil, nil)
+			_, err := convergedc.Subnets.ListReservedIpsBySubnetId(ctx, subnetExtID, opts...)
+			return err
+		},
 	}, nil
+}
+
+func (c *clientWrapper) ListReservedIpsBySubnetId(
+	ctx context.Context,
+	subnetExtID string,
+	limit_ *int,
+) error {
+	// callWithContext runs the call in a goroutine, so a nil func would panic
+	// there and take the webhook process with it rather than failing the check.
+	if c.ListReservedIpsBySubnetIdFunc == nil {
+		return fmt.Errorf("no reserved IP listing is wired on this Prism Central client")
+	}
+	_, err := callWithContext(ctx, func() (struct{}, error) {
+		return struct{}{}, c.ListReservedIpsBySubnetIdFunc(ctx, subnetExtID, limit_)
+	})
+	return err
 }
 
 func (c *clientWrapper) ValidateCredentials(

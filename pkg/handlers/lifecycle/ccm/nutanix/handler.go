@@ -22,6 +22,7 @@ import (
 	apivariables "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/api/variables"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/addons"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/config"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/serviceloadbalancer/metallb"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/options"
 	handlersutils "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/utils"
 )
@@ -132,7 +133,9 @@ func (p *provider) Apply(
 		),
 		p.client,
 		helmChart,
-	).WithValueTemplater(templateValuesFunc(clusterConfig.Nutanix))
+	).WithValueTemplater(
+		templateValuesFunc(clusterConfig.Nutanix, clusterConfig.Addons.ServiceLoadBalancer),
+	)
 
 	if err = applier.Apply(ctx, cluster, p.config.DefaultsNamespace(), log); err != nil {
 		return fmt.Errorf("failed to apply nutanix-ccm installation HelmChartProxy: %w", err)
@@ -141,10 +144,65 @@ func (p *provider) Apply(
 	return nil
 }
 
+// autoIPAMConfig returns the automatic Service address configuration when the
+// cluster uses it. MetalLB is the only provider that advertises the pools the
+// CCM creates, so any other provider leaves the Service controller off.
+func autoIPAMConfig(
+	slb *v1alpha1.ServiceLoadBalancer,
+) *v1alpha1.ServiceLoadBalancerAutoIPAM {
+	if slb == nil ||
+		slb.Provider != v1alpha1.ServiceLoadBalancerProviderMetalLB ||
+		slb.Configuration == nil {
+		return nil
+	}
+	return slb.Configuration.AutoIPAM
+}
+
+// clusterUID is the cluster half of the reservation context the CCM stores on
+// Prism Central. An empty value renders empty and the CCM refuses to reserve,
+// rather than reserving an address no cluster teardown could release.
+func clusterUID(cluster *clusterv1.Cluster) string {
+	if cluster == nil {
+		return ""
+	}
+	return string(cluster.GetUID())
+}
+
+// controlPlaneEndpoint is the endpoint the CCM is configured with. The cluster
+// config carries no host while the address is reserved from an IPAM pool - the
+// reserved address is resolved into the generated templates, never persisted -
+// so it is taken from the Cluster, which CAPI has populated by the time any
+// addon is installed.
+//
+// An empty host must not reach the values template: it renders
+// KUBERNETES_SERVICE_HOST="", which defeats the in-cluster config the CCM would
+// otherwise fall back to, and the CCM then crash-loops with the nodes still
+// carrying the uninitialized taint.
+func controlPlaneEndpoint(
+	cluster *clusterv1.Cluster,
+	spec v1alpha1.ControlPlaneEndpointSpec,
+) (v1alpha1.ControlPlaneEndpointSpec, error) {
+	if spec.Host == "" && cluster != nil {
+		spec.Host = cluster.Spec.ControlPlaneEndpoint.Host
+	}
+	if spec.Port == 0 && cluster != nil {
+		spec.Port = cluster.Spec.ControlPlaneEndpoint.Port
+	}
+	if spec.Host == "" {
+		return spec, fmt.Errorf(
+			"no control plane endpoint host for cluster %s; "+
+				"if the address is reserved from a subnet, the reservation has not completed yet",
+			ctrlclient.ObjectKeyFromObject(cluster),
+		)
+	}
+	return spec, nil
+}
+
 func templateValuesFunc(
 	nutanixConfig *v1alpha1.NutanixSpec,
+	serviceLoadBalancer *v1alpha1.ServiceLoadBalancer,
 ) func(*clusterv1.Cluster, string) (string, error) {
-	return func(_ *clusterv1.Cluster, valuesTemplate string) (string, error) {
+	return func(cluster *clusterv1.Cluster, valuesTemplate string) (string, error) {
 		joinQuoted := template.FuncMap{
 			"joinQuoted": func(items []string) string {
 				for i, item := range items {
@@ -166,9 +224,27 @@ func templateValuesFunc(
 			PrismCentralAdditionalTrustBundle string
 			IPsToIgnore                       []string
 			ControlPlaneEndpoint              v1alpha1.ControlPlaneEndpointSpec
+
+			// ServiceLoadBalancerAutoIPAM is nil unless the cluster reserves
+			// Service addresses automatically. It is the only switch for the CCM
+			// LoadBalancer strategy, so the two cannot disagree.
+			ServiceLoadBalancerAutoIPAM *v1alpha1.ServiceLoadBalancerAutoIPAM
+			// MetalLBNamespace is where the CCM creates its per-Service pools. It
+			// must be the namespace CAREN installs MetalLB into.
+			MetalLBNamespace string
+			// ClusterUID identifies this cluster in the reservation context the
+			// CCM stores on Prism Central. It is what lets the management cluster
+			// release this cluster's addresses once the cluster is gone, so it
+			// must be the Cluster UID and not a name, which is reusable.
+			ClusterUID string
 		}
 
 		address, port, err := nutanixConfig.PrismCentralEndpoint.ParseURL()
+		if err != nil {
+			return "", err
+		}
+
+		endpoint, err := controlPlaneEndpoint(cluster, nutanixConfig.ControlPlaneEndpoint)
 		if err != nil {
 			return "", err
 		}
@@ -178,8 +254,11 @@ func templateValuesFunc(
 			PrismCentralPort:                  port,
 			PrismCentralInsecure:              nutanixConfig.PrismCentralEndpoint.Insecure,
 			PrismCentralAdditionalTrustBundle: nutanixConfig.PrismCentralEndpoint.AdditionalTrustBundle,
-			IPsToIgnore:                       ipsToIgnore(nutanixConfig),
-			ControlPlaneEndpoint:              nutanixConfig.ControlPlaneEndpoint,
+			IPsToIgnore:                       ipsToIgnore(endpoint),
+			ControlPlaneEndpoint:              endpoint,
+			ServiceLoadBalancerAutoIPAM:       autoIPAMConfig(serviceLoadBalancer),
+			MetalLBNamespace:                  metallb.DefaultHelmReleaseNamespace,
+			ClusterUID:                        clusterUID(cluster),
 		}
 
 		var b bytes.Buffer
@@ -192,16 +271,20 @@ func templateValuesFunc(
 	}
 }
 
-func ipsToIgnore(nutanixConfig *v1alpha1.NutanixSpec) []string {
-	toIgnore := []string{nutanixConfig.ControlPlaneEndpoint.Host}
-	// Also ignore the virtual IP if it is set.
-	if nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec != nil &&
-		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration != nil &&
-		nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address != "" {
-		toIgnore = append(
-			toIgnore,
-			nutanixConfig.ControlPlaneEndpoint.VirtualIPSpec.Configuration.Address,
-		)
+func ipsToIgnore(endpoint v1alpha1.ControlPlaneEndpointSpec) []string {
+	// An empty string in this list would be rendered into the CCM's
+	// ignoredNodeIPs and compared against every node address.
+	toIgnore := []string{}
+	if host := endpoint.Host; host != "" {
+		toIgnore = append(toIgnore, host)
+	}
+	// Also ignore the virtual IP if it is set and differs from the host, which
+	// it does not when both come from the same reservation.
+	if endpoint.VirtualIPSpec != nil &&
+		endpoint.VirtualIPSpec.Configuration != nil &&
+		endpoint.VirtualIPSpec.Configuration.Address != "" &&
+		endpoint.VirtualIPSpec.Configuration.Address != endpoint.Host {
+		toIgnore = append(toIgnore, endpoint.VirtualIPSpec.Configuration.Address)
 	}
 	return toIgnore
 }

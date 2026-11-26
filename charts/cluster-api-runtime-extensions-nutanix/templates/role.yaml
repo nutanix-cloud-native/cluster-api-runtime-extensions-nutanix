@@ -97,6 +97,33 @@ rules:
       - update
       - watch
   - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - ipaddressclaims
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - ipaddresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - nutanixippools
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+  - apiGroups:
       - storage.k8s.io
     resources:
       - storageclasses

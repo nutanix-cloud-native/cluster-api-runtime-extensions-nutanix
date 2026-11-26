@@ -24,12 +24,21 @@ type ObjectMeta struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// ControlPlaneEndpointSpec is where the API server is reached.
+//
+// The address is either given as host, or reserved from a Nutanix subnet named
+// by virtualIP.configuration.ipReservation. The rule requires at least one and
+// deliberately allows both: once an address has been reserved it is written
+// back into host, because that is the field the CNI and the CCM read.
+// +kubebuilder:validation:XValidation:rule="has(self.host) || (has(self.virtualIP) && has(self.virtualIP.configuration) && has(self.virtualIP.configuration.ipReservation))",message="either host or virtualIP.configuration.ipReservation must be set"
 type ControlPlaneEndpointSpec struct {
 	// The hostname on which the API server is serving.
-	// +kubebuilder:validation:Required
+	// Optional when virtualIP.configuration.ipReservation names a subnet to
+	// reserve the address from; it is then filled in with the reserved address.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
-	Host string `json:"host"`
+	Host string `json:"host,omitempty"`
 
 	// The port on which the API server is serving.
 	// +kubebuilder:validation:Required
@@ -68,6 +77,36 @@ type ControlPlaneVirtualIPConfiguration struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	Port int32 `json:"port,omitempty"`
+
+	// IPReservation reserves the API server address from a Nutanix subnet
+	// instead of requiring the operator to pick a free address themselves.
+	// +kubebuilder:validation:Optional
+	IPReservation *ControlPlaneIPReservation `json:"ipReservation,omitempty"`
+}
+
+// ControlPlaneIPReservation reserves one address for the API server from a
+// Nutanix subnet, so the operator does not have to find a free one. The subnet
+// is identified the same way as everywhere else in this API, which is also how
+// NutanixIPPool identifies one.
+type ControlPlaneIPReservation struct {
+	// Subnet is the Nutanix subnet the API server address is reserved from, as
+	// either a UUID or the name of a subnet. The subnet must be IPAM-managed.
+	// A name need only be unique on this Prism Central; set cluster when it is
+	// not.
+	// Immutable: the address is reserved once, and changing the subnet would
+	// orphan that reservation while the API server still answers on it.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Subnet string `json:"subnet"`
+
+	// Cluster is the Prism Element cluster that disambiguates a subnet name, as
+	// either a name or a UUID. Needed only when the name is not unique on this
+	// Prism Central; a UUID subnet never needs it.
+	// Immutable, for the same reason as subnet.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value cannot be changed after cluster creation"
+	Cluster *string `json:"cluster,omitempty"`
 }
 
 // LocalObjectReference contains enough information to let you locate the

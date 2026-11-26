@@ -282,6 +282,15 @@ spec:
                         - provider
                       type: object
                     serviceLoadBalancer:
+                      description: |-
+                        ServiceLoadBalancer selects the LoadBalancer-type Service provider and where
+                        its addresses come from.
+
+                        autoIPAM is tied to MetalLB: the CCM reserves the address and labels a pool,
+                        and only the MetalLB advertisement CAREN installs announces it. The provider
+                        enum admits MetalLB alone today, so the rule is unreachable; it is here so
+                        that adding a provider fails loudly instead of silently leaving automatic
+                        addresses reserved and unannounced.
                       properties:
                         configuration:
                           description: Configuration for the chosen ServiceLoadBalancer provider.
@@ -290,6 +299,7 @@ spec:
                               description: |-
                                 AddressRanges is a list of IPv4 address ranges the
                                 provider uses to choose an address for a load balancer.
+                                Mutually exclusive with autoIPAM.
                               items:
                                 description: AddressRange defines an IPv4 range.
                                 properties:
@@ -306,9 +316,42 @@ spec:
                               maxItems: 10
                               minItems: 1
                               type: array
-                          required:
-                            - addressRanges
+                            autoIPAM:
+                              description: |-
+                                AutoIPAM reserves one address per LoadBalancer-type Service from a Nutanix
+                                subnet, instead of drawing from a static range. The CCM owns reservation
+                                and release; MetalLB only advertises what the CCM reserved.
+                                Mutually exclusive with addressRanges.
+                              properties:
+                                cluster:
+                                  description: |-
+                                    Cluster is the Prism Element cluster that disambiguates a subnet name, as
+                                    either a name or a UUID. Needed only when the name is not unique on this
+                                    Prism Central; a UUID subnet never needs it.
+                                    Immutable, for the same reason as subnet.
+                                  type: string
+                                  x-kubernetes-validations:
+                                    - message: Value cannot be changed after cluster creation
+                                      rule: self == oldSelf
+                                subnet:
+                                  description: |-
+                                    Subnet is the Nutanix subnet addresses are reserved from, as either a UUID
+                                    or the name of a subnet. The subnet must be IPAM-managed. A name need only
+                                    be unique on this Prism Central; set cluster when it is not.
+                                    Immutable: changing it would orphan the reservations already held on the
+                                    previous subnet.
+                                  minLength: 1
+                                  type: string
+                                  x-kubernetes-validations:
+                                    - message: Value cannot be changed after cluster creation
+                                      rule: self == oldSelf
+                              required:
+                                - subnet
+                              type: object
                           type: object
+                          x-kubernetes-validations:
+                            - message: exactly one of addressRanges or autoIPAM must be set
+                              rule: has(self.addressRanges) != has(self.autoIPAM)
                         provider:
                           description: |-
                             The LoadBalancer-type Service provider to deploy. Not required in infrastructures where
@@ -319,6 +362,9 @@ spec:
                       required:
                         - provider
                       type: object
+                      x-kubernetes-validations:
+                        - message: autoIPAM requires the MetalLB provider
+                          rule: '!has(self.configuration) || !has(self.configuration.autoIPAM) || self.provider == ''MetalLB'''
                   type: object
                 eks:
                   description: EKS cluster configuration.

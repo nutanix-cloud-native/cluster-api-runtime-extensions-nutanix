@@ -100,3 +100,23 @@ func TestControlPlaneEndpointCheck_EndpointTimeout(t *testing.T) {
 
 	assert.Equal(t, preflight.CheckResult{Allowed: true}, result)
 }
+
+// While the API server address is being reserved from a subnet the host is
+// empty. Dialing it would join an empty host to the port and probe localhost,
+// where a management cluster's own API server answers on 6443, so every
+// automatic-mode cluster would be rejected as "endpoint in use".
+func TestControlPlaneEndpointCheckSkipsAnEmptyHost(t *testing.T) {
+	t.Parallel()
+
+	check := &controlPlaneEndpointCheck{
+		cluster: &clusterv1beta2.Cluster{
+			Spec: clusterv1beta2.ClusterSpec{
+				ControlPlaneEndpoint: clusterv1beta2.APIEndpoint{Host: "", Port: 6443},
+			},
+		},
+	}
+
+	result := check.Run(context.Background())
+	assert.True(t, result.Allowed, result.Causes)
+	assert.Empty(t, result.Causes)
+}

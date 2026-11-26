@@ -28,6 +28,7 @@ import (
 	nutanixcsi "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/nutanix"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/csi/snapshotcontroller"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ingress/awsloadbalancercontroller"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/ipam"
 	konnectoragent "github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/konnectoragent"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/nfd"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/lifecycle/registry"
@@ -146,6 +147,7 @@ func (h *Handlers) AllHandlers(mgr manager.Manager) []handlers.Named {
 		awsloadbalancercontroller.New(mgr.GetClient(), h.awsLoadBalancerControllerConfig, helmChartInfoGetter),
 		servicelbgc.New(mgr.GetClient()),
 		coredns.New(mgr.GetClient()),
+		ipam.New(mgr.GetClient()),
 		registry.New(mgr.GetClient(), registryHandlers),
 		// The order of the handlers in the list is important and are called consecutively.
 		// The MetalLB provider may be configured to create a IPAddressPool on the remote cluster.

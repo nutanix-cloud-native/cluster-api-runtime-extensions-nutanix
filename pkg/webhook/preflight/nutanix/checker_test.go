@@ -72,6 +72,9 @@ func TestNutanixChecker_Init(t *testing.T) {
 		storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("storageContainer")
 		},
+		serviceLoadBalancerAutoIPAMChecksFactory: func(cd *checkDependencies) []preflight.Check {
+			return record("serviceLoadBalancerAutoIPAM")
+		},
 		controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {
 			return record("controlPlaneEndpoint")
 		},
@@ -85,7 +88,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 
 	checker.Init(context.Background(), nil, &clusterv1beta2.Cluster{}, nil)
 
-	if !assert.Len(t, calls, 11) {
+	if !assert.Len(t, calls, 12) {
 		return
 	}
 	assert.Equal(t, []string{"configuration", "credentials", "prismCentralVersion"}, calls[:3])
@@ -95,6 +98,7 @@ func TestNutanixChecker_Init(t *testing.T) {
 		"vmImageKubernetesVersion",
 		"cidrValidation",
 		"storageContainer",
+		"serviceLoadBalancerAutoIPAM",
 		"controlPlaneEndpoint",
 		"metro",
 		"flowNetworkSecurityDSRToSNAT",
@@ -203,6 +207,9 @@ func TestNutanixChecker_PrismCentralVersionGating(t *testing.T) {
 					return nil
 				},
 				storageContainerChecksFactory: func(cd *checkDependencies) []preflight.Check {
+					return nil
+				},
+				serviceLoadBalancerAutoIPAMChecksFactory: func(cd *checkDependencies) []preflight.Check {
 					return nil
 				},
 				controlPlaneEndpointChecksFactory: func(cd *checkDependencies) []preflight.Check {

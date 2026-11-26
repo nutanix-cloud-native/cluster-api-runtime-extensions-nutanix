@@ -19,6 +19,7 @@ import (
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/patches/selectors"
 	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/common/pkg/capi/clustertopology/variables"
+	"github.com/nutanix-cloud-native/cluster-api-runtime-extensions-nutanix/pkg/handlers/ipamendpoint"
 )
 
 const (
@@ -27,12 +28,14 @@ const (
 )
 
 type nutanixControlPlaneEndpoint struct {
+	client            client.Client
 	variableName      string
 	variableFieldPath []string
 }
 
-func NewPatch() *nutanixControlPlaneEndpoint {
+func NewPatch(cl client.Client) *nutanixControlPlaneEndpoint {
 	return newNutanixControlPlaneEndpoint(
+		cl,
 		v1alpha1.ClusterConfigVariableName,
 		v1alpha1.NutanixVariableName,
 		VariableName,
@@ -40,10 +43,12 @@ func NewPatch() *nutanixControlPlaneEndpoint {
 }
 
 func newNutanixControlPlaneEndpoint(
+	cl client.Client,
 	variableName string,
 	variableFieldPath ...string,
 ) *nutanixControlPlaneEndpoint {
 	return &nutanixControlPlaneEndpoint{
+		client:            cl,
 		variableName:      variableName,
 		variableFieldPath: variableFieldPath,
 	}
@@ -54,7 +59,7 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 	obj *unstructured.Unstructured,
 	vars map[string]apiextensionsv1.JSON,
 	holderRef runtimehooksv1.HolderReference,
-	_ client.ObjectKey,
+	clusterKey client.ObjectKey,
 	_ mutation.ClusterGetter,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
@@ -71,6 +76,13 @@ func (h *nutanixControlPlaneEndpoint) Mutate(
 			log.V(5).Info("Nutanix ControlPlaneEndpoint variable not defined")
 			return nil
 		}
+		return err
+	}
+
+	// The address may have been reserved rather than named, in which case it
+	// lives only in the IPAddress: NKP forbids writing it back into the
+	// Cluster. Without this the endpoint would be patched in as empty.
+	if _, err := ipamendpoint.Resolve(ctx, h.client, clusterKey, &controlPlaneEndpointVar); err != nil {
 		return err
 	}
 
