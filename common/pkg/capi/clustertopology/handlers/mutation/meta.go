@@ -63,6 +63,11 @@ func (mgp metaGeneratePatches) Name() string {
 	return mgp.name
 }
 
+// Mutators returns the mutators in the order they are applied.
+func (mgp metaGeneratePatches) Mutators() []MetaMutator {
+	return mgp.mutators
+}
+
 func (mgp metaGeneratePatches) CreateClusterGetter(
 	clusterKey client.ObjectKey,
 ) func(context.Context) (*clusterv1.Cluster, error) {

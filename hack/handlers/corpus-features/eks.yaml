@@ -1,0 +1,61 @@
+# Copyright 2026 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  topology:
+    classRef:
+      name: eks-quick-start
+    variables:
+    - name: clusterConfig
+      value:
+        eks:
+          additionalTags:
+            Team: golden
+          identityRef:
+            kind: AWSClusterStaticIdentity
+            name: golden-identity
+          network:
+            vpc:
+              id: vpc-0123456789abcdef0
+          region: us-west-2
+        kubeProxy:
+          mode: disabled
+        ntp:
+          servers:
+          - time.example.com
+        users:
+        - name: golden
+          sshAuthorizedKeys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAua0lo8BiGWgvIiDCKnQDKL5uERHfnehm0ns5CEJpJw golden
+          sudo: ALL=(ALL) NOPASSWD:ALL
+    version: ${KUBERNETES_VERSION}
+    workers:
+      machineDeployments:
+      - class: default-worker
+        name: md-0
+        replicas: ${WORKER_MACHINE_COUNT}
+        variables:
+          overrides:
+          - name: workerConfig
+            value:
+              eks:
+                additionalSecurityGroups:
+                - id: sg-0123456789abcdef0
+                additionalTags:
+                  NodeType: worker
+                ami:
+                  id: ami-0123456789abcdef0
+                placementGroup:
+                  name: golden-worker-pg
+                volumes:
+                  root:
+                    size: 200
+                    type: gp3
+              taints:
+              - effect: NoSchedule
+                key: golden-key
+                value: golden-value
