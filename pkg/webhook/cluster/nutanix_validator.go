@@ -276,14 +276,14 @@ func validateWorkerFailureDomainConfig(
 	return fldErrs
 }
 
-// validatePrismCentralIPNotInLoadBalancerIPRange checks if the Prism Central IP is not
-// in the MetalLB Load Balancer IP range and error out if it is.
+// validatePrismCentralIPNotInLoadBalancerIPRange checks if the Prism Central
+// IP is not inside the ServiceLoadBalancer address range configured for any
+// supported provider, and returns an error if it is.
 func validatePrismCentralIPNotInLoadBalancerIPRange(
 	pcEndpoint v1alpha1.NutanixPrismCentralEndpointSpec,
 	serviceLoadBalancerConfiguration *v1alpha1.ServiceLoadBalancer,
 ) error {
 	if serviceLoadBalancerConfiguration == nil ||
-		serviceLoadBalancerConfiguration.Provider != v1alpha1.ServiceLoadBalancerProviderMetalLB ||
 		serviceLoadBalancerConfiguration.Configuration == nil {
 		return nil
 	}
@@ -299,7 +299,7 @@ func validatePrismCentralIPNotInLoadBalancerIPRange(
 		isIPInRange, err := helpers.IsIPInRange(pool.Start, pool.End, pcIP.String())
 		if err != nil {
 			return fmt.Errorf(
-				"failed to check if Prism Central IP %q is part of MetalLB address range %q-%q: %w",
+				"failed to check if Prism Central IP %q is part of ServiceLoadBalancer address range %q-%q: %w",
 				pcIP,
 				pool.Start,
 				pool.End,
@@ -308,7 +308,7 @@ func validatePrismCentralIPNotInLoadBalancerIPRange(
 		}
 		if isIPInRange {
 			errMsg := fmt.Sprintf(
-				"Prism Central IP %q must not be part of MetalLB address range %q-%q",
+				"Prism Central IP %q must not be part of ServiceLoadBalancer address range %q-%q",
 				pcIP,
 				pool.Start,
 				pool.End,
