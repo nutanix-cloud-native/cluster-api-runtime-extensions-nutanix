@@ -982,50 +982,40 @@
       }
     },
     "govulncheck@latest": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#govulncheck",
+      "last_modified": "2026-11-22T18:15:35Z",
+      "resolved": "github:NixOS/nixpkgs/619c39f6eac5d1ed6b8f073a9414baf7034b2356#govulncheck",
       "source": "devbox-search",
-      "version": "1.1.4",
+      "version": "1.10.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/cjvd14imk7b43sway8ws7fh1swfws8hx-govulncheck-1.1.4",
+              "path": "/nix/store/l3qk2nsarm7ylcvijzza2zq973hvw9d0-govulncheck-1.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/cjvd14imk7b43sway8ws7fh1swfws8hx-govulncheck-1.1.4"
+          "store_path": "/nix/store/l3qk2nsarm7ylcvijzza2zq973hvw9d0-govulncheck-1.10.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/r7cpz24rpavf45d3dzviwkqs7r07ax9c-govulncheck-1.1.4",
+              "path": "/nix/store/7yfhdaijigq8ga1mnnw1ik4rk1cgqql0-govulncheck-1.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/r7cpz24rpavf45d3dzviwkqs7r07ax9c-govulncheck-1.1.4"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/bam9f1h02n6gjd3clv9q9mvj8dfj6lf0-govulncheck-1.1.4",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/bam9f1h02n6gjd3clv9q9mvj8dfj6lf0-govulncheck-1.1.4"
+          "store_path": "/nix/store/7yfhdaijigq8ga1mnnw1ik4rk1cgqql0-govulncheck-1.10.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/3ddprqx23bhzg052f9a7xsr3dz61rx3m-govulncheck-1.1.4",
+              "path": "/nix/store/j08ymfdr91fxdpmy57iaja8hiwi8w49x-govulncheck-1.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/3ddprqx23bhzg052f9a7xsr3dz61rx3m-govulncheck-1.1.4"
+          "store_path": "/nix/store/j08ymfdr91fxdpmy57iaja8hiwi8w49x-govulncheck-1.10.0"
         }
       }
     },
